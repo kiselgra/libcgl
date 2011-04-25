@@ -10,6 +10,7 @@ void register_scheme_functions_for_cameras();
 void register_scheme_functions_for_textures();
 void register_scheme_functions_for_glut();
 void register_scheme_functions_for_meshes();
+void register_scheme_functions_for_framebuffers();
 
 void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();

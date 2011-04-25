@@ -112,12 +112,14 @@ void attach_depth_buffer(framebuffer_ref ref) {
 
 void draw_buffers_done(framebuffer_ref ref) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
+#if CGL_GL_VERSION == GL3
 	if (framebuffers->attachments_in_use == 0) {
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 	}
 	else
 		glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
+#endif
 }
 
 void check_framebuffer_setup(framebuffer_ref ref) {
@@ -148,9 +150,6 @@ void bind_framebuffer(framebuffer_ref ref) {
 	if (framebuffer->attachments_in_use)
 		glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
 	else
-		glDrawBuffer(GL_NONE);
-#else
-	if (framebuffer->attachments_in_use==0)
 		glDrawBuffer(GL_NONE);
 #endif
 	framebuffer->bound = true;
