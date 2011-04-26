@@ -28,6 +28,22 @@ extern "C" {
 		return pixels;
 	}
 
+	unsigned char* load_png3ub(const char *filename, unsigned int *w, unsigned int *h) {
+		png::image<png::rgb_pixel> image(filename);
+		*w = image.get_width(),
+		*h = image.get_height();
+		unsigned char *pixels = (unsigned char*)malloc(3*sizeof(unsigned char)**w**h);
+		for (size_t y = 0; y < *h; ++y)
+			for (size_t x = 0; x < *w; ++x) {
+				png::rgb_pixel px = image.get_pixel(x, *h-y-1);
+				int i = 3*(y**w+x);
+				pixels[i+0] = px.red;
+				pixels[i+1] = px.green;
+				pixels[i+2] = px.blue;
+			}
+		return pixels;
+	}
+
 	void save_png1f(const float *data, unsigned int w, unsigned int h, const char *filename) {
 		png::image<png::rgb_pixel> image(w, h);
 		for (size_t y = 0; y < h; ++y)

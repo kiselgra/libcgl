@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include "cgl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef struct {
 	int id;
 } mesh_ref;
@@ -17,6 +22,11 @@ void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsig
 unsigned int index_buffer_length_of_mesh(mesh_ref mr);
 unsigned int vertex_buffer_length_of_mesh(mesh_ref mr);
 char* mesh_name(mesh_ref mr);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

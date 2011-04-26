@@ -9,6 +9,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  \
                         drawelement.c  drawelement.h  \
                         framebuffer.c  framebuffer.h  \
                         glut.c         glut.h     \
+						gl-version.h \
                         impex.cpp      impex.h      \
                         mesh.c         mesh.h  \
 						objloader.cpp  objloader.h \
@@ -22,7 +23,7 @@ bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
 bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
 
-snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+snarf_opts = -D WITH_GUILE $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 SUFFIXES: .x
 .c.x:
 	guile-snarf -o $@ $< $(snarf_opts)
@@ -34,13 +35,13 @@ SUFFIXES: .x
 CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE -D CGL_GL_VERSION=$(GL_VERSION)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
-library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impex.h mesh.h shader.h texture.h objloader.h scheme.h
+library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h mesh.h shader.h texture.h objloader.h scheme.h
 
 # setting c++ flags:
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) -D WITH_GUILE $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 
 libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
 

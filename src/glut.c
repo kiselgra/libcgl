@@ -71,11 +71,7 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 
 void register_display_function(     void (*fn)())                        { glutDisplayFunc(fn); }
 void register_idle_function(        void (*fn)())                        { glutIdleFunc(fn); }
-#if CGL_GL_VERSION == GL3
 void register_keyboard_function(    void (*fn)(unsigned char, int, int)) { glutKeyboardFunc(fn); }
-#else
-void register_keyboard_function(    void (*fn)(unsigned char)) { glutKeyboardFunc(fn); }
-#endif
 #if CGL_GL_VERSION == GL3
 void register_keyboard_up_function( void (*fn)(unsigned char, int, int)) { glutKeyboardUpFunc(fn); }
 void register_mouse_function(       void (*fn)(int, int, int, int))      { glutMouseFunc(fn); }
@@ -84,11 +80,7 @@ void register_mouse_motion_function(void (*fn)(int, int))                { glutM
 void register_resize_function(      void (*fn)(int, int))                { glutReshapeFunc(fn); }
 
 float move_factor = 0.1;
-#if CGL_GL_VERSION == GL3
 void standard_keyboard(unsigned char key, int x, int y)
-#else
-void standard_keyboard(unsigned char key)
-#endif
 {
 	vec3f tmp;
 	vec3f cam_right, cam_pos, cam_dir, cam_up;

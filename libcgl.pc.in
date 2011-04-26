@@ -7,4 +7,4 @@ Name: libcgl
 Description: cgl
 Version: @VERSION@
 Libs: -L${libdir} -lcgl
-Cflags: -I${includedir}/libcgl-@VERSION@
+Cflags: -I${includedir}/libcgl-@VERSION@ -D CGL_GL_VERSION=@GL_VERSION@

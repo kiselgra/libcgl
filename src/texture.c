@@ -64,6 +64,60 @@ static void incorporate_params(struct texture *tex, tex_params_t *params) {
 	else        tex->params = default_tex_params();
 }
 
+static texture_ref internal_make_tex(const char *name, GLenum target, tex_params_t *params, GLenum int_format, GLenum format, GLenum type, int w, int h, void *data) {
+	texture_ref ref;
+	allocate_texture();
+	ref.id = next_texture_index++;
+	struct texture *texture = textures+ref.id;
+	texture->name = malloc(strlen(name)+1);
+	strcpy(texture->name, name);
+	
+	check_for_gl_errors("1");
+	glGenTextures(1, &texture->texid);
+	
+	check_for_gl_errors("2");
+	glBindTexture(target, texture->texid);
+	texture->target = target;
+	texture->format = format; // data comes in this format
+	texture->internal_format = int_format; // data is stored in this format
+	texture->type = type; // data is expected to come as float
+	texture->bound = true;           // ---v
+	set_texture_params(ref, params); // does bind and unbind.
+	texture->bound = false;
+
+	check_for_gl_errors("3");
+	texture->width = w;
+	texture->height = h;
+	glTexImage2D(target, 0, texture->internal_format, texture->width, texture->height, 0, texture->format, texture->type, data);
+	check_for_gl_errors("4");
+	if (texture->params.mipmapping)
+		glGenerateMipmap(target);
+
+	glBindTexture(target, 0);
+	check_for_gl_errors("5");
+
+	return ref;
+}
+
+texture_ref make_texture_ub(const char *name, const char *filename, int target, tex_params_t *params) {
+	unsigned int w, h;
+	char *actual_name = find_file(filename);
+	texture_ref ref;
+	if (!actual_name) {
+		fprintf(stderr, "File '%s' not found in any registered search directory.\n", filename);
+		ref.id = -1;
+		return ref;
+	}
+	unsigned char *data = load_png3ub(actual_name, &w, &h);
+	free(actual_name);
+	
+	internal_make_tex(name, target, params, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, w, h, data);
+	free(data);
+
+	check_for_gl_errors(__FUNCTION__);
+	return ref;
+}
+
 texture_ref make_texture(const char *name, const char *filename, int target, tex_params_t *params) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
@@ -76,32 +130,7 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 	vec3f *data = load_png3f(actual_name, &w, &h);
 	free(actual_name);
 	
-	allocate_texture();
-	ref.id = next_texture_index++;
-	struct texture *texture = textures+ref.id;
-	texture->name = malloc(strlen(name)+1);
-	strcpy(texture->name, name);
-	
-	glGenTextures(1, &texture->texid);
-	
-	glBindTexture(target, texture->texid);
-	texture->target = target;
-	texture->format = GL_RGB; // data comes in this format
-	texture->internal_format = GL_RGBA; // data is stored in this format
-	texture->type = GL_FLOAT; // data is expected to come as float
-	texture->bound = true;           // ---v
-	set_texture_params(ref, params); // does bind and unbind.
-	texture->bound = false;
-
-	texture->width = w;
-	texture->height = h;
-	texture->format = GL_RGB;
-	glTexImage2D(target, 0, texture->internal_format, texture->width, texture->height, 0, texture->format, texture->type, data);
-	if (texture->params.mipmapping)
-		glGenerateMipmap(target);
-
-	glBindTexture(target, 0);
-
+	internal_make_tex(name, target, params, GL_RGBA, GL_RGB, GL_FLOAT, w, h, data);
 	free(data);
 
 	check_for_gl_errors(__FUNCTION__);
@@ -250,6 +279,19 @@ SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 4, 0, 0, (SCM name, SC
 	else        p = default_fbo_tex_params();
 // 	printf("calling mt with %s %s\n", fn, gl_enum_string(t));
 	texture_ref ref = make_texture(n, fn, t, &p);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_make_texture_from_file_ub, "texture-from-file-ub", 4, 0, 0, (SCM name, SCM filename, SCM target, SCM mm), "") {
+	char *n = scm_to_locale_string(name);
+	char *fn = scm_to_locale_string(filename);
+	GLenum t = scheme_symbol_to_gl_enum(&target);
+	bool mipmap = scm_to_bool(mm);
+	tex_params_t p;
+	if (mipmap) p = default_tex_params();
+	else        p = default_fbo_tex_params();
+// 	printf("calling mt with %s %s\n", fn, gl_enum_string(t));
+	texture_ref ref = make_texture_ub(n, fn, t, &p);
 	return scm_from_int(ref.id);
 }
 

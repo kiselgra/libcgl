@@ -3,6 +3,11 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef struct {
 	int id;
 } shader_ref;
@@ -28,6 +33,11 @@ shader_ref find_shader(const char *name);
 bool valid_shader_ref(shader_ref ref);
 shader_ref make_invalid_shader();
 const char* shader_name(shader_ref ref);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

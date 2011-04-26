@@ -1,11 +1,12 @@
 #ifndef __OBJLOADER_H__ 
 #define __OBJLOADER_H__ 
 
+#include <libmcm-0.0.1/vectors.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <libmcm-0.0.1/vectors.h>
 
 typedef struct {
 	int x, y, z;
@@ -38,6 +39,7 @@ typedef struct {
 
 
 void load_objfile(const char *name, const char *filename, obj_data *output);
+
 
 #ifdef __cplusplus
 }

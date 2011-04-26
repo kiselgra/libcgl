@@ -3,6 +3,11 @@
 
 #include <libmcm-0.0.1/camera-matrices.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef struct {
 	int id;
 } camera_ref;
@@ -28,6 +33,11 @@ camera_ref current_camera();
 camera_ref find_camera(const char *name);
 bool valid_camera_ref(camera_ref ref);
 bool is_perspective_camera(camera_ref ref);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

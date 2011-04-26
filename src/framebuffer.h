@@ -3,6 +3,11 @@
 
 #include "texture.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef struct {
 	int id;
 } framebuffer_ref;
@@ -17,6 +22,10 @@ void unbind_framebuffer(framebuffer_ref ref);
 void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int height);
 framebuffer_ref find_framebuffer(const char *name);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
