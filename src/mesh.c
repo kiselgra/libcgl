@@ -1,0 +1,79 @@
+#include "mesh.h"
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct mesh {
+	char *name;
+	GLuint vao_id;
+	GLuint *vertex_buffer_ids;
+	GLuint index_buffer_id;
+	unsigned int vertex_buffers;
+	char **vertex_buffer_names;
+	int next_vbo;
+	bool bound;
+};
+
+static struct mesh *meshes = 0;
+static unsigned int meshes_allocated = 0, 
+                    next_mesh_index = 0;
+
+mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
+	// maintain mesh table
+	if (next_mesh_index >= meshes_allocated) {
+		struct mesh *old_array = meshes;
+		unsigned int allocate = 1.5 * (meshes_allocated + 1);
+		meshes = malloc(sizeof(struct mesh) * allocate);
+		for (int i = 0; i < meshes_allocated; ++i)
+			meshes[i] = old_array[i];
+		meshes_allocated = allocate;
+		free(old_array);
+	}
+	// set up new mesh
+	mesh_ref ref;
+	ref.mesh_id = next_mesh_index++;
+	struct mesh *mesh = meshes+ref.mesh_id;
+	mesh->next_vbo = 0;
+	mesh->index_buffer_id = 0;
+	mesh->bound = false;
+	mesh->name = malloc(strlen(name)+1);
+	strcpy(mesh->name, name);
+	mesh->vertex_buffer_ids = malloc(sizeof(GLuint) * vertex_buffers);
+	mesh->vertex_buffers = vertex_buffers;
+	mesh->vertex_buffer_names = malloc(sizeof(char*) * vertex_buffers);
+	glGenVertexArrays(1, &mesh->vao_id);
+	glGenBuffers(vertex_buffers, mesh->vertex_buffer_ids);
+	return ref;
+}
+void bind_mesh_to_gl(mesh_ref mr) {
+	glBindVertexArray(meshes[mr.mesh_id].vao_id);
+	meshes[mr.mesh_id].bound = true;
+}
+void unbind_mesh_from_gl(mesh_ref mr) {
+	glBindVertexArray(0);
+	meshes[mr.mesh_id].bound = true;
+}
+bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, unsigned int size_in_bytes, unsigned int element_dim, void *data, GLenum usage_hint) {
+	struct mesh *mesh = meshes+mr.mesh_id;
+	int vbo_id = mesh->next_vbo++;
+	if (vbo_id > mesh->vertex_buffers) {
+		fprintf(stderr, "too many vbos bound to mesh %s.\n", mesh->name);
+		return false;
+	}
+	mesh->vertex_buffer_names[vbo_id] = malloc(strlen(name)+1),
+	strcpy(mesh->vertex_buffer_names[vbo_id], name);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
+	glEnableVertexAttribArray(vbo_id);
+	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint),
+	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+	return true;
+}
+void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsigned int *data, GLenum usage_hint) {
+	struct mesh *mesh = meshes+mr.mesh_id;
+	glGenBuffers(1, &mesh->index_buffer_id);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer_id);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * number_of_indices, data, usage_hint);
+}
+
+
