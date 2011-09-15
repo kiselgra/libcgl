@@ -17,6 +17,7 @@ struct shader {
 	int input_vars;
 	int next_input_var;
 	bool bound, built_ok;
+	char *vert_info_log, *frag_info_log, *program_info_log;
 };
 
 static struct shader *shaders = 0;
@@ -42,6 +43,7 @@ shader_ref make_shader(const char *name, int input_vars) {
 	shader->built_ok = false;
 	shader->input_vars = input_vars;
 	shader->next_input_var = 0;
+	shader->vert_info_log = shader->frag_info_log = 0;
 	shader->input_var_names = malloc(sizeof(char*) * input_vars);
 	shader->input_var_ids = malloc(sizeof(unsigned int*) * input_vars);
 	for (int i = 0; i < input_vars; ++i) {
@@ -52,6 +54,7 @@ shader_ref make_shader(const char *name, int input_vars) {
 	shader->vertex_program = shader->fragment_program = shader->shader_program = 0;
 	return ref;
 }
+
 void add_shader_source(char **destination, const char *add) {
 	unsigned int old_size = 0;
 	if (*destination) old_size = strlen(*destination) + 1; // we insert an additional \n
@@ -65,14 +68,17 @@ void add_shader_source(char **destination, const char *add) {
 	free(*destination);
 	*destination = new_src;
 }
+
 void add_vertex_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.shader_id;
 	add_shader_source(&shader->vertex_source, src);
 }
+
 void add_fragment_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.shader_id;
 	add_shader_source(&shader->fragment_source, src);
 }
+
 bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
 	struct shader *shader = shaders+ref.shader_id;
 	if (shader->next_input_var >= shader->input_vars) {
@@ -85,12 +91,30 @@ bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
 	shader->input_var_ids[i] = index;
 	return true;
 }
+
 bool modify_shader_input_index(shader_ref ref, const char *varname, unsigned int new_index) {
 	// TO DO.
 	// note: shader must be re-linked afterwards.
 	fprintf(stderr, "not supported yet.");
 	return false;
 }
+
+void store_info_log(char **target, GLuint object) {
+	int len = 0, written = 0;
+	if (glIsShader(object))       glGetShaderiv(object, GL_INFO_LOG_LENGTH, &len);
+	else if (glIsProgram(object)) glGetProgramiv(object, GL_INFO_LOG_LENGTH, &len);
+	else                          len = 127;
+	free(*target);
+	*target = malloc(len+1);
+	while (written < len-1) {
+		printf("len = %d, written = %d\n", len, written);
+		if (glIsShader(object))       glGetShaderInfoLog(object, len, &written, *target);
+		else if (glIsProgram(object)) glGetProgramInfoLog(object, len, &written, *target);
+		else                          strcpy(*target, "tried to get info log of an object which is neither a shader nor a program"), written = len;
+	}
+	(*target)[len] = '\0';
+}
+
 bool compile_and_link_shader(shader_ref ref) {
 	struct shader *shader = shaders+ref.shader_id;
 	const GLchar *src[2];
@@ -108,6 +132,7 @@ bool compile_and_link_shader(shader_ref ref) {
 
 	glGetShaderiv(shader->vertex_program, GL_COMPILE_STATUS, &compile_res);
 	if (compile_res == GL_FALSE) {
+		store_info_log(&shader->vert_info_log, shader->vertex_program);
 		glDeleteShader(shader->vertex_program);
 		glDeleteShader(shader->fragment_program);
 		fprintf(stderr, "failed to compile vertex shader of %s\n", shader->name);
@@ -116,6 +141,7 @@ bool compile_and_link_shader(shader_ref ref) {
 
 	glGetShaderiv(shader->fragment_program, GL_COMPILE_STATUS, &compile_res);
 	if (compile_res == GL_FALSE) {
+		store_info_log(&shader->frag_info_log, shader->fragment_program);
 		glDeleteShader(shader->vertex_program);
 		glDeleteShader(shader->fragment_program);
 		fprintf(stderr, "failed to compile fragment shader of %s\n", shader->name);
@@ -139,6 +165,7 @@ bool compile_and_link_shader(shader_ref ref) {
 	glLinkProgram(shader->shader_program);
 	glGetProgramiv(shader->shader_program, GL_LINK_STATUS, &compile_res);
 	if (compile_res == GL_FALSE) {
+		store_info_log(&shader->program_info_log, shader->shader_program);
 		fprintf(stderr, "faild to link shader %s\n", shader->name);
 		return false;
 	}
@@ -146,11 +173,29 @@ bool compile_and_link_shader(shader_ref ref) {
 	shader->built_ok = true;
 	return true;
 }
+
 void bind_shader(shader_ref ref) {
 	glUseProgram(shaders[ref.shader_id].shader_program);
 	shaders[ref.shader_id].bound = true;
 }
+
 void unbind_shader(shader_ref ref) {
 	glUseProgram(0);
 	shaders[ref.shader_id].bound = false;
+}
+
+const char *vertex_shader_info_log(shader_ref ref) {
+	return shaders[ref.shader_id].vert_info_log;
+}
+
+const char *fragment_shader_info_log(shader_ref ref) {
+	return shaders[ref.shader_id].frag_info_log;
+}
+
+const char *shader_info_log(shader_ref ref) {
+	return shaders[ref.shader_id].program_info_log;
+}
+
+int gl_shader_object(shader_ref ref) {
+	return shaders[ref.shader_id].shader_program;
 }
