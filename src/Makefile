@@ -1,11 +1,18 @@
 CC=gcc -Wall -ggdb3 -O0 -std=gnu99
 
-OBJS=blub.o mesh.o shader.o
+all: lib blub
+.PHONY: clean lib
 
-blub: $(OBJS)
-	$(CC) $(OBJS) -o $@ -lGLEW -lGL -lGLU -lglut -lmcm
+LIBOBJS=mesh.o shader.o
 
-.PHONY: clean
+blub: $(OBJS) lib
+	$(CC) blub.c -o $@ libcgl.a -lGLEW -lGL -lGLU -lglut -lmcm
+
+lib: libcgl.a
+
+libcgl.a: $(LIBOBJS)
+	ar rcs libcgl.a $(LIBOBJS)
+
 
 clean:
-	rm $(OBJS) blub
+	rm $(LIBOBJS) blub libcgl.a
