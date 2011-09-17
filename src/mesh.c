@@ -10,6 +10,7 @@ struct mesh {
 	GLuint *vertex_buffer_ids;
 	GLuint index_buffer_id;
 	unsigned int indices;
+	unsigned int vertices;
 	unsigned int vertex_buffers;
 	char **vertex_buffer_names;
 	int next_vbo;
@@ -37,7 +38,7 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	struct mesh *mesh = meshes+ref.mesh_id;
 	mesh->next_vbo = 0;
 	mesh->index_buffer_id = 0;
-	mesh->indices = 0;
+	mesh->indices = mesh->vertices = 0;
 	mesh->bound = false;
 	mesh->name = malloc(strlen(name)+1);
 	strcpy(mesh->name, name);
@@ -56,11 +57,23 @@ void unbind_mesh_from_gl(mesh_ref mr) {
 	glBindVertexArray(0);
 	meshes[mr.mesh_id].bound = true;
 }
-bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, unsigned int size_in_bytes, unsigned int element_dim, void *data, GLenum usage_hint) {
+bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
+	if (content_type != GL_FLOAT) {
+		fprintf(stderr, "Only float vertex buffers supported, atm.\n");
+		exit(-1);
+	}
 	struct mesh *mesh = meshes+mr.mesh_id;
+	if (mesh->vertices)
+		if (mesh->vertices != vertices) {
+			fprintf(stderr, "The mesh %s has a vbo of %d elements bound to it already, so you can't bind another one of size %d\n", mesh->name, mesh->vertices, vertices);
+			exit(-1);
+		}
+		else
+			mesh->vertices = vertices;
+	unsigned int size_in_bytes = sizeof(GLfloat) * vertices * element_dim;
 	int vbo_id = mesh->next_vbo++;
 	if (vbo_id > mesh->vertex_buffers) {
-		fprintf(stderr, "too many vbos bound to mesh %s.\n", mesh->name);
+		fprintf(stderr, "Too many vbos bound to mesh %s.\n", mesh->name);
 		return false;
 	}
 	mesh->vertex_buffer_names[vbo_id] = malloc(strlen(name)+1),
@@ -81,5 +94,8 @@ void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsig
 
 unsigned int index_buffer_length_of_mesh(mesh_ref mr) {
 	return meshes[mr.mesh_id].indices;
+}
+unsigned int vertex_buffer_length_of_mesh(mesh_ref mr) {
+	return meshes[mr.mesh_id].vertices;
 }
 

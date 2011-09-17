@@ -8,6 +8,8 @@ typedef struct {
 } camera_ref;
 
 camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, float fovy, float aspect, float near, float far);
+camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, 
+                                 float right, float left, float top, float bottom, float near, float far);
 
 matrix4x4f* projection_matrix_of_cam(camera_ref ref);
 matrix4x4f* lookat_matrix_of_cam(camera_ref ref);
