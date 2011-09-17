@@ -5,18 +5,17 @@
 
 #include <GL/glew.h>
 #include <GL/glxew.h>
-#include <GL/freeglut.h>
+//#include <GL/freeglut.h>
 
 #include "mesh.h"
 #include "shader.h"
 #include "drawelement.h"
+#include "camera.h"
+#include "glut.h"
 
 #include <libmcm-0.0.1/vectors.h>
 #include <libmcm-0.0.1/matrix.h>
 #include <libmcm-0.0.1/camera-matrices.h>
-
-matrix4x4f projection_matrix, lookat_matrix, gl_view_matrix;
-vec3f cam_pos, cam_dir, cam_up;
 
 void check_for_errors(const char *function)
 {
@@ -167,9 +166,9 @@ void render_tri_new()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	bind_shader(my_shader);
 	int loc = glGetUniformLocation(gl_shader_object(my_shader), "proj");
-	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix.col_major);
+	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
 	loc = glGetUniformLocation(gl_shader_object(my_shader), "moview");
-	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix.col_major);
+	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
 	vec3f light; make_vec3f(&light, 0, 5, 0);
 	loc = glGetUniformLocation(gl_shader_object(my_shader), "light_pos");
 	glUniform3fv(loc, 1, (float*)&light);
@@ -204,115 +203,17 @@ static void display(void)
 
 	render_tri_new();
 
-	glutSwapBuffers();
+	swap_buffers();
 // 	glutPostRedisplay();
 	check_for_errors("display");
 }
 
-static void keyboard(unsigned char key, int x, int y)
-{
-	vec3f tmp;
-	vec3f right;
-	extract_pos_vec3f_of_matrix(&cam_pos, &lookat_matrix);
-	extract_dir_vec3f_of_matrix(&cam_dir, &lookat_matrix);
-	extract_up_vec3f_of_matrix(&cam_up, &lookat_matrix);
-	extract_right_vec3f_of_matrix(&right, &lookat_matrix);
-	float move_factor = 0.1;
-	switch (key) {
-		case 27:
-			exit(0);
-		case 's':
-			copy_vec3f(&tmp, &cam_dir);
-			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
-			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
-			break;
-		case 'w':
-			copy_vec3f(&tmp, &cam_dir);
-			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
-			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
-			break;
-		case 'a':
-			copy_vec3f(&tmp, &right);
-			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
-			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
-			break;
-		case 'd':
-			copy_vec3f(&tmp, &right);
-			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
-			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
-			break;
-		case 'f':
-			copy_vec3f(&tmp, &cam_up);
-			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
-			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
-			break;
-		case 'r':
-			copy_vec3f(&tmp, &cam_up);
-			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
-			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
-			break;
-	}
-	printf("campos:   %f %f %f\n", cam_pos.x, cam_pos.y, cam_pos.z);
-	printf("camdir:   %f %f %f\n", cam_dir.x, cam_dir.y, cam_dir.z);
-	printf("camup:    %f %f %f\n", cam_up.x, cam_up.y, cam_up.z);
-	make_lookat_matrixf(&lookat_matrix, &cam_pos, &cam_dir, &cam_up);
-	make_gl_viewing_matrixf(&gl_view_matrix, &lookat_matrix);
-}
-
-static int last_mouse_x = -1, last_mouse_y = -1;
-
-static void mouse_motion(int x, int y)
-{
-	static matrix4x4f xrot, yrot, rot, tmp;
-	static vec3f x_axis, y_axis; 
-	static bool first_time = true;
-	if (first_time) {
-		make_vec3f(&x_axis, 1, 0, 0);
-		make_vec3f(&y_axis, 0, 1, 0);
-		first_time = false;
-	}
-	float delta_x = x - last_mouse_x;	last_mouse_x = x;
-	float delta_y = y - last_mouse_y;	last_mouse_y = y;
-	float delta_factor = 0.002;
-	make_rotation_matrix4x4f(&xrot, &x_axis, delta_factor * delta_y);
-	make_rotation_matrix4x4f(&yrot, &y_axis, delta_factor * delta_x);
-	multiply_matrices4x4f(&rot, &xrot, &yrot);
-	multiply_matrices4x4f(&tmp, &lookat_matrix, &rot);
-	copy_matrix4x4f(&lookat_matrix, &tmp);
-	make_gl_viewing_matrixf(&gl_view_matrix, &lookat_matrix);
-}
-
-static void mouse_func(int button, int state, int x, int y)
-{
-	if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON)
-		last_mouse_x = x, last_mouse_y = y;
-}
-
-void startup_glut(int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
-{
-	glutInit(&argc, argv);
-	glutInitContextVersion (gl_maj, gl_min);
-	glutInitContextFlags (GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
-	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-	glutInitWindowSize (res_x, res_y); 
-	glutInitWindowPosition (100, 100);
-	glutCreateWindow("GLEW Test");
-	
-	glViewport(0,0,res_x,res_y);
-
-	glutDisplayFunc(display); 
-	glutIdleFunc(display); 
-	glutMouseFunc(mouse_func);
-	glutMotionFunc(mouse_motion);
-	// glutReshapeFunc(reshape);
-	// glutReshapeFunc(reshape);
-	glutKeyboardFunc (keyboard);
-}
-
 int main(int argc, char **argv) 
 {
-	startup_glut(argc, argv, 3, 3, 500, 500);
-	
+	startup_glut("blub", argc, argv, 3, 3, 500, 500);
+	register_display_function(display);
+	register_idle_function(display);
+
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
 	ignore_error("glew-init");
@@ -330,13 +231,11 @@ int main(int argc, char **argv)
 	check_for_errors("after trigen");
 	make_shaders();
 
-	make_projection_matrixf(&projection_matrix, 45, 1, 0.01, 10000);
-
+	vec3f cam_pos, cam_dir, cam_up;
 	make_vec3f(&cam_pos, 0, 0, 1);
 	make_vec3f(&cam_dir, 0, 0, -1);
 	make_vec3f(&cam_up, 0, 1, 0);
-	make_lookat_matrixf(&lookat_matrix, &cam_pos, &cam_dir, &cam_up);
-	make_gl_viewing_matrixf(&gl_view_matrix, &lookat_matrix);
+	use_camera(make_perspective_cam("my cam", &cam_pos, &cam_dir, &cam_up, 45, 1, 0.1, 1000));
 
 	int w = 10, h = 10;
 	vec3f *grid = malloc(sizeof(vec3f)*h*w);
@@ -381,8 +280,7 @@ int main(int argc, char **argv)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	glutMainLoop();
-
+	enter_glut_main_loop();
 
 	return 0;
 }
