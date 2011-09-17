@@ -8,7 +8,7 @@
 #include <GL/freeglut.h>
 #include <stdio.h>
 
-void startup_glut(char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
+void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
 {
 	glutInit(&argc, argv);
 	glutInitContextVersion (gl_maj, gl_min);

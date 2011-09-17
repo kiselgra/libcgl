@@ -14,7 +14,7 @@
 
 #include <libmcm-0.0.1/matrix.h>
 
-void startup_glut(char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y);
+void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y);
 
 void register_display_function(     void (*fn)());
 void register_idle_function(        void (*fn)());

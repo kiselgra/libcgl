@@ -3,7 +3,7 @@ CC=gcc -Wall -ggdb3 -O0 -std=gnu99
 all: lib blub
 .PHONY: clean lib
 
-LIBOBJS=mesh.o shader.o drawelement.o glut.o camera.o
+LIBOBJS=mesh.o shader.o drawelement.o glut.o camera.o cgl.o
 
 blub: $(OBJS) lib
 	$(CC) blub.c -o $@ libcgl.a -lGLEW -lGL -lGLU -lglut -lmcm

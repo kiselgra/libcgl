@@ -7,6 +7,7 @@
 #include <GL/glxew.h>
 //#include <GL/freeglut.h>
 
+#include "cgl.h"
 #include "mesh.h"
 #include "shader.h"
 #include "drawelement.h"
@@ -16,34 +17,6 @@
 #include <libmcm-0.0.1/vectors.h>
 #include <libmcm-0.0.1/matrix.h>
 #include <libmcm-0.0.1/camera-matrices.h>
-
-void check_for_errors(const char *function)
-{
-	GLenum error;
-	bool fucked = false;
-	while (( error = glGetError() ) != GL_NO_ERROR) {
-		fprintf (stderr, "GL error %d detected in %s\n", error, function);
-		fucked = true;
-	}
-
-	if (fucked) exit(-1);
-}
-
-void ignore_error(const char *function)
-{
-	GLenum error = glGetError();
-	fprintf(stderr, "Ignoring GL error %s (for %s).\n", gluErrorString(error), function);
-}
-
-void dump_info(void)
-{
-	check_for_errors ("pre dumpInfo");
-	printf ("Vendor: %s\n", glGetString (GL_VENDOR));
-	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
-	printf ("Version: %s\n", glGetString (GL_VERSION));
-	printf ("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
-	check_for_errors ("dumpInfo");
-}
 
 
 GLuint master_vertex_array_buffer_object;
@@ -205,30 +178,17 @@ static void display(void)
 
 	swap_buffers();
 // 	glutPostRedisplay();
-	check_for_errors("display");
+	check_for_gl_errors("display");
 }
 
 int main(int argc, char **argv) 
 {
-	startup_glut("blub", argc, argv, 3, 3, 500, 500);
+	startup_cgl("blub", 3, 3, argc, argv, 500, 500, true);
 	register_display_function(display);
 	register_idle_function(display);
 
-	glewExperimental = GL_TRUE;
-	GLenum err = glewInit();
-	ignore_error("glew-init");
-	
-	if (GLEW_OK != err)
-	{
-		/* Problem: glewInit failed, something is seriously wrong. */
-		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-	}
-	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
-	
-	dump_info();
-
 	MakeTriangleNew();
-	check_for_errors("after trigen");
+	check_for_gl_errors("after trigen");
 	make_shaders();
 
 	vec3f cam_pos, cam_dir, cam_up;
