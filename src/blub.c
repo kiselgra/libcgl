@@ -165,7 +165,7 @@ void make_shaders()
 
 mesh_ref s1, line_mesh[7][7], ortho_test;
 float h_min = 0, h_max = 0;
-int level = 3;
+int level = 0;
 
 void render_tri_new()
 {
@@ -286,13 +286,21 @@ mesh_ref make_sampled_bspline_mesh(int samples, int k, int i, float *t, float st
 	return sample_mesh;
 }
 
-float T[] = { 0, 1, 2, 3, 4, 5, 6 };
+float T[] = { 0, 1, 2, 3, 4, 5, 6, 7, 7, 7 };
+// float T[] = { 0, 1, 2, 2.1, 2.2, 3.2, 4.2, 5.2, 6.2, 7.2, 8, 9 };
+
+void spline_keyhandler(unsigned char key, int x, int y) {
+	if (key == '+' && level < 3) ++level;
+	else if (key == '-' && level > 0) --level;
+	else standard_keyboard(key, x, y);
+}
 
 int main(int argc, char **argv) 
 {
 	startup_cgl("blub", 3, 3, argc, argv, 500, 500, true);
 	register_display_function(display);
 	register_idle_function(display);
+	register_keyboard_function(spline_keyhandler);
 
 	MakeTriangleNew();
 	check_for_gl_errors("after trigen");
@@ -304,13 +312,13 @@ int main(int argc, char **argv)
 	make_vec3f(&cam_up, 0, 1, 0);
 	use_camera(make_perspective_cam("my cam", &cam_pos, &cam_dir, &cam_up, 45, 1, 0.1, 1000));
 // 	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, (int)2*M_PI*100, 0, 100, 0, 0.1, 1000));
-	float ortho_r = 7, ortho_l = -1,
+	float ortho_r = 9, ortho_l = -2,
 	      ortho_t = 4, ortho_b = -1;
 	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, ortho_r, ortho_l, ortho_t, ortho_b, 0.01, 1000));
 
 	for (int k = 0; k < 4; ++k)
 		for (int i = 0; i < 7-k; ++i)
-			line_mesh[k][i] = make_sampled_bspline_mesh(500, k, i, T, 0, 6);
+			line_mesh[k][i] = make_sampled_bspline_mesh(500, k, i, T, -1, 7);
 
 	vec3f *ortho_verts = malloc(sizeof(vec3f)*3*4);
 	unsigned int *ortho_ids = malloc(sizeof(unsigned int) * 12);
