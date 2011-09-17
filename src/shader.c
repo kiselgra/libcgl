@@ -59,7 +59,7 @@ void add_shader_source(char **destination, const char *add) {
 	unsigned int old_size = 0;
 	if (*destination) old_size = strlen(*destination) + 1; // we insert an additional \n
 	unsigned int new_size = strlen(add);
-	char *new_src = malloc(old_size + new_size);
+	char *new_src = malloc(old_size + new_size+1);
 	if (old_size) {
 		strcpy(new_src, *destination);
 		new_src[old_size] = '\n';

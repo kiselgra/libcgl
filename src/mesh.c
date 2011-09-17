@@ -9,6 +9,7 @@ struct mesh {
 	GLuint vao_id;
 	GLuint *vertex_buffer_ids;
 	GLuint index_buffer_id;
+	unsigned int indices;
 	unsigned int vertex_buffers;
 	char **vertex_buffer_names;
 	int next_vbo;
@@ -36,6 +37,7 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	struct mesh *mesh = meshes+ref.mesh_id;
 	mesh->next_vbo = 0;
 	mesh->index_buffer_id = 0;
+	mesh->indices = 0;
 	mesh->bound = false;
 	mesh->name = malloc(strlen(name)+1);
 	strcpy(mesh->name, name);
@@ -71,9 +73,13 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, uns
 }
 void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsigned int *data, GLenum usage_hint) {
 	struct mesh *mesh = meshes+mr.mesh_id;
+	mesh->indices = number_of_indices;
 	glGenBuffers(1, &mesh->index_buffer_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer_id);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * number_of_indices, data, usage_hint);
 }
 
+unsigned int index_buffer_length_of_mesh(mesh_ref mr) {
+	return meshes[mr.mesh_id].indices;
+}
 

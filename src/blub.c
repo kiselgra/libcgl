@@ -84,9 +84,42 @@ void MakeTriangleNew()
 }
 
 
-GLuint vertex_shader;
-GLuint fragment_shader;   
-GLuint shader;
+
+struct drawelement {
+	char *name;
+	mesh_ref mesh;
+	shader_ref shader;
+	matrix4x4f local_transformation;
+};
+typedef struct {
+	int id;
+} drawelement_ref;
+static struct drawelement *drawelements = 0;
+static unsigned int drawelements_allocated = 0,
+                    next_drawelement_index = 0;
+
+drawelement_ref make_drawelement(const char *name, mesh_ref mesh, shader_ref shader, matrix4x4f *local_transformation) {
+	if (next_drawelement_index >= drawelements_allocated) {
+		struct drawelement *old_array = drawelements;
+		unsigned int allocate = 1.5 * (drawelements_allocated + 1);
+		drawelements = malloc(sizeof(struct drawelement) * allocate);
+		for (int i = 0; i < drawelements_allocated; ++i)
+			drawelements[i] = old_array[i];
+		drawelements_allocated = allocate;
+		free(old_array);
+	}
+	// actual setup
+	drawelement_ref ref;
+	ref.id = next_drawelement_index++;
+	struct drawelement *drawelement = drawelements + ref.id;
+	drawelement->name = malloc(strlen(name)+1);
+	strcpy(drawelement->name, name);
+	drawelement->mesh = mesh;
+	drawelement->shader = shader;
+	copy_matrix4x4f(&drawelement->local_transformation, local_transformation);
+	return ref;
+}
+
 
 
 shader_ref my_shader;
@@ -102,14 +135,19 @@ void make_shaders()
 		"#version 150 core\n"
 		"\n"
 		"in vec3 in_Position;\n"
+		"in vec3 in_normal;\n"
 		"uniform mat4 proj;\n"
 		"uniform mat4 moview;\n"
+		"out vec4 pos_wc;\n"
+		"out vec3 normal_wc;\n"
 		"in vec3 in_Color;\n"
 		"out vec3 ex_Color;\n"
 		"\n"
 		"void main(void)\n"
 		"{\n"
-		"	gl_Position = proj * moview * vec4(in_Position, 1.0); //vec4(in_Position, 1.0);\n"
+		"	pos_wc = vec4(in_Position, 1.0);\n"
+		"	normal_wc = in_normal;\n"
+		"	gl_Position = proj * moview * pos_wc;\n"
 		"	ex_Color = in_Color;\n"
 		"}\n";
 
@@ -120,18 +158,29 @@ void make_shaders()
 		"// precision highp float;\n"
 		"\n"
 		"in vec3 ex_Color;\n"
-		"out vec4 out_Color;\n"
+		"in vec4 pos_wc;\n"
+		"in vec3 normal_wc;\n"
+		"out vec4 out_col;\n"
+		"uniform vec3 light_pos;\n"
+		"uniform vec2 h_min_max;\n"
 		"\n"
 		"void main(void)\n"
 		"{\n"
-		"	out_Color = vec4(1,0,0,1.0);\n"
+		"	out_col = vec4(normalize(normal_wc), 1);\n"
+		"	vec3 to_light = normalize(light_pos - pos_wc.xyz);\n"
+		"	float n_dot_l = dot(normal_wc, to_light);\n"
+		"	out_col = vec4(n_dot_l,0,0,1);\n"
+		"   float r = (pos_wc.y - h_min_max.x) / (h_min_max.y - h_min_max.x);\n"
+		"	out_col = vec4(r,0,0,1);\n"
+		"	//out_col = vec4(1,0,0,1.0);\n"
 		"}\n";
 	
 
-	my_shader = make_shader("my shader", 1);
+	my_shader = make_shader("my shader", 2);
 	add_vertex_source(my_shader, vertex);
 	add_fragment_source(my_shader, frag);
 	add_shader_input(my_shader, "in_Position", 0);
+	add_shader_input(my_shader, "in_normal", 1);
 	bool ok = compile_and_link_shader(my_shader);
 	if (!ok) {
 		fprintf(stderr, "Vertex Shader Info Log:\n"
@@ -145,23 +194,42 @@ void make_shaders()
 	}
 }
 
+mesh_ref s1;
+float h_min = 0, h_max = 0;
 
 void render_tri_new()
 {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	bind_shader(my_shader);
 	int loc = glGetUniformLocation(gl_shader_object(my_shader), "proj");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix.col_major);
 	loc = glGetUniformLocation(gl_shader_object(my_shader), "moview");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix.col_major);
+	vec3f light; make_vec3f(&light, 0, 5, 0);
+	loc = glGetUniformLocation(gl_shader_object(my_shader), "light_pos");
+	glUniform3fv(loc, 1, (float*)&light);
+	vec2f heights; make_vec2f(&heights, h_min, h_max);
+	loc = glGetUniformLocation(gl_shader_object(my_shader), "h_min_max");
+	glUniform2fv(loc, 1, (float*)&heights);
 
+	/*
 	bind_mesh_to_gl(tri_mesh);
 	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(tri_mesh);
+	*/
+
+	bind_mesh_to_gl(s1);
+	glDrawElements(GL_TRIANGLES, index_buffer_length_of_mesh(s1), GL_UNSIGNED_INT, 0);
+	unbind_mesh_from_gl(s1);
 	
 	unbind_shader(my_shader);
 }
 
-void display(void)
+// 
+// glut stuff
+// 
+
+static void display(void)
 {
 	static float c = 0;
 	//c += 0.00001;
@@ -176,41 +244,109 @@ void display(void)
 	check_for_errors("display");
 }
 
-void keyboard(unsigned char key, int x, int y)
+static void keyboard(unsigned char key, int x, int y)
 {
-	static float angle = 0;
 	vec3f tmp;
+	vec3f right;
+	extract_pos_vec3f_of_matrix(&cam_pos, &lookat_matrix);
+	extract_dir_vec3f_of_matrix(&cam_dir, &lookat_matrix);
+	extract_up_vec3f_of_matrix(&cam_up, &lookat_matrix);
+	extract_right_vec3f_of_matrix(&right, &lookat_matrix);
+	float move_factor = 0.1;
 	switch (key) {
 		case 27:
 			exit(0);
-		case 'r':
-			angle += 0.1;
-			float x = cos(angle);
-			float y = sin(angle);
-			make_vec3f(&cam_pos, y, 0, x);
-			make_vec3f(&tmp, 0, 0, 0);
-			sub_components_vec3f(&cam_dir, &tmp, &cam_pos);
+		case 's':
+			copy_vec3f(&tmp, &cam_dir);
+			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
+			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
-
-		case 'l':
-			make_vec3f(&tmp, 0.02, 0, 0);
-			add_components_vec3f(&cam_pos, &tmp, &cam_pos);
+		case 'w':
+			copy_vec3f(&tmp, &cam_dir);
+			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
+			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
+			break;
+		case 'a':
+			copy_vec3f(&tmp, &right);
+			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
+			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
+			break;
+		case 'd':
+			copy_vec3f(&tmp, &right);
+			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
+			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
+			break;
+		case 'f':
+			copy_vec3f(&tmp, &cam_up);
+			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
+			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
+			break;
+		case 'r':
+			copy_vec3f(&tmp, &cam_up);
+			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
+			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 	}
+	printf("campos:   %f %f %f\n", cam_pos.x, cam_pos.y, cam_pos.z);
+	printf("camdir:   %f %f %f\n", cam_dir.x, cam_dir.y, cam_dir.z);
+	printf("camup:    %f %f %f\n", cam_up.x, cam_up.y, cam_up.z);
 	make_lookat_matrixf(&lookat_matrix, &cam_pos, &cam_dir, &cam_up);
 	make_gl_viewing_matrixf(&gl_view_matrix, &lookat_matrix);
 }
 
+static int last_mouse_x = -1, last_mouse_y = -1;
+
+static void mouse_motion(int x, int y)
+{
+	static matrix4x4f xrot, yrot, rot, tmp;
+	static vec3f x_axis, y_axis; 
+	static bool first_time = true;
+	if (first_time) {
+		make_vec3f(&x_axis, 1, 0, 0);
+		make_vec3f(&y_axis, 0, 1, 0);
+		first_time = false;
+	}
+	float delta_x = x - last_mouse_x;	last_mouse_x = x;
+	float delta_y = y - last_mouse_y;	last_mouse_y = y;
+	float delta_factor = 0.002;
+	make_rotation_matrix4x4f(&xrot, &x_axis, delta_factor * delta_y);
+	make_rotation_matrix4x4f(&yrot, &y_axis, delta_factor * delta_x);
+	multiply_matrices4x4f(&rot, &xrot, &yrot);
+	multiply_matrices4x4f(&tmp, &lookat_matrix, &rot);
+	copy_matrix4x4f(&lookat_matrix, &tmp);
+	make_gl_viewing_matrixf(&gl_view_matrix, &lookat_matrix);
+}
+
+static void mouse_func(int button, int state, int x, int y)
+{
+	if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON)
+		last_mouse_x = x, last_mouse_y = y;
+}
+
+void startup_glut(int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
+{
+	glutInit(&argc, argv);
+	glutInitContextVersion (gl_maj, gl_min);
+	glutInitContextFlags (GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
+	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutInitWindowSize (res_x, res_y); 
+	glutInitWindowPosition (100, 100);
+	glutCreateWindow("GLEW Test");
+	
+	glViewport(0,0,res_x,res_y);
+
+	glutDisplayFunc(display); 
+	glutIdleFunc(display); 
+	glutMouseFunc(mouse_func);
+	glutMotionFunc(mouse_motion);
+	// glutReshapeFunc(reshape);
+	// glutReshapeFunc(reshape);
+	glutKeyboardFunc (keyboard);
+}
 
 int main(int argc, char **argv) 
 {
-	glutInit(&argc, argv);
-	glutInitContextVersion (3, 3);
-	glutInitContextFlags (GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
-	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-	glutInitWindowSize (500, 500); 
-	glutInitWindowPosition (100, 100);
-	glutCreateWindow("GLEW Test");
+	startup_glut(argc, argv, 3, 3, 500, 500);
 	
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
@@ -223,18 +359,8 @@ int main(int argc, char **argv)
 	}
 	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 	
-	glViewport(0,0,500,500);
-	// dumpInfo ();
-	// init ();
-	glutDisplayFunc(display); 
-	glutIdleFunc(display); 
-	// glutReshapeFunc(reshape);
-	// glutReshapeFunc(reshape);
-	glutKeyboardFunc (keyboard);
 	dump_info();
 
-
-// 	MakeTriangle();
 	MakeTriangleNew();
 	check_for_errors("after trigen");
 	make_shaders();
@@ -247,10 +373,48 @@ int main(int argc, char **argv)
 	make_lookat_matrixf(&lookat_matrix, &cam_pos, &cam_dir, &cam_up);
 	make_gl_viewing_matrixf(&gl_view_matrix, &lookat_matrix);
 
-	// broken awesome on ubuntu
-	display();
-	display();
-	// ;
+	int w = 10, h = 10;
+	vec3f *grid = malloc(sizeof(vec3f)*h*w);
+	vec3f *norm = malloc(sizeof(vec3f)*h*w);
+	for (int y = 0; y < h; ++y)
+		for (int x = 0; x < w; ++x) {
+			float z = (rand()%16000-8000)/6000.0;
+			make_vec3f(grid+(y*w)+x, x, z, -y);
+		}
+	for (int y = 0; y < h; ++y)
+		for (int x = 0; x < w; ++x) {
+			vec3f accum;
+			vec3f from;
+			copy_vec3f(&from, grid+(y*w)+x);
+			vec3f tmp;
+			sub_components_vec3f(&accum, grid+((y+1)*w)+x, &from);
+			sub_components_vec3f(&tmp, grid+((y-1)*w)+x, &from); add_components_vec3f(&accum, &accum, &tmp);
+			sub_components_vec3f(&tmp, grid+(y*w)+x+1, &from);   add_components_vec3f(&accum, &accum, &tmp);
+			sub_components_vec3f(&tmp, grid+(y*w)+x-1, &from);   add_components_vec3f(&accum, &accum, &tmp);
+			div_vec3f_by_scalar(norm+(y*w)+x, &tmp, 4);
+			if (from.y > h_max) h_max = from.y;
+			if (from.y < h_min) h_min = from.y;
+		}
+	int indices = (h-1)*(w-1)*6;
+	unsigned int *index_buffer = malloc(sizeof(int)*indices);
+	for (int y = 0; y < h-1; ++y)
+		for (int x = 0; x < w-1; ++x) {
+			index_buffer[6*(y*(w-1)+x) + 0] = y*w+x;
+			index_buffer[6*(y*(w-1)+x) + 1] = y*w+x+1;
+			index_buffer[6*(y*(w-1)+x) + 2] = (y+1)*w+x;
+			index_buffer[6*(y*(w-1)+x) + 3] = y*w+x+1;
+			index_buffer[6*(y*(w-1)+x) + 4] = (y+1)*w+x+1;
+			index_buffer[6*(y*(w-1)+x) + 5] = (y+1)*w+x;
+		}
+	s1 = make_mesh("s1", 2);
+	bind_mesh_to_gl(s1);
+	add_vertex_buffer_to_mesh(s1, "verts", GL_FLOAT, sizeof(float)*3*w*h, 3, (float*)grid, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(s1, "normals", GL_FLOAT, sizeof(float)*3*w*h, 3, (float*)norm, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(s1, indices, index_buffer, GL_STATIC_DRAW);
+	unbind_mesh_from_gl(s1);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
 	glutMainLoop();
 
