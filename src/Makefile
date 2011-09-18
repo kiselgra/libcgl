@@ -1,6 +1,6 @@
 CC=gcc -Wall -ggdb3 -O0 -std=gnu99
 
-all: lib blub bspline
+all: lib blub bspline bezier
 .PHONY: clean lib
 
 LIBOBJS=mesh.o shader.o drawelement.o glut.o camera.o cgl.o
@@ -10,6 +10,9 @@ blub: blub.c lib
 
 bspline: bspline.c lib
 	$(CC) bspline.c -o $@ libcgl.a -lGLEW -lGL -lGLU -lglut -lmcm
+
+bezier: bezier.c lib
+	$(CC) bezier.c -o $@ libcgl.a -lGLEW -lGL -lGLU -lglut -lmcm
 
 lib: libcgl.a
 
