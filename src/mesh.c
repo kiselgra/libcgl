@@ -34,8 +34,8 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	}
 	// set up new mesh
 	mesh_ref ref;
-	ref.mesh_id = next_mesh_index++;
-	struct mesh *mesh = meshes+ref.mesh_id;
+	ref.id = next_mesh_index++;
+	struct mesh *mesh = meshes+ref.id;
 	mesh->next_vbo = 0;
 	mesh->index_buffer_id = 0;
 	mesh->indices = mesh->vertices = 0;
@@ -49,27 +49,31 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	glGenBuffers(vertex_buffers, mesh->vertex_buffer_ids);
 	return ref;
 }
+
 void bind_mesh_to_gl(mesh_ref mr) {
-	glBindVertexArray(meshes[mr.mesh_id].vao_id);
-	meshes[mr.mesh_id].bound = true;
+	glBindVertexArray(meshes[mr.id].vao_id);
+	meshes[mr.id].bound = true;
 }
+
 void unbind_mesh_from_gl(mesh_ref mr) {
 	glBindVertexArray(0);
-	meshes[mr.mesh_id].bound = true;
+	meshes[mr.id].bound = true;
 }
+
 bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
 	if (content_type != GL_FLOAT) {
 		fprintf(stderr, "Only float vertex buffers supported, atm.\n");
 		exit(-1);
 	}
-	struct mesh *mesh = meshes+mr.mesh_id;
-	if (mesh->vertices)
+	struct mesh *mesh = meshes+mr.id;
+	if (mesh->vertices) {
 		if (mesh->vertices != vertices) {
 			fprintf(stderr, "The mesh %s has a vbo of %d elements bound to it already, so you can't bind another one of size %d\n", mesh->name, mesh->vertices, vertices);
 			exit(-1);
 		}
-		else
-			mesh->vertices = vertices;
+	}
+	else
+		mesh->vertices = vertices;
 	unsigned int size_in_bytes = sizeof(GLfloat) * vertices * element_dim;
 	int vbo_id = mesh->next_vbo++;
 	if (vbo_id > mesh->vertex_buffers) {
@@ -80,12 +84,33 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, uns
 	strcpy(mesh->vertex_buffer_names[vbo_id], name);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
 	glEnableVertexAttribArray(vbo_id);
-	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint),
+	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 	return true;
 }
+
+bool change_vertex_buffer_data(mesh_ref mr, char *name, GLenum content_type, unsigned int element_dim, void *data, GLenum usage_hint) {
+	struct mesh *mesh = meshes+mr.id;
+	int vbo_id = -1;
+	for (int i = 0; i < mesh->next_vbo; ++i)
+		if (strcmp(name, mesh->vertex_buffer_names[i]) == 0) {
+			vbo_id = i;
+			break;
+		}
+	if (vbo_id == -1) {
+		fprintf(stderr, "In change_vertex_buffer_data: Mesh does not have a vbo called %s.\n", name);
+		exit(-1);
+	}
+	unsigned int size_in_bytes = sizeof(GLfloat) * mesh->vertices * element_dim;
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
+	glEnableVertexAttribArray(vbo_id);
+	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
+	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+	return true;
+}
+
 void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsigned int *data, GLenum usage_hint) {
-	struct mesh *mesh = meshes+mr.mesh_id;
+	struct mesh *mesh = meshes+mr.id;
 	mesh->indices = number_of_indices;
 	glGenBuffers(1, &mesh->index_buffer_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer_id);
@@ -93,9 +118,9 @@ void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsig
 }
 
 unsigned int index_buffer_length_of_mesh(mesh_ref mr) {
-	return meshes[mr.mesh_id].indices;
+	return meshes[mr.id].indices;
 }
 unsigned int vertex_buffer_length_of_mesh(mesh_ref mr) {
-	return meshes[mr.mesh_id].vertices;
+	return meshes[mr.id].vertices;
 }
 
