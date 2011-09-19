@@ -141,13 +141,14 @@ void make_shaders() // {{{
 		"out vec4 out_col;\n"
 		"uniform sampler2D the_tex;\n"
 		"void main() {\n"
-		"	out_col = texture(the_tex, out_tc);\n"
+		"	//out_col = vec4(out_tc,0,1);//texture(the_tex, out_tc);\n"
+		"	out_col = vec4(texture(the_tex, out_tc).rgb, 1);\n"
 		"}\n";
 	tex_shader = make_shader("line shader", 2);
 	add_vertex_source(tex_shader, tex_vert);
 	add_fragment_source(tex_shader, tex_frag);
 	add_shader_input(tex_shader, "in_pos", 0);
-	add_shader_input(tex_shader, "in_tc", 0);
+	add_shader_input(tex_shader, "in_tc", 1);
 	ok = compile_and_link_shader(tex_shader);
 	if (!ok) {
 		fprintf(stderr, "Vertex Shader Info Log:\n"
@@ -219,13 +220,16 @@ static void display(void)
 
 	loc = glGetUniformLocation(gl_shader_object(line_shader), "line_col");
 		
+	/*
 	if (draw_cp) {
 		bind_mesh_to_gl(control_grid_mesh);
 		glUniform3fv(loc, 1, (float*)(colors+6));
 		glDrawElements(GL_LINES, index_buffer_length_of_mesh(control_grid_mesh), GL_UNSIGNED_INT, 0);
 		unbind_mesh_from_gl(control_point_mesh);
 	}
+	*/
 	
+	/*
 	bind_mesh_to_gl(control_point_mesh);
 	glUniform3fv(loc, 1, (float*)(colors+3));
 	if (selected_cp >= 0)
@@ -234,6 +238,7 @@ static void display(void)
 	glPointSize(10);
 	glDrawElements(GL_POINTS, index_buffer_length_of_mesh(control_point_mesh), GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(control_point_mesh);
+	*/
 	
 	void render_patch(struct bezier_patch *patch, int level) {
 		if (level == 0) {
@@ -245,18 +250,25 @@ static void display(void)
 			render_patch(patch->children[i], level-1);
 	}
 	glUniform3fv(loc, 1, (float*)(colors+0));
-	render_patch(bezier_patch, level);
+// 	render_patch(bezier_patch, level);
 	
 	unbind_shader(line_shader);
 
 
 	bind_shader(tex_shader);
+
+	loc = glGetUniformLocation(gl_shader_object(tex_shader), "proj");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+
+	glBindTexture(GL_TEXTURE_2D, texture_id(test_texture));
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "the_tex");
-	glUniform1i(loc, texture_id(test_texture));
+	glUniform1i(loc, 0);
+
 	bind_mesh_to_gl(test_mesh);
 	glDrawElements(GL_TRIANGLES, index_buffer_length_of_mesh(test_mesh), GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(test_mesh);
 	unbind_shader(tex_shader);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	swap_buffers();
 	check_for_gl_errors("display");
@@ -336,7 +348,7 @@ void subdivide_patch(struct bezier_patch *p, int d) {
 	      right[number_of_control_points],
 	      curr[number_of_control_points];
 	vec3f new_grids[4][number_of_control_points*number_of_control_points];
-	int w = number_of_control_points, h = number_of_control_points;
+	int w = number_of_control_points/*, h = number_of_control_points*/;
 	
 	// subdivide along y
 	for (int y = 0; y < number_of_control_points; ++y) {

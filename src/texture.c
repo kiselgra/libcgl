@@ -46,12 +46,14 @@ texture_ref make_texture(const char *name, const char *filename, int target) {
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-// 	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	texture->width = 2;
 	texture->height = 2;
-	float data[2*2*4] = { 1,0,0,1,   0,1,0,1,   0,0,1,1,    0,1,1,1 };
-	glTexImage2D(target, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_FLOAT, data);
+// 	float data[2*2*4] = { 1,0,0,1,   0,1,0,1,   0,0,1,1,    0,1,1,1 };
+// 	glTexImage2D(target, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_FLOAT, data);
+	unsigned char data[2*2*4] = { 255,0,0,255,   0,255,0,255,  0,0,255,255,  0,255,255,255 };
+	glTexImage2D(target, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	glBindTexture(target, 0);
 
