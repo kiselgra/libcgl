@@ -137,11 +137,13 @@ bool draw_cp = true;
 // glut stuff
 // 
 
+#define number_of_control_points 8
+
 struct bezier_node {
 	struct bezier_node *left, *right;
 	mesh_ref mesh;
-	vec3f control_points[4];
-	unsigned int indices[4];
+	vec3f control_points[number_of_control_points];
+	unsigned int indices[number_of_control_points];
 };
 struct bezier_node *bezier_line;
 
@@ -221,13 +223,13 @@ static void display(void)
 }
 
 
-#define number_of_control_points 4
 static vec3f control_points[number_of_control_points];
-unsigned int cp_ids[number_of_control_points] = { 0, 1, 2, 3 };
+unsigned int cp_ids[number_of_control_points];
 
 struct bezier_node* make_bezier_segment(vec3f *cp, int d);
 
 void subdivide(struct bezier_node *node, int d) {
+/*
 	vec3f left[4], right[4];
 	vec3f level1[3];
 	vec3f level2[2];
@@ -251,6 +253,31 @@ void subdivide(struct bezier_node *node, int d) {
 	right[1] = level2[1];
 	right[2] = level1[2];
 	right[3] = node->control_points[3];
+*/
+	vec3f left[number_of_control_points], right[number_of_control_points];
+	vec3f level[number_of_control_points][number_of_control_points];
+	vec3f tmp;
+
+	for (int i = 0; i < number_of_control_points; ++i)
+		level[0][i] = node->control_points[i];
+	left[0] = node->control_points[0];
+	right[number_of_control_points-1] = node->control_points[number_of_control_points-1];
+
+	printf("------------------\n");
+	for (int l = 1; l < number_of_control_points; ++l) {
+// 		printf("level %d: ", l);
+		for (int i = 0; i < number_of_control_points - l; ++i) {
+// 			printf("%d ", i);
+			sub_components_vec3f(&tmp, level[l-1]+i+1, level[l-1]+i);
+			div_vec3f_by_scalar(&tmp, &tmp, 2);
+			add_components_vec3f(level[l]+i, level[l-1]+i, &tmp);
+		}
+// 		printf("\n");
+// 		printf("left %d:  L %d   I %d\n", l, l, 0);
+// 		printf("right %d: L %d   I %d\n", number_of_control_points-l-1, l, number_of_control_points-l-1);
+		left[l] = level[l][0];
+		right[number_of_control_points-l-1] = level[l][number_of_control_points-l-1];
+	}
 	
 	node->left = make_bezier_segment(left, d+1);
 	node->right = make_bezier_segment(right, d+1);
@@ -259,14 +286,14 @@ void subdivide(struct bezier_node *node, int d) {
 struct bezier_node* make_bezier_segment(vec3f *cp, int d) {
 	struct bezier_node *node = malloc(sizeof(struct bezier_node));
 	node->left = node->right = 0;
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < number_of_control_points; ++i) {
 		node->control_points[i] = cp[i];
 		node->indices[i] = i;
 	}
 	node->mesh = make_mesh("a bezier segment", 1);
 	bind_mesh_to_gl(node->mesh);
-	add_vertex_buffer_to_mesh(node->mesh, "vt", GL_FLOAT, 4, 3, node->control_points, GL_STATIC_DRAW);
-	add_index_buffer_to_mesh(node->mesh, 4, node->indices, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(node->mesh, "vt", GL_FLOAT, number_of_control_points, 3, node->control_points, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(node->mesh, number_of_control_points, node->indices, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(node->mesh);
 
 	if (d < 5) subdivide(node, d);
@@ -277,11 +304,15 @@ void regen_bezier() {
 	static bool first_time = true;
 	float z = 10;
 
+	for (int i = 0; i < number_of_control_points; ++i) cp_ids[i] = i;
+
 	if (first_time) {
 		make_vec3f(control_points+0, 0,    -0.5, z);
 		make_vec3f(control_points+1, -0.5,  0.5, z);
 		make_vec3f(control_points+2,  0.5,  1.5, z);
 		make_vec3f(control_points+3,  1.5,  1.5, z);
+		for (int i = 4; i < number_of_control_points; ++i)
+			make_vec3f(control_points+i, 0.5+i*0.2, 0.0, z);
 	}
 	
 	bezier_line = make_bezier_segment(control_points, 0);
