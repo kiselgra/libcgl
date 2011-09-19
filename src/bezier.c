@@ -229,31 +229,6 @@ unsigned int cp_ids[number_of_control_points];
 struct bezier_node* make_bezier_segment(vec3f *cp, int d);
 
 void subdivide(struct bezier_node *node, int d) {
-/*
-	vec3f left[4], right[4];
-	vec3f level1[3];
-	vec3f level2[2];
-	vec3f level3[1];
-	vec3f tmp;
-	sub_components_vec3f(&tmp, node->control_points+1, node->control_points+0);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level1+0, node->control_points+0, &tmp);
-	sub_components_vec3f(&tmp, node->control_points+2, node->control_points+1);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level1+1, node->control_points+1, &tmp);
-	sub_components_vec3f(&tmp, node->control_points+3, node->control_points+2);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level1+2, node->control_points+2, &tmp);
-	
-	sub_components_vec3f(&tmp, level1+1, level1+0);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level2+0, level1+0, &tmp);
-	sub_components_vec3f(&tmp, level1+2, level1+1);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level2+1, level1+1, &tmp);
-	
-	sub_components_vec3f(&tmp, level2+1, level2+0);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level3+0, level2+0, &tmp);
-
-	left[0] = node->control_points[0];
-	left[1] = level1[0];
-	left[2] = level2[0];
-	left[3] = level3[0];
-	
-	right[0] = level3[0];
-	right[1] = level2[1];
-	right[2] = level1[2];
-	right[3] = node->control_points[3];
-*/
 	vec3f left[number_of_control_points], right[number_of_control_points];
 	vec3f level[number_of_control_points][number_of_control_points];
 	vec3f tmp;
@@ -263,18 +238,12 @@ void subdivide(struct bezier_node *node, int d) {
 	left[0] = node->control_points[0];
 	right[number_of_control_points-1] = node->control_points[number_of_control_points-1];
 
-	printf("------------------\n");
 	for (int l = 1; l < number_of_control_points; ++l) {
-// 		printf("level %d: ", l);
 		for (int i = 0; i < number_of_control_points - l; ++i) {
-// 			printf("%d ", i);
 			sub_components_vec3f(&tmp, level[l-1]+i+1, level[l-1]+i);
 			div_vec3f_by_scalar(&tmp, &tmp, 2);
 			add_components_vec3f(level[l]+i, level[l-1]+i, &tmp);
 		}
-// 		printf("\n");
-// 		printf("left %d:  L %d   I %d\n", l, l, 0);
-// 		printf("right %d: L %d   I %d\n", number_of_control_points-l-1, l, number_of_control_points-l-1);
 		left[l] = level[l][0];
 		right[number_of_control_points-l-1] = level[l][number_of_control_points-l-1];
 	}

@@ -12,6 +12,7 @@
 #include "shader.h"
 #include "drawelement.h"
 #include "camera.h"
+#include "texture.h"
 #include "glut.h"
 
 #include <libmcm-0.0.1/vectors.h>
@@ -22,6 +23,7 @@
 
 shader_ref my_shader;
 shader_ref line_shader;
+shader_ref tex_shader;
 
 void make_shaders() // {{{
 {
@@ -123,27 +125,74 @@ void make_shaders() // {{{
 	}
 
 
+	const char *tex_vert =
+		"#version 150 core\n"
+		"in vec3 in_pos;\n"
+		"in vec2 in_tc;\n"
+		"out vec2 out_tc;\n"
+		"uniform mat4 proj;\n"
+		"void main() {\n"
+		"	gl_Position = proj * vec4(in_pos,1);\n"
+		"	out_tc = in_tc;\n"
+		"}\n";
+	const char *tex_frag =
+		"#version 150 core\n"
+		"in vec2 out_tc;\n"
+		"out vec4 out_col;\n"
+		"uniform sampler2D the_tex;\n"
+		"void main() {\n"
+		"	out_col = texture(the_tex, out_tc);\n"
+		"}\n";
+	tex_shader = make_shader("line shader", 2);
+	add_vertex_source(tex_shader, tex_vert);
+	add_fragment_source(tex_shader, tex_frag);
+	add_shader_input(tex_shader, "in_pos", 0);
+	add_shader_input(tex_shader, "in_tc", 0);
+	ok = compile_and_link_shader(tex_shader);
+	if (!ok) {
+		fprintf(stderr, "Vertex Shader Info Log:\n"
+		                "-----------------------\n%s\n"
+						"Fragment Shader Info Log:\n"
+						"-------------------------\n%s\n"
+						"Program Info Log:\n"
+						"-----------------\n%s\n", vertex_shader_info_log(tex_shader),
+						                           fragment_shader_info_log(tex_shader),
+												   shader_info_log(tex_shader));
+	}
+
+
 } // }}}
 
 #define refinement_levels 5
-mesh_ref s1, line_mesh[7][7], ortho_test, control_point_mesh, spline_mesh, refined_cps[refinement_levels];
+mesh_ref ortho_test, control_point_mesh, control_grid_mesh;
 float h_min = 0, h_max = 0;
 int level = 0;
 int selected_cp = -1;
 bool draw_cp = true;
 
+mesh_ref test_mesh;
+texture_ref test_texture;
 
 // 
 // glut stuff
 // 
 
+#define number_of_control_points 4
+
 struct bezier_node {
 	struct bezier_node *left, *right;
 	mesh_ref mesh;
-	vec3f control_points[4];
-	unsigned int indices[4];
+	vec3f control_points[number_of_control_points];
+	unsigned int indices[number_of_control_points];
 };
 struct bezier_node *bezier_line;
+
+struct bezier_patch {
+	struct bezier_patch *children[4];
+	mesh_ref mesh;
+	vec3f control_grid[number_of_control_points*number_of_control_points];
+};
+struct bezier_patch *bezier_patch;
 
 static void display(void)
 {
@@ -162,15 +211,6 @@ static void display(void)
 	make_vec3f(colors+5, 1, 0, 1);
 	make_vec3f(colors+6, 1, 1, 1);
 
-/*
-	for (int i = 0; i < 7-level; ++i) {
-		int loc = glGetUniformLocation(gl_shader_object(line_shader), "line_col");
-		glUniform3fv(loc, 1, (float*)(colors+i));
-		bind_mesh_to_gl(line_mesh[level][i]);
-		glDrawElements(GL_LINE_STRIP, index_buffer_length_of_mesh(line_mesh[level][i]), GL_UNSIGNED_INT, 0);
-		unbind_mesh_from_gl(line_mesh[level][i]);
-	}
-	*/
 
 	
 	bind_mesh_to_gl(ortho_test);
@@ -178,137 +218,200 @@ static void display(void)
 	unbind_mesh_from_gl(ortho_test);
 
 	loc = glGetUniformLocation(gl_shader_object(line_shader), "line_col");
+		
+	if (draw_cp) {
+		bind_mesh_to_gl(control_grid_mesh);
+		glUniform3fv(loc, 1, (float*)(colors+6));
+		glDrawElements(GL_LINES, index_buffer_length_of_mesh(control_grid_mesh), GL_UNSIGNED_INT, 0);
+		unbind_mesh_from_gl(control_point_mesh);
+	}
+	
 	bind_mesh_to_gl(control_point_mesh);
 	glUniform3fv(loc, 1, (float*)(colors+3));
 	if (selected_cp >= 0)
 // 		glDrawRangeElements(GL_POINTS, selected_cp+1, selected_cp+2, 2, GL_UNSIGNED_INT, 0);
 		glDrawElementsBaseVertex(GL_POINTS, 1, GL_UNSIGNED_INT, 0, selected_cp);
-	glUniform3fv(loc, 1, (float*)(colors+6));
-	if (draw_cp)
-		glDrawElements(GL_LINE_STRIP, index_buffer_length_of_mesh(control_point_mesh), GL_UNSIGNED_INT, 0);
 	glPointSize(10);
 	glDrawElements(GL_POINTS, index_buffer_length_of_mesh(control_point_mesh), GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(control_point_mesh);
 	
-	void render_segment(struct bezier_node *node, int level) {
+	void render_patch(struct bezier_patch *patch, int level) {
 		if (level == 0) {
-			bind_mesh_to_gl(node->mesh);
-			glDrawElements(GL_LINE_STRIP, index_buffer_length_of_mesh(node->mesh), GL_UNSIGNED_INT, 0);
-			unbind_mesh_from_gl(node->mesh);
+			bind_mesh_to_gl(patch->mesh);
+			glDrawElements(GL_LINES, index_buffer_length_of_mesh(patch->mesh), GL_UNSIGNED_INT, 0);
+			unbind_mesh_from_gl(patch->mesh);
 		}
-		else if (node->left && node->right) {
-			render_segment(node->left, level-1);
-			render_segment(node->right, level-1);
-		}
+		else for (int i = 0; i < 4; ++i)
+			render_patch(patch->children[i], level-1);
 	}
-	
 	glUniform3fv(loc, 1, (float*)(colors+0));
-	render_segment(bezier_line, level);
-	
-	/*
-	glUniform3fv(loc, 1, (float*)(colors+0));
-	bind_mesh_to_gl(spline_mesh);
-	glDrawElements(GL_LINE_STRIP, index_buffer_length_of_mesh(spline_mesh), GL_UNSIGNED_INT, 0);
-	unbind_mesh_from_gl(spline_mesh);
-	*/
-
-
+	render_patch(bezier_patch, level);
 	
 	unbind_shader(line_shader);
+
+
+	bind_shader(tex_shader);
+	loc = glGetUniformLocation(gl_shader_object(tex_shader), "the_tex");
+	glUniform1i(loc, texture_id(test_texture));
+	bind_mesh_to_gl(test_mesh);
+	glDrawElements(GL_TRIANGLES, index_buffer_length_of_mesh(test_mesh), GL_UNSIGNED_INT, 0);
+	unbind_mesh_from_gl(test_mesh);
+	unbind_shader(tex_shader);
 
 	swap_buffers();
 	check_for_gl_errors("display");
 }
 
 
-#define number_of_control_points 4
-static vec3f control_points[number_of_control_points];
-unsigned int cp_ids[number_of_control_points] = { 0, 1, 2, 3 };
-
 struct bezier_node* make_bezier_segment(vec3f *cp, int d);
 
-void subdivide(struct bezier_node *node, int d) {
-	vec3f left[4], right[4];
-	vec3f level1[3];
-	vec3f level2[2];
-	vec3f level3[1];
+void subdivide(vec3f *control_points, vec3f *left, vec3f *right) {
+	vec3f level[number_of_control_points][number_of_control_points];
 	vec3f tmp;
-	sub_components_vec3f(&tmp, node->control_points+1, node->control_points+0);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level1+0, node->control_points+0, &tmp);
-	sub_components_vec3f(&tmp, node->control_points+2, node->control_points+1);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level1+1, node->control_points+1, &tmp);
-	sub_components_vec3f(&tmp, node->control_points+3, node->control_points+2);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level1+2, node->control_points+2, &tmp);
-	
-	sub_components_vec3f(&tmp, level1+1, level1+0);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level2+0, level1+0, &tmp);
-	sub_components_vec3f(&tmp, level1+2, level1+1);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level2+1, level1+1, &tmp);
-	
-	sub_components_vec3f(&tmp, level2+1, level2+0);    div_vec3f_by_scalar(&tmp, &tmp, 2);   add_components_vec3f(level3+0, level2+0, &tmp);
 
-	left[0] = node->control_points[0];
-	left[1] = level1[0];
-	left[2] = level2[0];
-	left[3] = level3[0];
-	
-	right[0] = level3[0];
-	right[1] = level2[1];
-	right[2] = level1[2];
-	right[3] = node->control_points[3];
-	
-	node->left = make_bezier_segment(left, d+1);
-	node->right = make_bezier_segment(right, d+1);
-}
+	for (int i = 0; i < number_of_control_points; ++i)
+		level[0][i] = control_points[i];
+	left[0] = control_points[0];
+	right[number_of_control_points-1] = control_points[number_of_control_points-1];
 
-struct bezier_node* make_bezier_segment(vec3f *cp, int d) {
-	struct bezier_node *node = malloc(sizeof(struct bezier_node));
-	node->left = node->right = 0;
-	for (int i = 0; i < 4; ++i) {
-		node->control_points[i] = cp[i];
-		node->indices[i] = i;
+	for (int l = 1; l < number_of_control_points; ++l) {
+		for (int i = 0; i < number_of_control_points - l; ++i) {
+			sub_components_vec3f(&tmp, level[l-1]+i+1, level[l-1]+i);
+			div_vec3f_by_scalar(&tmp, &tmp, 2);
+			add_components_vec3f(level[l]+i, level[l-1]+i, &tmp);
+		}
+		left[l] = level[l][0];
+		right[number_of_control_points-l-1] = level[l][number_of_control_points-l-1];
 	}
-	node->mesh = make_mesh("a bezier segment", 1);
-	bind_mesh_to_gl(node->mesh);
-	add_vertex_buffer_to_mesh(node->mesh, "vt", GL_FLOAT, 4, 3, node->control_points, GL_STATIC_DRAW);
-	add_index_buffer_to_mesh(node->mesh, 4, node->indices, GL_STATIC_DRAW);
-	unbind_mesh_from_gl(node->mesh);
-
-	if (d < 5) subdivide(node, d);
-	return node;
 }
 
-void regen_bezier() {
+#define number_of_patch_indices (2*(2*(number_of_control_points-1)*number_of_control_points))
+unsigned int patch_indices[number_of_patch_indices];
+void precompute_index_buffer() {
+	int w = number_of_control_points, h = number_of_control_points;
+	for (int y = 0; y < h-1; ++y)
+		for (int x = 0; x < w-1; ++x) {
+			int idx = (y*(w-1)+x);
+			patch_indices[4*idx + 0] = y*w+x;
+			patch_indices[4*idx + 1] = y*w+x+1;
+			patch_indices[4*idx + 2] = y*w+x;
+			patch_indices[4*idx + 3] = (y+1)*w+x;
+		}
+	int sofar = (h-1)*(w-1)*4;
+	for (int y = 0; y < h-1; ++y) {
+		patch_indices[sofar + 2*y + 0] = y*w + w-1;
+		patch_indices[sofar + 2*y + 1] = (y+1)*w + w-1;
+	}
+	sofar += 2*(h-1);
+	for (int x = 0; x < w-1; ++x) {
+		patch_indices[sofar + 2*x + 0] = (h-1)*w + x;
+		patch_indices[sofar + 2*x + 1] = (h-1)*w + x+1;
+	}
+	printf("sofar: %d / %d\n", sofar + 2*(w-1), 2*(2*(number_of_control_points-1)*number_of_control_points));
+}
+
+void subdivide_patch(struct bezier_patch *p, int d);
+
+struct bezier_patch* make_bezier_patch(vec3f *cp, int d) {
+	// init patch
+	struct bezier_patch *patch = malloc(sizeof(struct bezier_patch));
+	for (int i = 0; i < 4; ++i) patch->children[i] = 0;
+	// copy control points
+	for (int y = 0; y < number_of_control_points; ++y)
+		for (int x = 0; x < number_of_control_points; ++x)
+			patch->control_grid[y*number_of_control_points+x] = cp[y*number_of_control_points+x];
+	patch->mesh = make_mesh("a bezier patch", 1);
+	bind_mesh_to_gl(patch->mesh);
+	add_vertex_buffer_to_mesh(patch->mesh, "vt", GL_FLOAT, number_of_control_points*number_of_control_points, 3, patch->control_grid, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(patch->mesh, number_of_patch_indices, patch_indices, GL_STATIC_DRAW);
+	unbind_mesh_from_gl(patch->mesh);
+
+	if (d > 0) subdivide_patch(patch, d);
+
+	return patch;
+}
+
+void subdivide_patch(struct bezier_patch *p, int d) {
+	vec3f left[number_of_control_points],
+	      right[number_of_control_points],
+	      curr[number_of_control_points];
+	vec3f new_grids[4][number_of_control_points*number_of_control_points];
+	int w = number_of_control_points, h = number_of_control_points;
+	
+	// subdivide along y
+	for (int y = 0; y < number_of_control_points; ++y) {
+		for (int x = 0; x < number_of_control_points; ++x)
+			curr[x] = p->control_grid[y*w + x];
+		subdivide(curr, left, right);
+		for (int x = 0; x < number_of_control_points; ++x) {
+			new_grids[0][y*w+x] = left[x];
+			new_grids[1][y*w+x] = right[x];
+		}
+	}
+	
+	// subdivide along x
+	for (int x = 0; x < number_of_control_points; ++x) {
+		for (int i = 0; i < 2; ++i) {
+			for (int y = 0; y < number_of_control_points; ++y)
+				curr[y] = new_grids[i][y*w + x];
+			subdivide(curr, left, right);
+			for (int y = 0; y < number_of_control_points; ++y) {
+				new_grids[i][y*w+x] = left[y];
+				new_grids[i+2][y*w+x] = right[y];
+			}
+		}
+	}
+
+	for (int i = 0; i < 4; ++i)
+		p->children[i] = make_bezier_patch(new_grids[i], d-1);
+}
+
+vec3f base_control_grid[number_of_control_points*number_of_control_points];
+unsigned int cp_ids[number_of_control_points*number_of_control_points];
+
+void regen_patch() {
 	static bool first_time = true;
 	float z = 10;
-
-	if (first_time) {
-		make_vec3f(control_points+0, 0,    -0.5, z);
-		make_vec3f(control_points+1, -0.5,  0.5, z);
-		make_vec3f(control_points+2,  0.5,  1.5, z);
-		make_vec3f(control_points+3,  1.5,  1.5, z);
-	}
 	
-	bezier_line = make_bezier_segment(control_points, 0);
-
+	if (first_time)
+		for (int y = 0; y < number_of_control_points; ++y)
+			for (int x = 0; x < number_of_control_points; ++x) {
+				make_vec3f(base_control_grid+y*number_of_control_points+x, x/2.0-0.5, y/2.0-0.5, z);
+				cp_ids[y*number_of_control_points+x] = y*number_of_control_points+x;
+			}
+	
+	bezier_patch = make_bezier_patch(base_control_grid, 5);
+	
 	if (first_time) {
 		control_point_mesh = make_mesh("control points", 1);
 		bind_mesh_to_gl(control_point_mesh);
-		add_vertex_buffer_to_mesh(control_point_mesh, "vt", GL_FLOAT, number_of_control_points, 3, control_points, GL_STATIC_DRAW);
-		add_index_buffer_to_mesh(control_point_mesh, number_of_control_points, cp_ids, GL_STATIC_DRAW);
+		add_vertex_buffer_to_mesh(control_point_mesh, "vt", GL_FLOAT, number_of_control_points*number_of_control_points, 3, base_control_grid, GL_STATIC_DRAW);
+		add_index_buffer_to_mesh(control_point_mesh, number_of_control_points*number_of_control_points, cp_ids, GL_STATIC_DRAW);
 		unbind_mesh_from_gl(control_point_mesh);
+
+		control_grid_mesh = make_mesh("control grid", 1);
+		bind_mesh_to_gl(control_grid_mesh);
+		add_vertex_buffer_to_mesh(control_grid_mesh, "vt", GL_FLOAT, number_of_control_points*number_of_control_points, 3, base_control_grid, GL_STATIC_DRAW);
+		add_index_buffer_to_mesh(control_grid_mesh, number_of_patch_indices, patch_indices, GL_STATIC_DRAW);
+		unbind_mesh_from_gl(control_grid_mesh);
 
 		first_time = false;
 	}
 	else {
 		bind_mesh_to_gl(control_point_mesh);
-		change_vertex_buffer_data(control_point_mesh, "vt", GL_FLOAT, 3, control_points, GL_STATIC_DRAW);
+		change_vertex_buffer_data(control_point_mesh, "vt", GL_FLOAT, 3, base_control_grid, GL_STATIC_DRAW);
 		unbind_mesh_from_gl(control_point_mesh);
+		
+		bind_mesh_to_gl(control_grid_mesh);
+		change_vertex_buffer_data(control_grid_mesh, "vt", GL_FLOAT, 3, base_control_grid, GL_STATIC_DRAW);
+		unbind_mesh_from_gl(control_grid_mesh);
 	}
+
 }
 
 void spline_keyhandler(unsigned char key, int x, int y) {
 	if (key == '+' && level < 3) ++level;
 	else if (key == '-' && level > 0) --level;
-	else if (key == 'x') {
-		make_vec3f(control_points+2, 0.5, vec3f_component_val(control_points+2, 1)-0.2, 10);
-		regen_bezier();
-	}
 	else if (key == 'v') {
 		int vp[4];
 		glGetIntegerv(GL_VIEWPORT, vp);
@@ -345,9 +448,10 @@ static void mouse_motion(int x, int y) {
 	
 	printf("%d %d\n", x, y);
 	vec4f mapped = map_glut_coordinates_to_ortho(x, y);
-	control_points[selected_cp].x = mapped.x;
-	control_points[selected_cp].y = mapped.y;
-	regen_bezier();
+	base_control_grid[selected_cp].x = mapped.x;
+	base_control_grid[selected_cp].y = mapped.y;
+// 	regen_patch();
+// 	regen_bezier();
 }
 
 static void mouse_button(int button, int state, int x, int y) {
@@ -360,9 +464,9 @@ static void mouse_button(int button, int state, int x, int y) {
 		vec4f mapped = map_glut_coordinates_to_ortho(x, y);
 
 		selected_cp = -1;
-		for (int i = 0; i < number_of_control_points; ++i) {
-			float dx = mapped.x - control_points[i].x;
-			float dy = mapped.y - control_points[i].y;
+		for (int i = 0; i < number_of_control_points*number_of_control_points; ++i) {
+			float dx = mapped.x - base_control_grid[i].x;
+			float dy = mapped.y - base_control_grid[i].y;
 			float d = dx*dx + dy*dy;
 			if (d < dist) {
 				dist = d;
@@ -376,6 +480,7 @@ static void mouse_button(int button, int state, int x, int y) {
 	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
 		left_down = false;
 		selected_cp = -1;
+		regen_patch();
 	}
 }
 
@@ -434,51 +539,23 @@ int main(int argc, char **argv)
 	add_index_buffer_to_mesh(ortho_test, 12, ortho_ids, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(ortho_test);
 
-	// -------------
-	regen_bezier();
-	// -------------
+	vec3f testmesh_v[3] = { {0,0,10}, {0,1,10}, {1,1,10} };
+	vec2f testmesh_t[3] = { {0,0}, {0,1}, {1,1} };
+	unsigned int testmesh_i[3] = {0,1,2};
+	test_mesh = make_mesh("test", 2);
+	bind_mesh_to_gl(test_mesh);
+	add_vertex_buffer_to_mesh(test_mesh, "vt", GL_FLOAT, 3, 3, testmesh_v, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(test_mesh, "tx", GL_FLOAT, 3, 2, testmesh_t, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(test_mesh, 3, testmesh_i, GL_STATIC_DRAW);
+	unbind_mesh_from_gl(test_mesh);
 
-/*
-	int w = 10, h = 10;
-	vec3f *grid = malloc(sizeof(vec3f)*h*w);
-	vec3f *norm = malloc(sizeof(vec3f)*h*w);
-	for (int y = 0; y < h; ++y)
-		for (int x = 0; x < w; ++x) {
-			float z = (rand()%16000-8000)/6000.0;
-			make_vec3f(grid+(y*w)+x, x, z, -y);
-		}
-	for (int y = 0; y < h; ++y)
-		for (int x = 0; x < w; ++x) {
-			vec3f accum;
-			vec3f from;
-			copy_vec3f(&from, grid+(y*w)+x);
-			vec3f tmp;
-			sub_components_vec3f(&accum, grid+((y+1)*w)+x, &from);
-			sub_components_vec3f(&tmp, grid+((y-1)*w)+x, &from); add_components_vec3f(&accum, &accum, &tmp);
-			sub_components_vec3f(&tmp, grid+(y*w)+x+1, &from);   add_components_vec3f(&accum, &accum, &tmp);
-			sub_components_vec3f(&tmp, grid+(y*w)+x-1, &from);   add_components_vec3f(&accum, &accum, &tmp);
-			div_vec3f_by_scalar(norm+(y*w)+x, &tmp, 4);
-			if (from.y > h_max) h_max = from.y;
-			if (from.y < h_min) h_min = from.y;
-		}
-	int indices = (h-1)*(w-1)*6;
-	unsigned int *index_buffer = malloc(sizeof(int)*indices);
-	for (int y = 0; y < h-1; ++y)
-		for (int x = 0; x < w-1; ++x) {
-			index_buffer[6*(y*(w-1)+x) + 0] = y*w+x;
-			index_buffer[6*(y*(w-1)+x) + 1] = y*w+x+1;
-			index_buffer[6*(y*(w-1)+x) + 2] = (y+1)*w+x;
-			index_buffer[6*(y*(w-1)+x) + 3] = y*w+x+1;
-			index_buffer[6*(y*(w-1)+x) + 4] = (y+1)*w+x+1;
-			index_buffer[6*(y*(w-1)+x) + 5] = (y+1)*w+x;
-		}
-	s1 = make_mesh("s1", 2);
-	bind_mesh_to_gl(s1);
-	add_vertex_buffer_to_mesh(s1, "verts", GL_FLOAT, w*h, 3, (float*)grid, GL_STATIC_DRAW);
-	add_vertex_buffer_to_mesh(s1, "normals", GL_FLOAT, w*h, 3, (float*)norm, GL_STATIC_DRAW);
-	add_index_buffer_to_mesh(s1, indices, index_buffer, GL_STATIC_DRAW);
-	unbind_mesh_from_gl(s1);
-	*/
+	test_texture = make_texture("mytex", "somewhere", GL_TEXTURE_2D);
+
+	// -------------
+// 	regen_bezier();
+	precompute_index_buffer();
+	regen_patch();
+	// -------------
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
