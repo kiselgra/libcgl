@@ -1,5 +1,7 @@
 #include "framebuffer.h"
 
+#include "cgl.h"
+
 #include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,6 +56,7 @@ framebuffer_ref make_framebuffer(char *name, unsigned int width, unsigned int he
 	framebuffer->bound = false;
 	framebuffer->depthbuffer = 0;
 
+	check_for_gl_errors(__FUNCTION__);
 	return ref;
 }
 
@@ -69,6 +72,7 @@ void attach_texture_as_colorbuffer(framebuffer_ref ref, char *name, texture_ref 
 	printf("attaching texture id %d to framebuffer %s as att #%d.\n", texture_id(texture), framebuffer->name, id);
 	framebuffer->color_attachments[id] = GL_COLOR_ATTACHMENT0 + id;
 	glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D, texture_id(texture), 0);
+	check_for_gl_errors(__FUNCTION__);
 }
 
 void attach_texture_as_depthbuffer(framebuffer_ref ref, char *name, texture_ref texture) {
@@ -90,6 +94,7 @@ void attach_depth_buffer(framebuffer_ref ref) {
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer->depthbuffer);
 	// unbind renderbuffer?
+	check_for_gl_errors(__FUNCTION__);
 }
 
 void check_framebuffer_setup(framebuffer_ref ref) {
@@ -103,6 +108,7 @@ void check_framebuffer_setup(framebuffer_ref ref) {
 		fprintf(stderr, "Frammebuffer %s is not complete. Errorcode %d\n", framebuffer->name, status);
 		exit(-1);
 	}
+	check_for_gl_errors(__FUNCTION__);
 }
 
 static int old_vp[4];

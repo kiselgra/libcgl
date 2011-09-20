@@ -25,6 +25,7 @@
 shader_ref my_shader;
 shader_ref line_shader;
 shader_ref tex_shader;
+shader_ref pick_shader;
 
 void make_shaders() // {{{
 {
@@ -99,8 +100,9 @@ void make_shaders() // {{{
 		"#version 150 core\n"
 		"in vec3 in_pos;\n"
 		"uniform mat4 proj;\n"
+		"uniform mat4 moview;\n"
 		"void main() {\n"
-		"	gl_Position = proj * vec4(in_pos,1);\n"
+		"	gl_Position = proj * moview * vec4(in_pos,1);\n"
 		"}\n";
 	const char *line_frag =
 		"#version 150 core\n"
@@ -132,8 +134,9 @@ void make_shaders() // {{{
 		"in vec2 in_tc;\n"
 		"out vec2 out_tc;\n"
 		"uniform mat4 proj;\n"
+		"uniform mat4 moview;\n"
 		"void main() {\n"
-		"	gl_Position = proj * vec4(in_pos,1);\n"
+		"	gl_Position = proj * moview * vec4(in_pos,1);\n"
 		"	out_tc = in_tc;\n"
 		"}\n";
 	const char *tex_frag =
@@ -142,7 +145,6 @@ void make_shaders() // {{{
 		"out vec4 out_col;\n"
 		"uniform sampler2D the_tex;\n"
 		"void main() {\n"
-		"	//out_col = vec4(out_tc,0,1);//texture(the_tex, out_tc);\n"
 		"	out_col = vec4(texture(the_tex, out_tc).rgb, 1);\n"
 		"}\n";
 	tex_shader = make_shader("line shader", 2);
@@ -160,6 +162,38 @@ void make_shaders() // {{{
 						"-----------------\n%s\n", vertex_shader_info_log(tex_shader),
 						                           fragment_shader_info_log(tex_shader),
 												   shader_info_log(tex_shader));
+	}
+
+
+	const char *pick_vert =
+		"#version 150 core\n"
+		"in vec3 in_pos;\n"
+		"uniform mat4 proj;\n"
+		"uniform mat4 moview;\n"
+		"void main() {\n"
+		"	gl_Position = proj * moview * vec4(in_pos,1);\n"
+		"}\n";
+	const char *pick_frag =
+		"#version 150 core\n"
+		"out uvec4 id;\n"
+		"uniform uint object_id;\n"
+		"void main() {\n"
+		"	id = uvec4(object_id, 0, 0, 0);\n"
+		"}\n";
+	pick_shader = make_shader("line shader", 1);
+	add_vertex_source(pick_shader, pick_vert);
+	add_fragment_source(pick_shader, pick_frag);
+	add_shader_input(pick_shader, "in_pos", 0);
+	ok = compile_and_link_shader(pick_shader);
+	if (!ok) {
+		fprintf(stderr, "Vertex Shader Info Log:\n"
+		                "-----------------------\n%s\n"
+						"Fragment Shader Info Log:\n"
+						"-------------------------\n%s\n"
+						"Program Info Log:\n"
+						"-----------------\n%s\n", vertex_shader_info_log(pick_shader),
+						                           fragment_shader_info_log(pick_shader),
+												   shader_info_log(pick_shader));
 	}
 
 
@@ -216,6 +250,8 @@ static void display(void)
 	
 	int loc = glGetUniformLocation(gl_shader_object(line_shader), "proj");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+	loc = glGetUniformLocation(gl_shader_object(line_shader), "moview");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
 	vec3f colors[7];
 	make_vec3f(colors+0, 1, 0, 0);
 	make_vec3f(colors+1, 0, 1, 0);
@@ -240,12 +276,13 @@ static void display(void)
 		unbind_mesh_from_gl(control_point_mesh);
 	}
 	
+	glPointSize(10);
 	bind_mesh_to_gl(control_point_mesh);
 	glUniform3fv(loc, 1, (float*)(colors+3));
 	if (selected_cp >= 0)
 // 		glDrawRangeElements(GL_POINTS, selected_cp+1, selected_cp+2, 2, GL_UNSIGNED_INT, 0);
 		glDrawElementsBaseVertex(GL_POINTS, 1, GL_UNSIGNED_INT, 0, selected_cp);
-	glPointSize(10);
+	glUniform3fv(loc, 1, (float*)(colors+6));
 	glDrawElements(GL_POINTS, index_buffer_length_of_mesh(control_point_mesh), GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(control_point_mesh);
 	
@@ -263,6 +300,8 @@ static void display(void)
 	}
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "proj");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+	loc = glGetUniformLocation(gl_shader_object(tex_shader), "moview");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
 	
 	glBindTexture(GL_TEXTURE_2D, texture_id(test_texture));
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "the_tex");
@@ -279,6 +318,8 @@ static void display(void)
 	/*
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "proj");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+// 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "moview");
+// 	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
 
 	glBindTexture(GL_TEXTURE_2D, texture_id(test_texture));
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "the_tex");
@@ -525,7 +566,10 @@ vec4f map_glut_coordinates_to_ortho(int x, int y) {
 
 bool left_down = false;
 static void mouse_motion(int x, int y) {
-	if (!left_down) return;
+	if (!left_down) {
+// 		standard_mouse_motion(x, y);
+		return;
+	}
 	if (selected_cp < 0) return;
 	
 	printf("%d %d\n", x, y);
@@ -536,11 +580,15 @@ static void mouse_motion(int x, int y) {
 // 	regen_bezier();
 }
 
+void pick(int x, int y);
+
 static void mouse_button(int button, int state, int x, int y) {
-// 	standard_mouse_func(button, state, x, y);
-	
+	if (button == GLUT_RIGHT_BUTTON)
+		standard_mouse_func(GLUT_LEFT_BUTTON, state, x, y);
+
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 
+		/*
 		float dist = 1e10;
 		float max_dist = 0.2;
 		vec4f mapped = map_glut_coordinates_to_ortho(x, y);
@@ -558,6 +606,8 @@ static void mouse_button(int button, int state, int x, int y) {
 		}
 
 		left_down = true;
+		*/
+		pick(x, 500-y);
 	}
 	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
 		left_down = false;
@@ -570,10 +620,9 @@ void test_im(char *, char*);
 
 framebuffer_ref picking_fbo;
 texture_ref picking_tex;
-shader_ref picking_shader;
 
 void initialize_picking(int w, int h) {
-	picking_tex = make_empty_texture("pick-ids", w, h, GL_TEXTURE_2D, GL_R32I);
+	picking_tex = make_empty_texture("pick-ids", w, h, GL_TEXTURE_2D, GL_R32UI, GL_UNSIGNED_INT, GL_RGB_INTEGER);
 	picking_fbo = make_framebuffer("picking-fbo", w, h);
 	bind_framebuffer(picking_fbo);
 	bind_texture(picking_tex);
@@ -584,7 +633,35 @@ void initialize_picking(int w, int h) {
 	unbind_texture(picking_tex);
 }
 
-// void pick
+void pick(int x, int y) {
+	bind_framebuffer(picking_fbo);
+	bind_shader(pick_shader);
+	bind_mesh_to_gl(control_point_mesh);
+	
+	int loc = glGetUniformLocation(gl_shader_object(pick_shader), "proj");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+	loc = glGetUniformLocation(gl_shader_object(pick_shader), "moview");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
+	
+	glPointSize(10);
+	loc = glGetUniformLocation(gl_shader_object(pick_shader), "object_id");
+
+	for (int i = 0; i < number_of_control_points*number_of_control_points; ++i) {
+		glUniform1ui(loc, i);
+		glDrawElementsBaseVertex(GL_POINTS, 1, GL_UNSIGNED_INT, 0, i);
+	}
+	unbind_mesh_from_gl(control_point_mesh);
+	unbind_shader(pick_shader);
+	unbind_framebuffer(picking_fbo);
+
+	bind_framebuffer(framebuffer);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	unsigned int data[3*3*4];
+	glReadPixels(x-1, y-1, 3, 3, GL_RGBA_INTEGER, GL_UNSIGNED_INT, data);
+	unbind_framebuffer(framebuffer);
+
+	
+}
 
 int main(int argc, char **argv) 
 {
@@ -598,14 +675,14 @@ int main(int argc, char **argv)
 	make_shaders();
 
 	vec3f cam_pos, cam_dir, cam_up;
-	make_vec3f(&cam_pos, 0, 0, 0);
-	make_vec3f(&cam_dir, 0, 0, -1);
+	make_vec3f(&cam_pos, 0, 0, 5);
+	make_vec3f(&cam_dir, 0, 0, 1);
 	make_vec3f(&cam_up, 0, 1, 0);
 	use_camera(make_perspective_cam("my cam", &cam_pos, &cam_dir, &cam_up, 45, 1, 0.1, 1000));
 // 	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, (int)2*M_PI*100, 0, 100, 0, 0.1, 1000));
 	float ortho_r = 2, ortho_l = -1,
 	      ortho_t = 2, ortho_b = -1;
-	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, ortho_r, ortho_l, ortho_t, ortho_b, 0.01, 1000));
+// 	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, ortho_r, ortho_l, ortho_t, ortho_b, 0.01, 1000));
 
 	// -------------
 	
@@ -663,6 +740,7 @@ int main(int argc, char **argv)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	*/
 
+	initialize_picking(500, 500);
 	// -------------
 // 	regen_bezier();
 	precompute_index_buffer();

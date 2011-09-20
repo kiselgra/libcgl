@@ -1,5 +1,6 @@
 #include "texture.h"
 #include "impex.h"
+#include "cgl.h"
 
 #include <libmcm-0.0.1/vectors.h>
 
@@ -64,10 +65,11 @@ texture_ref make_texture(const char *name, const char *filename, int target) {
 
 	free(data);
 
+	check_for_gl_errors(__FUNCTION__);
 	return ref;
 }
 
-texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format) {
+texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format) {
 	allocate_texture();
 	texture_ref ref;
 	ref.id = next_texture_index++;
@@ -86,9 +88,10 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 
 	texture->width = w;
 	texture->height = h;
-	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
 
 	glBindTexture(target, 0);
+	check_for_gl_errors(__FUNCTION__);
 	return ref;
 }
 
@@ -114,6 +117,7 @@ void save_texture_as_rgb_png(texture_ref ref, const char *filename) {
 
 	if (!was_bound)
 		unbind_texture(ref);
+	check_for_gl_errors(__FUNCTION__);
 }
 
 int texture_id(texture_ref ref) {
