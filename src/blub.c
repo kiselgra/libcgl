@@ -13,6 +13,7 @@
 #include "drawelement.h"
 #include "camera.h"
 #include "texture.h"
+#include "framebuffer.h"
 #include "glut.h"
 
 #include <libmcm-0.0.1/vectors.h>
@@ -172,7 +173,7 @@ int selected_cp = -1;
 bool draw_cp = true;
 
 mesh_ref test_mesh;
-texture_ref test_texture;
+texture_ref test_texture, fbo_texture;
 
 // 
 // glut stuff
@@ -195,8 +196,19 @@ struct bezier_patch {
 };
 struct bezier_patch *bezier_patch;
 
+framebuffer_ref framebuffer;
+
+
 static void display(void)
 {
+// 	bind_texture(fbo_texture);
+	glClearColor(0,1,0,1);
+	bind_framebuffer(framebuffer);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+// 	unbind_framebuffer(framebuffer);
+// 	unbind_texture(fbo_texture);
+	
+	glClearColor(0,0,1,1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	bind_shader(line_shader);
@@ -270,8 +282,12 @@ static void display(void)
 	unbind_shader(tex_shader);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	unbind_framebuffer(framebuffer);
+
 	swap_buffers();
 	check_for_gl_errors("display");
+	
+	save_texture_as_rgb_png(fbo_texture, "/tmp/out.png");
 }
 
 
@@ -496,6 +512,7 @@ static void mouse_button(int button, int state, int x, int y) {
 	}
 }
 
+void test_im(char *, char*);
 
 int main(int argc, char **argv) 
 {
@@ -561,7 +578,16 @@ int main(int argc, char **argv)
 	add_index_buffer_to_mesh(test_mesh, 3, testmesh_i, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(test_mesh);
 
-	test_texture = make_texture("mytex", "somewhere", GL_TEXTURE_2D);
+	test_texture = make_texture("mytex", "/home/kai/Downloads/a-gnu.png", GL_TEXTURE_2D);
+	fbo_texture = make_empty_texture("fbo content", 256, 256, GL_TEXTURE_2D);
+	framebuffer = make_framebuffer("the-fbo", 256, 256);
+	bind_framebuffer(framebuffer);
+	glBindTexture(GL_TEXTURE_2D, texture_id(fbo_texture));
+	attach_texture_as_colorbuffer(framebuffer, "content", fbo_texture);
+	attach_depth_buffer(framebuffer);
+	check_framebuffer_setup(framebuffer);
+	unbind_framebuffer(framebuffer);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// -------------
 // 	regen_bezier();

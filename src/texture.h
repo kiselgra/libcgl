@@ -7,7 +7,11 @@ typedef struct {
 
 
 texture_ref make_texture(const char *name, const char *filename, int target);
+texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target);
 int texture_id(texture_ref ref);
+void bind_texture(texture_ref ref);
+void unbind_texture(texture_ref ref);
+void save_texture_as_rgb_png(texture_ref ref, const char *filename);
 
 #endif
 
