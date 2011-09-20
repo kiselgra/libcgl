@@ -193,6 +193,7 @@ struct bezier_patch {
 	struct bezier_patch *children[4];
 	mesh_ref mesh;
 	vec3f control_grid[number_of_control_points*number_of_control_points];
+	vec2f tex_coords[number_of_control_points*number_of_control_points];
 };
 struct bezier_patch *bezier_patch;
 
@@ -202,9 +203,9 @@ framebuffer_ref framebuffer;
 static void display(void)
 {
 // 	bind_texture(fbo_texture);
-	glClearColor(0,1,0,1);
-	bind_framebuffer(framebuffer);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+// 	glClearColor(0,1,0,1);
+// 	bind_framebuffer(framebuffer);
+// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 // 	unbind_framebuffer(framebuffer);
 // 	unbind_texture(fbo_texture);
 	
@@ -232,16 +233,13 @@ static void display(void)
 
 	loc = glGetUniformLocation(gl_shader_object(line_shader), "line_col");
 		
-	/*
 	if (draw_cp) {
 		bind_mesh_to_gl(control_grid_mesh);
 		glUniform3fv(loc, 1, (float*)(colors+6));
 		glDrawElements(GL_LINES, index_buffer_length_of_mesh(control_grid_mesh), GL_UNSIGNED_INT, 0);
 		unbind_mesh_from_gl(control_point_mesh);
 	}
-	*/
 	
-	/*
 	bind_mesh_to_gl(control_point_mesh);
 	glUniform3fv(loc, 1, (float*)(colors+3));
 	if (selected_cp >= 0)
@@ -250,25 +248,35 @@ static void display(void)
 	glPointSize(10);
 	glDrawElements(GL_POINTS, index_buffer_length_of_mesh(control_point_mesh), GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(control_point_mesh);
-	*/
 	
+	unbind_shader(line_shader);
+	bind_shader(tex_shader);
+
 	void render_patch(struct bezier_patch *patch, int level) {
 		if (level == 0) {
 			bind_mesh_to_gl(patch->mesh);
-			glDrawElements(GL_LINES, index_buffer_length_of_mesh(patch->mesh), GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_TRIANGLES, index_buffer_length_of_mesh(patch->mesh), GL_UNSIGNED_INT, 0);
 			unbind_mesh_from_gl(patch->mesh);
 		}
 		else for (int i = 0; i < 4; ++i)
 			render_patch(patch->children[i], level-1);
 	}
-	glUniform3fv(loc, 1, (float*)(colors+0));
-// 	render_patch(bezier_patch, level);
+	loc = glGetUniformLocation(gl_shader_object(tex_shader), "proj");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
 	
-	unbind_shader(line_shader);
+	glBindTexture(GL_TEXTURE_2D, texture_id(test_texture));
+	loc = glGetUniformLocation(gl_shader_object(tex_shader), "the_tex");
+	glUniform1i(loc, 0);
+
+	render_patch(bezier_patch, level);
+
+	unbind_shader(tex_shader);
+	
 
 
 	bind_shader(tex_shader);
 
+	/*
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "proj");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
 
@@ -281,40 +289,58 @@ static void display(void)
 	unbind_mesh_from_gl(test_mesh);
 	unbind_shader(tex_shader);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	*/
 
-	unbind_framebuffer(framebuffer);
+// 	unbind_framebuffer(framebuffer);
 
 	swap_buffers();
 	check_for_gl_errors("display");
 	
-	save_texture_as_rgb_png(fbo_texture, "/tmp/out.png");
+// 	save_texture_as_rgb_png(fbo_texture, "/tmp/out.png");
 }
 
 
 struct bezier_node* make_bezier_segment(vec3f *cp, int d);
 
-void subdivide(vec3f *control_points, vec3f *left, vec3f *right) {
+void subdivide(vec3f *control_points, vec2f *tc, vec3f *left, vec3f *right, vec2f *texleft, vec2f *texright) {
 	vec3f level[number_of_control_points][number_of_control_points];
 	vec3f tmp;
+	vec2f leveltc[number_of_control_points][number_of_control_points];
+	vec2f tmp2;
 
-	for (int i = 0; i < number_of_control_points; ++i)
+	for (int i = 0; i < number_of_control_points; ++i) {
 		level[0][i] = control_points[i];
+		leveltc[0][i] = tc[i];
+	}
 	left[0] = control_points[0];
 	right[number_of_control_points-1] = control_points[number_of_control_points-1];
+	texleft[0] = tc[0];
+	texright[number_of_control_points-1] = tc[number_of_control_points-1];
+
 
 	for (int l = 1; l < number_of_control_points; ++l) {
 		for (int i = 0; i < number_of_control_points - l; ++i) {
 			sub_components_vec3f(&tmp, level[l-1]+i+1, level[l-1]+i);
 			div_vec3f_by_scalar(&tmp, &tmp, 2);
 			add_components_vec3f(level[l]+i, level[l-1]+i, &tmp);
+
+			sub_components_vec2f(&tmp2, leveltc[l-1]+i+1, leveltc[l-1]+i);
+			div_vec2f_by_scalar(&tmp2, &tmp2, 2);
+			add_components_vec2f(leveltc[l]+i, leveltc[l-1]+i, &tmp2);
 		}
 		left[l] = level[l][0];
 		right[number_of_control_points-l-1] = level[l][number_of_control_points-l-1];
+		texleft[l] = leveltc[l][0];
+		texright[number_of_control_points-l-1] = leveltc[l][number_of_control_points-l-1];
 	}
 }
 
 #define number_of_patch_indices (2*(2*(number_of_control_points-1)*number_of_control_points))
 unsigned int patch_indices[number_of_patch_indices];
+
+#define number_of_patch_tri_indices (6*(number_of_control_points-1)*(number_of_control_points-1))
+unsigned int patch_tri_indices[number_of_patch_tri_indices];
+
 void precompute_index_buffer() {
 	int w = number_of_control_points, h = number_of_control_points;
 	for (int y = 0; y < h-1; ++y)
@@ -336,22 +362,36 @@ void precompute_index_buffer() {
 		patch_indices[sofar + 2*x + 1] = (h-1)*w + x+1;
 	}
 	printf("sofar: %d / %d\n", sofar + 2*(w-1), 2*(2*(number_of_control_points-1)*number_of_control_points));
+
+	for (int y = 0; y < h-1; ++y)
+		for (int x = 0; x < w-1; ++x) {
+			int base = 6*(y*(w-1)+x);
+			patch_tri_indices[base+0] = ((y+0)*w) + x+0;
+			patch_tri_indices[base+1] = ((y+0)*w) + x+1;
+			patch_tri_indices[base+2] = ((y+1)*w) + x+1;
+			patch_tri_indices[base+3] = ((y+0)*w) + x+0;
+			patch_tri_indices[base+4] = ((y+1)*w) + x+1;
+			patch_tri_indices[base+5] = ((y+1)*w) + x+0;
+		}
 }
 
 void subdivide_patch(struct bezier_patch *p, int d);
 
-struct bezier_patch* make_bezier_patch(vec3f *cp, int d) {
+struct bezier_patch* make_bezier_patch(vec3f *cp, vec2f *tc, int d) {
 	// init patch
 	struct bezier_patch *patch = malloc(sizeof(struct bezier_patch));
 	for (int i = 0; i < 4; ++i) patch->children[i] = 0;
 	// copy control points
 	for (int y = 0; y < number_of_control_points; ++y)
-		for (int x = 0; x < number_of_control_points; ++x)
+		for (int x = 0; x < number_of_control_points; ++x) {
 			patch->control_grid[y*number_of_control_points+x] = cp[y*number_of_control_points+x];
-	patch->mesh = make_mesh("a bezier patch", 1);
+			patch->tex_coords[y*number_of_control_points+x] = tc[y*number_of_control_points+x];
+		}
+	patch->mesh = make_mesh("a bezier patch", 2);
 	bind_mesh_to_gl(patch->mesh);
 	add_vertex_buffer_to_mesh(patch->mesh, "vt", GL_FLOAT, number_of_control_points*number_of_control_points, 3, patch->control_grid, GL_STATIC_DRAW);
-	add_index_buffer_to_mesh(patch->mesh, number_of_patch_indices, patch_indices, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(patch->mesh, "tc", GL_FLOAT, number_of_control_points*number_of_control_points, 2, patch->tex_coords, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(patch->mesh, number_of_patch_tri_indices, patch_tri_indices, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(patch->mesh);
 
 	if (d > 0) subdivide_patch(patch, d);
@@ -364,37 +404,50 @@ void subdivide_patch(struct bezier_patch *p, int d) {
 	      right[number_of_control_points],
 	      curr[number_of_control_points];
 	vec3f new_grids[4][number_of_control_points*number_of_control_points];
+	vec2f texleft[number_of_control_points],
+	      texright[number_of_control_points],
+	      texcurr[number_of_control_points];
+	vec2f new_texs[4][number_of_control_points*number_of_control_points];
 	int w = number_of_control_points/*, h = number_of_control_points*/;
 	
 	// subdivide along y
 	for (int y = 0; y < number_of_control_points; ++y) {
-		for (int x = 0; x < number_of_control_points; ++x)
+		for (int x = 0; x < number_of_control_points; ++x) {
 			curr[x] = p->control_grid[y*w + x];
-		subdivide(curr, left, right);
+			texcurr[x] = p->tex_coords[y*w +x];
+		}
+		subdivide(curr, texcurr, left, right, texleft, texright);
 		for (int x = 0; x < number_of_control_points; ++x) {
 			new_grids[0][y*w+x] = left[x];
 			new_grids[1][y*w+x] = right[x];
+			new_texs[0][y*w+x] = texleft[x];
+			new_texs[1][y*w+x] = texright[x];
 		}
 	}
 	
 	// subdivide along x
 	for (int x = 0; x < number_of_control_points; ++x) {
 		for (int i = 0; i < 2; ++i) {
-			for (int y = 0; y < number_of_control_points; ++y)
+			for (int y = 0; y < number_of_control_points; ++y) {
 				curr[y] = new_grids[i][y*w + x];
-			subdivide(curr, left, right);
+				texcurr[y] = new_texs[i][y*w +x];
+			}
+			subdivide(curr, texcurr, left, right, texleft, texright);
 			for (int y = 0; y < number_of_control_points; ++y) {
 				new_grids[i][y*w+x] = left[y];
 				new_grids[i+2][y*w+x] = right[y];
+				new_texs[i][y*w+x] = texleft[y];
+				new_texs[i+2][y*w+x] = texright[y];
 			}
 		}
 	}
 
 	for (int i = 0; i < 4; ++i)
-		p->children[i] = make_bezier_patch(new_grids[i], d-1);
+		p->children[i] = make_bezier_patch(new_grids[i], new_texs[i], d-1);
 }
 
 vec3f base_control_grid[number_of_control_points*number_of_control_points];
+vec2f base_tex_grid[number_of_control_points*number_of_control_points];
 unsigned int cp_ids[number_of_control_points*number_of_control_points];
 
 void regen_patch() {
@@ -405,10 +458,11 @@ void regen_patch() {
 		for (int y = 0; y < number_of_control_points; ++y)
 			for (int x = 0; x < number_of_control_points; ++x) {
 				make_vec3f(base_control_grid+y*number_of_control_points+x, x/2.0-0.5, y/2.0-0.5, z);
+				make_vec2f(base_tex_grid+y*number_of_control_points+x, x/(float)(number_of_control_points-1), y/(float)(number_of_control_points-1));
 				cp_ids[y*number_of_control_points+x] = y*number_of_control_points+x;
 			}
 	
-	bezier_patch = make_bezier_patch(base_control_grid, 5);
+	bezier_patch = make_bezier_patch(base_control_grid, base_tex_grid, 5);
 	
 	if (first_time) {
 		control_point_mesh = make_mesh("control points", 1);
@@ -514,6 +568,24 @@ static void mouse_button(int button, int state, int x, int y) {
 
 void test_im(char *, char*);
 
+framebuffer_ref picking_fbo;
+texture_ref picking_tex;
+shader_ref picking_shader;
+
+void initialize_picking(int w, int h) {
+	picking_tex = make_empty_texture("pick-ids", w, h, GL_TEXTURE_2D, GL_R32I);
+	picking_fbo = make_framebuffer("picking-fbo", w, h);
+	bind_framebuffer(picking_fbo);
+	bind_texture(picking_tex);
+	attach_texture_as_colorbuffer(picking_fbo, "content", picking_tex);
+	attach_depth_buffer(picking_fbo);
+	check_framebuffer_setup(picking_fbo);
+	unbind_framebuffer(picking_fbo);
+	unbind_texture(picking_tex);
+}
+
+// void pick
+
 int main(int argc, char **argv) 
 {
 	startup_cgl("blub", 3, 3, argc, argv, 500, 500, true);
@@ -579,6 +651,7 @@ int main(int argc, char **argv)
 	unbind_mesh_from_gl(test_mesh);
 
 	test_texture = make_texture("mytex", "/home/kai/Downloads/a-gnu.png", GL_TEXTURE_2D);
+	/*
 	fbo_texture = make_empty_texture("fbo content", 256, 256, GL_TEXTURE_2D);
 	framebuffer = make_framebuffer("the-fbo", 256, 256);
 	bind_framebuffer(framebuffer);
@@ -588,6 +661,7 @@ int main(int argc, char **argv)
 	check_framebuffer_setup(framebuffer);
 	unbind_framebuffer(framebuffer);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	*/
 
 	// -------------
 // 	regen_bezier();

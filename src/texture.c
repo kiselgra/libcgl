@@ -67,7 +67,7 @@ texture_ref make_texture(const char *name, const char *filename, int target) {
 	return ref;
 }
 
-texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target) {
+texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format) {
 	allocate_texture();
 	texture_ref ref;
 	ref.id = next_texture_index++;
@@ -86,7 +86,7 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 
 	texture->width = w;
 	texture->height = h;
-	glTexImage2D(target, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, GL_RGBA, GL_FLOAT, 0);
 
 	glBindTexture(target, 0);
 	return ref;
