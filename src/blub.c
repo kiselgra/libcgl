@@ -542,6 +542,25 @@ void spline_keyhandler(unsigned char key, int x, int y) {
 	}
 	else if (key == ' ')
 		draw_cp = !draw_cp;
+	
+
+	if (selected_cp != -1) {
+		bool regen = true;
+		switch (key) {
+			case 'x': base_control_grid[selected_cp].x -= 0.5; break;
+			case 'X': base_control_grid[selected_cp].x += 0.5; break;
+			case 'y': base_control_grid[selected_cp].y -= 0.5; break;
+			case 'Y': base_control_grid[selected_cp].y += 0.5; break;
+			case 'z': base_control_grid[selected_cp].z -= 0.5; break;
+			case 'Z': base_control_grid[selected_cp].z += 0.5; break;
+			default: regen = false;
+		}
+		if (regen)
+			regen_patch();
+	}
+
+// 	regen_patch();
+// 	regen_bezier();
 	else standard_keyboard(key, x, y);
 }
 
@@ -566,27 +585,17 @@ vec4f map_glut_coordinates_to_ortho(int x, int y) {
 
 bool left_down = false;
 static void mouse_motion(int x, int y) {
-	if (!left_down) {
-// 		standard_mouse_motion(x, y);
-		return;
-	}
-	if (selected_cp < 0) return;
 	
-	printf("%d %d\n", x, y);
-	vec4f mapped = map_glut_coordinates_to_ortho(x, y);
-	base_control_grid[selected_cp].x = mapped.x;
-	base_control_grid[selected_cp].y = mapped.y;
-// 	regen_patch();
-// 	regen_bezier();
+	standard_mouse_motion(x, y);
+	
 }
 
 void pick(int x, int y);
 
 static void mouse_button(int button, int state, int x, int y) {
-	if (button == GLUT_RIGHT_BUTTON)
-		standard_mouse_func(GLUT_LEFT_BUTTON, state, x, y);
+	standard_mouse_func(GLUT_LEFT_BUTTON, state, x, y);
 
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
 
 		/*
 		float dist = 1e10;
@@ -611,12 +620,9 @@ static void mouse_button(int button, int state, int x, int y) {
 	}
 	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
 		left_down = false;
-		selected_cp = -1;
-		regen_patch();
+// 		regen_patch();
 	}
 }
-
-void test_im(char *, char*);
 
 framebuffer_ref picking_fbo;
 texture_ref picking_tex;
@@ -635,32 +641,33 @@ void initialize_picking(int w, int h) {
 
 void pick(int x, int y) {
 	bind_framebuffer(picking_fbo);
+	
 	bind_shader(pick_shader);
 	bind_mesh_to_gl(control_point_mesh);
-	
-	int loc = glGetUniformLocation(gl_shader_object(pick_shader), "proj");
-	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
-	loc = glGetUniformLocation(gl_shader_object(pick_shader), "moview");
-	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
-	
-	glPointSize(10);
-	loc = glGetUniformLocation(gl_shader_object(pick_shader), "object_id");
+		int loc = glGetUniformLocation(gl_shader_object(pick_shader), "proj");
+		glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+		loc = glGetUniformLocation(gl_shader_object(pick_shader), "moview");
+		glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
+		
+		glPointSize(10);
+		loc = glGetUniformLocation(gl_shader_object(pick_shader), "object_id");
 
-	for (int i = 0; i < number_of_control_points*number_of_control_points; ++i) {
-		glUniform1ui(loc, i);
-		glDrawElementsBaseVertex(GL_POINTS, 1, GL_UNSIGNED_INT, 0, i);
-	}
+		for (int i = 0; i < number_of_control_points*number_of_control_points; ++i) {
+			glUniform1ui(loc, i+1);
+			glDrawElementsBaseVertex(GL_POINTS, 1, GL_UNSIGNED_INT, 0, i);
+		}
 	unbind_mesh_from_gl(control_point_mesh);
 	unbind_shader(pick_shader);
+
 	unbind_framebuffer(picking_fbo);
 
 	bind_framebuffer(framebuffer);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	unsigned int data[3*3*4];
-	glReadPixels(x-1, y-1, 3, 3, GL_RGBA_INTEGER, GL_UNSIGNED_INT, data);
+	unsigned int data[4];
+	glReadPixels(x, y, 1, 1, GL_RGBA_INTEGER, GL_UNSIGNED_INT, data);
 	unbind_framebuffer(framebuffer);
 
-	
+	selected_cp = data[0]-1;
 }
 
 int main(int argc, char **argv) 
