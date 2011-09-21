@@ -213,7 +213,7 @@ texture_ref test_texture, fbo_texture;
 // glut stuff
 // 
 
-#define number_of_control_points 4
+#define number_of_control_points 6
 
 struct bezier_node {
 	struct bezier_node *left, *right;
@@ -561,7 +561,7 @@ void spline_keyhandler(unsigned char key, int x, int y) {
 
 // 	regen_patch();
 // 	regen_bezier();
-	else standard_keyboard(key, x, y);
+	standard_keyboard(key, x, y);
 }
 
 vec4f map_glut_coordinates_to_ortho(int x, int y) {

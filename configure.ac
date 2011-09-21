@@ -1,0 +1,39 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.61)
+AC_INIT([libcgl], [0.0.1], [((lambda (x y z) (string-append x "@" y "." z ".org")) "stuff" "projects" "selgrad")])
+AM_INIT_AUTOMAKE
+
+# name one of your source files here
+AC_CONFIG_SRCDIR([src/mesh.c])
+AC_CONFIG_HEADER([config.h])
+AC_CONFIG_FILES(Makefile src/Makefile)
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CC_C99
+
+# when using flex/bison:
+# AC_PROG_LEX
+# AC_PROG_YACC
+
+# when building libraries
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+AC_CHECK_LIB([mcm], [make_vec3f])
+AC_CHECK_LIB([GL], [main])
+AC_CHECK_LIB([glut], [main])
+AC_CHECK_LIB([GLEW], [main])
+AC_CHECK_LIB([png], [main])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([inttypes.h stdlib.h string.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+
+AC_OUTPUT
