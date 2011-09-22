@@ -60,7 +60,7 @@ void unbind_mesh_from_gl(mesh_ref mr) {
 	meshes[mr.id].bound = true;
 }
 
-bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
+bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
 	if (content_type != GL_FLOAT) {
 		fprintf(stderr, "Only float vertex buffers supported, atm.\n");
 		exit(-1);
@@ -89,7 +89,7 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, char *name, GLenum content_type, uns
 	return true;
 }
 
-bool change_vertex_buffer_data(mesh_ref mr, char *name, GLenum content_type, unsigned int element_dim, void *data, GLenum usage_hint) {
+bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_type, unsigned int element_dim, void *data, GLenum usage_hint) {
 	struct mesh *mesh = meshes+mr.id;
 	int vbo_id = -1;
 	for (int i = 0; i < mesh->next_vbo; ++i)
@@ -123,4 +123,6 @@ unsigned int index_buffer_length_of_mesh(mesh_ref mr) {
 unsigned int vertex_buffer_length_of_mesh(mesh_ref mr) {
 	return meshes[mr.id].vertices;
 }
-
+char* mesh_name(mesh_ref mr) {
+	return meshes[mr.id].name;
+}

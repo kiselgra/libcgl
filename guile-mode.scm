@@ -1,6 +1,6 @@
 (use-modules (system foreign))
 
-(define cgl (dynamic-link "src/.libs/libcgl.so"))
+(define cgl (dynamic-link "libcgl"))
 (define mcm (dynamic-link "libmcm.so"))
 
 ;; actual startup

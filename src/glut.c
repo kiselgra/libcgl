@@ -78,9 +78,9 @@ void standard_keyboard(unsigned char key, int x, int y)
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 	}
-	printf("campos:   %f %f %f\n", cam_pos.x, cam_pos.y, cam_pos.z);
-	printf("camdir:   %f %f %f\n", cam_dir.x, cam_dir.y, cam_dir.z);
-	printf("camup:    %f %f %f\n", cam_up.x, cam_up.y, cam_up.z);
+// 	printf("campos:   %f %f %f\n", cam_pos.x, cam_pos.y, cam_pos.z);
+// 	printf("camdir:   %f %f %f\n", cam_dir.x, cam_dir.y, cam_dir.z);
+// 	printf("camup:    %f %f %f\n", cam_up.x, cam_up.y, cam_up.z);
 	make_lookat_matrixf(lookat_matrix, &cam_pos, &cam_dir, &cam_up);
 	recompute_gl_matrices_of_cam(current_camera());
 }
