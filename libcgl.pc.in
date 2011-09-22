@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libcgl
+Description: cgl
+Version: @VERSION@
+Libs: -L${libdir} -lcgl
+Cflags: -I${includedir}/libcgl-@VERSION@
