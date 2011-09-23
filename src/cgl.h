@@ -1,7 +1,6 @@
 #ifndef __CGL_H__ 
 #define __CGL_H__ 
 
-#define WITH_GUILE
 #include <libguile.h>
 
 #include <stdbool.h>

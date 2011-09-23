@@ -23,7 +23,7 @@
 
 
 shader_ref my_shader;
-shader_ref line_shader;
+shader_ref line_shader = { 0 };
 shader_ref tex_shader;
 shader_ref pick_shader;
 
@@ -96,6 +96,7 @@ void make_shaders() // {{{
 												   shader_info_log(my_shader));
 	}
 
+/*
 	const char *line_vert =
 		"#version 150 core\n"
 		"in vec3 in_pos;\n"
@@ -126,7 +127,9 @@ void make_shaders() // {{{
 						                           fragment_shader_info_log(line_shader),
 												   shader_info_log(line_shader));
 	}
-
+	printf("lineshader: %d\n", line_shader.shader_id);
+*/
+// 	line_shader = { 1 };
 
 	const char *tex_vert =
 		"#version 150 core\n"
@@ -680,8 +683,6 @@ void actual_main()
 	register_mouse_function(mouse_button);
 	register_mouse_motion_function(mouse_motion);
 	
-	scm_c_eval_string("(load \"test.scm\")");
-
 
 	make_shaders();
 

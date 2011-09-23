@@ -23,7 +23,7 @@ bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 # AM_CPPFLAGS = -Isrc/
 # AM_YFLAGS = -d -p__yacc_prefix__
 # AM_LFLAGS = -P__lex_prefix__ -o lex.yy.c
-AM_CPPFLAGS = $(GUILE_CFLAGS)
+AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
 library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impex.h mesh.h shader.h texture.h
@@ -38,3 +38,11 @@ libcgl_la_LIBADD = $(GUILE_LIBS)
 blub_LDADD = $(GUILE_LIBS)
 bezier_LDADD = $(GUILE_LIBS)
 bspline_LDADD = $(GUILE_LIBS)
+
+snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS)
+SUFFIXES: .x
+.c.x:
+	guile-snarf -o $@ $< $(snarf_opts)
+
+#scheme.c: shader.x
+

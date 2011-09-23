@@ -13,6 +13,8 @@
 #endif
 
 static void hop(void *data, int argc, char **argv) {
+	load_snarfed_definitions();
+	load_configfile("test.scm");
 	start_console_thread();
 
 	((void(*)())data)();	// run the user supplied 'inner main'

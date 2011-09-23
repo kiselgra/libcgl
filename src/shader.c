@@ -199,3 +199,45 @@ const char *shader_info_log(shader_ref ref) {
 int gl_shader_object(shader_ref ref) {
 	return shaders[ref.shader_id].shader_program;
 }
+
+#ifdef WITH_GUILE
+#include <libguile.h>
+
+SCM_DEFINE(s_make_shader, "make-shader", 2, 0, 0, (SCM name, SCM input_n), "create shader with name and number of input vars.") {
+	char *na = scm_to_locale_string(name);
+	int nu = scm_to_int(input_n);
+	shader_ref ref = make_shader(na, nu);
+	return scm_from_int(ref.shader_id);
+}
+SCM_DEFINE(s_add_vertex_source, "add-vertex-source", 2, 0, 0, (SCM shader, SCM src), "add vertex shader source to the shader object.") {
+	shader_ref ref = { scm_to_int(shader) };
+	char *source = scm_to_locale_string(src);
+	add_vertex_source(ref, source);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_add_fragment_source, "add-fragment-source", 2, 0, 0, (SCM shader, SCM src), "add fragment shader source to the shader object.") {
+	shader_ref ref = { scm_to_int(shader) };
+	char *source = scm_to_locale_string(src);
+	add_fragment_source(ref, source);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_add_shader_input, "add-shader-input", 3, 0, 0, (SCM shader, SCM varname, SCM index), "") {
+	shader_ref ref = { scm_to_int(shader) };
+	char *vn = scm_to_locale_string(varname);
+	int idx = scm_to_int(index);
+	bool ret = add_shader_input(ref, vn, idx);
+	return ret ? SCM_BOOL_T : SCM_BOOL_F;
+}
+SCM_DEFINE(s_compile_and_link_shader, "compile-and-link-shader", 1, 0, 0, (SCM shader), "") {
+	shader_ref ref = { scm_to_int(shader) };
+	bool ret = compile_and_link_shader(ref);
+	return ret ? SCM_BOOL_T : SCM_BOOL_F;
+}
+
+void register_scheme_functions_for_shaders() {
+#ifndef SCM_MAGIC_SNARFER
+#include "shader.x"
+#endif
+	printf("%s\n", s_s_make_shader);
+}
+#endif
