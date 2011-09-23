@@ -543,8 +543,10 @@ void spline_keyhandler(unsigned char key, int x, int y) {
 	else if (key == ' ')
 		draw_cp = !draw_cp;
 	
+printf("key\n");
 
 	if (selected_cp != -1) {
+	printf("cp!\n");
 		bool regen = true;
 		switch (key) {
 			case 'x': base_control_grid[selected_cp].x -= 0.5; break;
