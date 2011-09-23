@@ -672,14 +672,16 @@ void pick(int x, int y) {
 	selected_cp = data[0]-1;
 }
 
-int main(int argc, char **argv) 
+void actual_main()
 {
-	startup_cgl("blub", 3, 3, argc, argv, 500, 500, true);
 	register_display_function(display);
 	register_idle_function(display);
 	register_keyboard_function(spline_keyhandler);
 	register_mouse_function(mouse_button);
 	register_mouse_motion_function(mouse_motion);
+	
+	scm_c_eval_string("(load \"test.scm\")");
+
 
 	make_shaders();
 
@@ -736,7 +738,7 @@ int main(int argc, char **argv)
 	add_index_buffer_to_mesh(test_mesh, 3, testmesh_i, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(test_mesh);
 
-	test_texture = make_texture("mytex", "/home/kai/Downloads/a-gnu.png", GL_TEXTURE_2D);
+	test_texture = make_texture("mytex", "/home/kai/Desktop/a-gnu.png", GL_TEXTURE_2D);
 	/*
 	fbo_texture = make_empty_texture("fbo content", 256, 256, GL_TEXTURE_2D);
 	framebuffer = make_framebuffer("the-fbo", 256, 256);
@@ -760,8 +762,13 @@ int main(int argc, char **argv)
 	glDepthFunc(GL_LESS);
 
 	enter_glut_main_loop();
+}
 
+int main(int argc, char **argv) 
+{
+	startup_cgl("blub", 3, 3, argc, argv, 500, 500, actual_main, true, true);
 	return 0;
 }
+
 
 // vim: set foldmethod=marker :

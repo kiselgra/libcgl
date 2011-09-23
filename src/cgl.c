@@ -1,13 +1,24 @@
 #include "cgl.h"
 
 #include "glut.h"
+#include "scheme.h"
 
 #include <GL/glew.h>
 #include <GL/glxew.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, bool verbose) {
+#ifdef WITH_GUILE
+#include <libguile.h>
+#endif
+
+static void hop(void *data, int argc, char **argv) {
+	start_console_thread();
+
+	((void(*)())data)();	// run the user supplied 'inner main'
+}
+
+void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), bool use_guile, bool verbose) {
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
 	
 	glewExperimental = GL_TRUE;
@@ -23,6 +34,16 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 		dump_gl_info();
 		printf("Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 	}
+
+#ifdef WITH_GUILE
+	if (use_guile) {
+		scm_boot_guile(0, 0, hop, (void*)call);
+	}
+	else
+		call();
+#else
+	call();
+#endif
 }
 
 // actually, this should not be necessary as soon as we use the debugging extension...

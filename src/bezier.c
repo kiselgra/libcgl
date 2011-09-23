@@ -379,10 +379,8 @@ static void mouse_button(int button, int state, int x, int y) {
 	}
 }
 
-
-int main(int argc, char **argv) 
+void actual_main() 
 {
-	startup_cgl("blub", 3, 3, argc, argv, 500, 500, true);
 	register_display_function(display);
 	register_idle_function(display);
 	register_keyboard_function(spline_keyhandler);
@@ -485,7 +483,13 @@ int main(int argc, char **argv)
 
 	enter_glut_main_loop();
 
+}
+
+int main(int argc, char **argv) 
+{
+	startup_cgl("blub", 3, 3, argc, argv, 500, 500, actual_main, false, true);
 	return 0;
 }
+
 
 // vim: set foldmethod=marker :
