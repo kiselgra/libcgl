@@ -690,8 +690,11 @@ void actual_main()
 	make_vec3f(&cam_pos, 0, 0, 5);
 	make_vec3f(&cam_dir, 0, 0, 1);
 	make_vec3f(&cam_up, 0, 1, 0);
+	use_camera(find_camera("cam-name"));
+	/*
 	use_camera(make_perspective_cam("my cam", &cam_pos, &cam_dir, &cam_up, 45, 1, 0.1, 1000));
 // 	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, (int)2*M_PI*100, 0, 100, 0, 0.1, 1000));
+// 	*/
 	float ortho_r = 2, ortho_l = -1,
 	      ortho_t = 2, ortho_b = -1;
 // 	use_camera(make_orthographic_cam("my ortho", &cam_pos, &cam_dir, &cam_up, ortho_r, ortho_l, ortho_t, ortho_b, 0.01, 1000));
@@ -739,7 +742,7 @@ void actual_main()
 	add_index_buffer_to_mesh(test_mesh, 3, testmesh_i, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(test_mesh);
 
-	test_texture = make_texture("mytex", "/home/kai/Desktop/a-gnu.png", GL_TEXTURE_2D);
+	test_texture = find_texture("gnutex"); //make_texture("mytex", "/home/kai/Desktop/a-gnu.png", GL_TEXTURE_2D);
 	/*
 	fbo_texture = make_empty_texture("fbo content", 256, 256, GL_TEXTURE_2D);
 	framebuffer = make_framebuffer("the-fbo", 256, 256);

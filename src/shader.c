@@ -35,8 +35,8 @@ shader_ref make_shader(const char *name, int input_vars) {
 		free(old_array);
 	}
 	shader_ref ref;
-	ref.shader_id = next_shader_index++;
-	struct shader *shader = shaders+ref.shader_id;
+	ref.id = next_shader_index++;
+	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
 	strcpy(shader->name, name);
 	shader->bound = false;
@@ -70,17 +70,17 @@ void add_shader_source(char **destination, const char *add) {
 }
 
 void add_vertex_source(shader_ref ref, const char *src) {
-	struct shader *shader = shaders+ref.shader_id;
+	struct shader *shader = shaders+ref.id;
 	add_shader_source(&shader->vertex_source, src);
 }
 
 void add_fragment_source(shader_ref ref, const char *src) {
-	struct shader *shader = shaders+ref.shader_id;
+	struct shader *shader = shaders+ref.id;
 	add_shader_source(&shader->fragment_source, src);
 }
 
 bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
-	struct shader *shader = shaders+ref.shader_id;
+	struct shader *shader = shaders+ref.id;
 	if (shader->next_input_var >= shader->input_vars) {
 		fprintf(stderr, "tried to assign shader input (%s, %d) to shader %s when all bindings are set.\n", varname, index, shader->name);
 		return false;
@@ -116,7 +116,7 @@ void store_info_log(char **target, GLuint object) {
 }
 
 bool compile_and_link_shader(shader_ref ref) {
-	struct shader *shader = shaders+ref.shader_id;
+	struct shader *shader = shaders+ref.id;
 	const GLchar *src[2];
 	GLint compile_res;
 
@@ -175,55 +175,71 @@ bool compile_and_link_shader(shader_ref ref) {
 }
 
 void bind_shader(shader_ref ref) {
-	glUseProgram(shaders[ref.shader_id].shader_program);
-	shaders[ref.shader_id].bound = true;
+	glUseProgram(shaders[ref.id].shader_program);
+	shaders[ref.id].bound = true;
 }
 
 void unbind_shader(shader_ref ref) {
 	glUseProgram(0);
-	shaders[ref.shader_id].bound = false;
+	shaders[ref.id].bound = false;
 }
 
 const char *vertex_shader_info_log(shader_ref ref) {
-	return shaders[ref.shader_id].vert_info_log;
+	return shaders[ref.id].vert_info_log;
 }
 
 const char *fragment_shader_info_log(shader_ref ref) {
-	return shaders[ref.shader_id].frag_info_log;
+	return shaders[ref.id].frag_info_log;
 }
 
 const char *shader_info_log(shader_ref ref) {
-	return shaders[ref.shader_id].program_info_log;
+	return shaders[ref.id].program_info_log;
 }
 
 int gl_shader_object(shader_ref ref) {
-	return shaders[ref.shader_id].shader_program;
+	return shaders[ref.id].shader_program;
+}
+
+shader_ref find_shader(const char *name) {
+	shader_ref ref = { -1 };
+	if (strlen(name) == 0) return ref;
+	for (int i = 0; i < next_shader_index; ++i) {
+		if (strcmp(shaders[i].name, name) == 0) {
+			ref.id = i;
+			return ref;
+		}
+	}
+	return ref;
+}
+
+bool valid_shader_ref(shader_ref ref) {
+	return ref.id >= 0;
 }
 
 #ifdef WITH_GUILE
 #include <libguile.h>
 
 SCM_DEFINE(s_make_shader, "make-shader", 2, 0, 0, (SCM name, SCM input_n), "create shader with name and number of input vars.") {
-	char *na = scm_to_locale_string(name);
+	const char *na = scm_to_locale_string(name);
 	int nu = scm_to_int(input_n);
 	shader_ref ref = make_shader(na, nu);
-	return scm_from_int(ref.shader_id);
+	return scm_from_int(ref.id);
 }
 SCM_DEFINE(s_add_vertex_source, "add-vertex-source", 2, 0, 0, (SCM shader, SCM src), "add vertex shader source to the shader object.") {
 	shader_ref ref = { scm_to_int(shader) };
-	char *source = scm_to_locale_string(src);
+	const char *source = scm_to_locale_string(src);
 	add_vertex_source(ref, source);
 	return SCM_BOOL_T;
 }
 SCM_DEFINE(s_add_fragment_source, "add-fragment-source", 2, 0, 0, (SCM shader, SCM src), "add fragment shader source to the shader object.") {
 	shader_ref ref = { scm_to_int(shader) };
-	char *source = scm_to_locale_string(src);
+	const char *source = scm_to_locale_string(src);
 	add_fragment_source(ref, source);
 	return SCM_BOOL_T;
 }
 SCM_DEFINE(s_add_shader_input, "add-shader-input", 3, 0, 0, (SCM shader, SCM varname, SCM index), "") {
 	shader_ref ref = { scm_to_int(shader) };
-	char *vn = scm_to_locale_string(varname);
+	const char *vn = scm_to_locale_string(varname);
 	int idx = scm_to_int(index);
 	bool ret = add_shader_input(ref, vn, idx);
 	return ret ? SCM_BOOL_T : SCM_BOOL_F;
@@ -233,11 +249,23 @@ SCM_DEFINE(s_compile_and_link_shader, "compile-and-link-shader", 1, 0, 0, (SCM s
 	bool ret = compile_and_link_shader(ref);
 	return ret ? SCM_BOOL_T : SCM_BOOL_F;
 }
+SCM_DEFINE(s_find_shader, "find-shader", 1, 0, 0, (SCM name), "") {
+	const char *n = scm_to_locale_string(name);
+	shader_ref ref = find_shader(n);
+	if (valid_shader_ref(ref))
+		return scm_from_int(ref.id);
+	return SCM_BOOL_F;
+}
+SCM_DEFINE(s_valid_shader_ref, "valid-shader-ref", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	if (valid_shader_ref(ref))
+		return SCM_BOOL_T;
+	return SCM_BOOL_F;
+}
 
 void register_scheme_functions_for_shaders() {
 #ifndef SCM_MAGIC_SNARFER
 #include "shader.x"
 #endif
-	printf("%s\n", s_s_make_shader);
 }
 #endif

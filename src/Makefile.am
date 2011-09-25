@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libcgl.la
 noinst_PROGRAMS = bezier blub bspline
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
-libcgl_la_SOURCES = 	camera.c       camera.h  \
+libcgl_la_SOURCES = 	camera.c       camera.h  camera.x \
                         cgl.c          cgl.h          \
                         drawelement.c  drawelement.h  \
                         framebuffer.c  framebuffer.h  \
@@ -10,7 +10,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  \
                         impex.cpp      impex.h      \
                         mesh.c         mesh.h  \
 						scheme.c       scheme.h \
-                        shader.c       shader.h  \
+                        shader.c       shader.h  shader.x \
                         texture.c      texture.h
 
 
@@ -18,6 +18,11 @@ blub_SOURCES = $(libcgl_la_SOURCES) blub.c
 bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
 bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
+
+snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS)
+SUFFIXES: .x
+.c.x:
+	guile-snarf -o $@ $< $(snarf_opts)
 
 # for bison/flex
 # AM_CPPFLAGS = -Isrc/
@@ -39,10 +44,5 @@ blub_LDADD = $(GUILE_LIBS)
 bezier_LDADD = $(GUILE_LIBS)
 bspline_LDADD = $(GUILE_LIBS)
 
-snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS)
-SUFFIXES: .x
-.c.x:
-	guile-snarf -o $@ $< $(snarf_opts)
-
-#scheme.c: shader.x
+scheme.c: shader.x camera.x texture.x
 

@@ -73,3 +73,60 @@ void use_camera(camera_ref ref) {
 camera_ref current_camera() {
 	return current_cam_ref;
 }
+
+camera_ref find_camera(const char *name) {
+	camera_ref ref = { -1 };
+	if (strlen(name) == 0) return ref;
+	for (int i = 0; i < next_camera_index; ++i)
+		if (strcmp(cameras[i].name, name) == 0) {
+			ref.id = i;
+			return ref;
+		}
+	return ref;
+}
+
+bool valid_camera_ref(camera_ref ref) {
+	return ref.id >= 0;
+}
+
+
+#ifdef WITH_GUILE
+#include <libguile.h>
+#include <stdio.h>
+
+SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name, SCM pos, SCM dir, SCM up, SCM fovy, SCM aspect, SCM near, SCM far), "") {
+	char *n = scm_to_locale_string(name);
+	vec3f p, d, u;
+	make_vec3f(&p, 0, 0, 0);
+	make_vec3f(&d, 0, 0, 0);
+	make_vec3f(&u, 0, 0, 0);
+	void load_vec3f(SCM list, vec3f *v, const char *info) {
+		if (!scm_list_p(list)) {
+			fprintf(stderr, "%s is not a list.\n", info);
+			return;
+		}
+		if (scm_to_int(scm_length(list)) != 3) {
+			fprintf(stderr, "%s must be a list of length 3 (a vec3).\n", info);
+			return;
+		}
+		v->x = (float)scm_to_double(scm_list_ref(list, scm_from_int(0)));
+		v->y = (float)scm_to_double(scm_list_ref(list, scm_from_int(1)));
+		v->z = (float)scm_to_double(scm_list_ref(list, scm_from_int(2)));
+	}
+	load_vec3f(pos, &p, "pos");
+	load_vec3f(dir, &d, "dir");
+	load_vec3f(up, &u, "up");
+	float fo = (float)scm_to_double(fovy);
+	float as = (float)scm_to_double(aspect);
+	float ne = (float)scm_to_double(near);
+	float fa = (float)scm_to_double(far);
+	camera_ref ref = make_perspective_cam(n, &p, &d, &u, fo, as, ne, fa);
+	return scm_from_int(ref.id);
+}
+
+void register_scheme_functions_for_cameras() {
+#ifndef SCM_MAGIC_SNARFER
+#include "camera.x"
+#endif
+}
+#endif

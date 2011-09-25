@@ -19,6 +19,8 @@ void recompute_gl_matrices_of_cam(camera_ref ref);
 
 void use_camera(camera_ref ref);
 camera_ref current_camera();
+camera_ref find_camera(const char *name);
+bool valid_camera_ref(camera_ref ref);
 
 #endif
 

@@ -124,3 +124,42 @@ int texture_id(texture_ref ref) {
 	return textures[ref.id].texid;
 }
 
+texture_ref find_texture(const char *name) {
+	texture_ref ref = { -1 };
+	if (strlen(name) == 0) return ref;
+	for (int i = 0; i < next_texture_index; ++i)
+		if (strcmp(textures[i].name, name) == 0) {
+			ref.id = i;
+			return ref;
+		}
+	return ref;
+}
+
+bool valid_texture_ref(texture_ref ref) {
+	return ref.id >= 0;
+}
+
+#ifdef WITH_GUILE
+#include <libguile.h>
+#include <stdio.h>
+
+SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 3, 0, 0, (SCM name, SCM filename, SCM target), "") {
+	char *n = scm_to_locale_string(name);
+	char *fn = scm_to_locale_string(filename);
+	unsigned int t = -1;
+	if (scm_is_symbol(target)) {
+		char *n = scm_to_locale_string(scm_symbol_to_string(target));
+		if (strcmp("tex2d", n) == 0) t = GL_TEXTURE_2D;
+	}
+	else 
+		t = scm_to_uint32(target);
+	texture_ref ref = make_texture(n, fn, t);
+	return scm_from_int(ref.id);
+}
+
+void register_scheme_functions_for_textures() {
+#ifndef SCM_MAGIC_SNARFER
+#include "texture.x"
+#endif
+}
+#endif

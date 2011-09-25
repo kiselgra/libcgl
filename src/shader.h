@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 typedef struct {
-	int shader_id;
+	int id;
 } shader_ref;
 
 
@@ -22,6 +22,8 @@ const char *fragment_shader_info_log(shader_ref ref);
 const char *shader_info_log(shader_ref ref);
 
 int gl_shader_object(shader_ref ref);
+shader_ref find_shader(const char *name);
+bool valid_shader_ref(shader_ref ref);
 
 #endif
 

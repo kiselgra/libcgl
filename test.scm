@@ -25,3 +25,9 @@
   (add-shader-input shader "in_pos" 0)
   (compile-and-link-shader shader))
 	)(newline)
+
+
+(make-perspective-camera "cam-name" (list 0 0 5) (list 0 0 1) (list 0 1 0) 45 1 0.1 1000)
+
+;/make_texture("mytex", "/home/kai/Desktop/a-gnu.png", GL_TEXTURE_2D);
+(texture-from-file "gnutex" "/home/kai/Desktop/a-gnu.png" 'tex2d)

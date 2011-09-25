@@ -3,9 +3,13 @@
 #include <libguile.h>
 
 void register_scheme_functions_for_shaders();
+void register_scheme_functions_for_cameras();
+void register_scheme_functions_for_textures();
 
 void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();
+	register_scheme_functions_for_cameras();
+	register_scheme_functions_for_textures();
 }
 
 void start_console_thread() {
