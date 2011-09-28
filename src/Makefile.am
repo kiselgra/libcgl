@@ -9,6 +9,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  camera.x \
                         glut.c         glut.h     \
                         impex.cpp      impex.h      \
                         mesh.c         mesh.h  \
+						objloader.cpp  objloader.h \
 						scheme.c       scheme.h \
                         shader.c       shader.h  shader.x \
                         texture.c      texture.h
@@ -37,12 +38,12 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impe
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS)
-libcgl_la_LIBADD = $(GUILE_LIBS)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(OBJL_CPPFLAGS)
+libcgl_la_LIBADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
 
-blub_LDADD = $(GUILE_LIBS)
-bezier_LDADD = $(GUILE_LIBS)
-bspline_LDADD = $(GUILE_LIBS)
+blub_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
+bezier_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
+bspline_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
 
 scheme.c: shader.x camera.x texture.x
 

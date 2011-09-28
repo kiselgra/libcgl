@@ -32,6 +32,16 @@ AC_CHECK_LIB([glut], [main])
 AC_CHECK_LIB([GLEW], [main])
 AC_CHECK_LIB([png], [main])
 
+AC_PATH_PROG([OBJL_CONFIG], [libobjloader-config])
+if test "x$ac_cv_path_OBJL_CONFIG" = "x"; then
+	AC_MSG_ERROR([libobjloader not found. get it somewhere at server1.darkcellarnights.de/~kai/projekte])
+fi
+OBJL_CPPFLAGS=`$OBJL_CONFIG -c`
+OBJL_LDFLAGS=`$OBJL_CONFIG -l`
+AC_SUBST([OBJL_CPPFLAGS])
+AC_SUBST([OBJL_LDFLAGS])
+
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([inttypes.h stdlib.h string.h unistd.h])
