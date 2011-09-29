@@ -14,13 +14,13 @@
 
 static void hop(void *data, int argc, char **argv) {
 	load_snarfed_definitions();
-	load_configfile("test.scm");
+	load_configfile(argv[0]);
 	start_console_thread();
 
 	((void(*)())data)();	// run the user supplied 'inner main'
 }
 
-void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), bool use_guile, bool verbose) {
+void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), bool use_guile, bool verbose, const char *initfile) {
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
 	
 	glewExperimental = GL_TRUE;
@@ -39,7 +39,8 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 
 #ifdef WITH_GUILE
 	if (use_guile) {
-		scm_boot_guile(0, 0, hop, (void*)call);
+		char *p[2] = { (char*)initfile, 0 };
+		scm_boot_guile(1, p, hop, (void*)call);
 	}
 	else
 		call();

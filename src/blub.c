@@ -783,7 +783,7 @@ void actual_main()
 	bind_mesh_to_gl(test_mesh);
 	add_vertex_buffer_to_mesh(test_mesh, "vt", GL_FLOAT, obj.vertices, 3, obj.vertex_data, GL_STATIC_DRAW);
 	add_vertex_buffer_to_mesh(test_mesh, "nm", GL_FLOAT, obj.vertices, 3, obj.normal_data, GL_STATIC_DRAW);
-	add_index_buffer_to_mesh(test_mesh, 3*obj.groups[0].indices, (unsigned int*)obj.groups[0].v_ids, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(test_mesh, 3*obj.groups[0].triangles, (unsigned int*)obj.groups[0].v_ids, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(test_mesh);
 	
 
@@ -792,7 +792,7 @@ void actual_main()
 
 int main(int argc, char **argv) 
 {
-	startup_cgl("blub", 3, 3, argc, argv, 500, 500, actual_main, true, true);
+	startup_cgl("blub", 3, 3, argc, argv, 500, 500, actual_main, true, true, "test.scm");
 	return 0;
 }
 

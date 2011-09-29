@@ -19,7 +19,7 @@ typedef struct {
 
 typedef struct {
 	char *name;
-	int indices;
+	int triangles;
 	vec3i *v_ids, *n_ids, *t_ids;
 	obj_mtl *mtl;
 } obj_group;

@@ -618,7 +618,7 @@ void actual_main()
 
 int main(int argc, char **argv) 
 {
-	startup_cgl("blub", 3, 3, argc, argv, 500, 500, actual_main, false, true);
+	startup_cgl("blub", 3, 3, argc, argv, 500, 500, actual_main, false, true, "test.scm");
 	return 0;
 }
 

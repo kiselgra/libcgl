@@ -32,7 +32,7 @@ SUFFIXES: .x
 AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
-library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impex.h mesh.h shader.h texture.h
+library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impex.h mesh.h shader.h texture.h objloader.h
 
 # setting c++ flags:
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg

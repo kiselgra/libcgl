@@ -81,11 +81,11 @@ extern "C" {
 			std::string gname = string(name) + "/" + it->name;
 			group->name = (char*)malloc(gname.length()+1);
 			strcpy(group->name, gname.c_str());
-			group->indices = it->load_idxs_v.size();
-			group->v_ids = (vec3i*)malloc(sizeof(vec3i) * group->indices);
-			group->n_ids = (vec3i*)malloc(sizeof(vec3i) * group->indices);
-			group->t_ids = (vec3i*)malloc(sizeof(vec3i) * group->indices);
-			for (int j = 0; j < group->indices; ++j) {
+			group->triangles = it->load_idxs_v.size();
+			group->v_ids = (vec3i*)malloc(sizeof(vec3i) * group->triangles);
+			group->n_ids = (vec3i*)malloc(sizeof(vec3i) * group->triangles);
+			group->t_ids = (vec3i*)malloc(sizeof(vec3i) * group->triangles);
+			for (int j = 0; j < group->triangles; ++j) {
 				group->v_ids[j].x = it->load_idxs_v[j].x;   group->v_ids[j].y = it->load_idxs_v[j].y;   group->v_ids[j].z = it->load_idxs_v[j].z;
 				group->n_ids[j].x = it->load_idxs_n[j].x;   group->n_ids[j].y = it->load_idxs_n[j].y;   group->n_ids[j].z = it->load_idxs_n[j].z;
 // 				group->t_ids[j].x = it->load_idxs_t[j].x;   group->t_ids[j].y = it->load_idxs_t[j].y;   group->t_ids[j].z = it->load_idxs_t[j].z;
