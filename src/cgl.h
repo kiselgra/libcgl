@@ -1,7 +1,7 @@
 #ifndef __CGL_H__ 
 #define __CGL_H__ 
 
-#include <libguile.h>
+// #include <libguile.h>
 
 #include <stdbool.h>
 #include <GL/glew.h>
@@ -14,6 +14,8 @@ void check_for_gl_errors(const char *function);
 void standard_error_handler(GLenum error, const char *where);
 void ignore_gl_error(const char *function);
 void dump_gl_info(void);
+
+void quit(int status);
 
 typedef void (*error_handler_t)(GLenum error, const char *where);
 void register_error_handler(error_handler_t h);

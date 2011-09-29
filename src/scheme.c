@@ -15,11 +15,11 @@ void load_snarfed_definitions() {
 }
 
 void start_console_thread() {
-	scm_c_eval_string("(call-with-new-thread (lambda () "
+	scm_c_eval_string("(define repl-thread (call-with-new-thread (lambda () "
 	                                          "(use-modules (ice-9 readline)) "
 											  "(activate-readline) "
 											  "(top-repl) "
-											  "(format #t \"THE GUILE REPL IS TERMINATING NOW.~%\")))");
+											  "(format #t \"THE GUILE REPL IS TERMINATING NOW.~%\"))))");
 }
 
 

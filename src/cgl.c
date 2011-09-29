@@ -84,4 +84,8 @@ void dump_gl_info(void)
 	check_for_gl_errors("dump-info");
 }
 
-
+void quit(int status) {
+	scm_c_eval_string("(cancel-thread repl-thread)");
+	scm_c_eval_string("(join-thread repl-thread)");
+	exit(status);
+}

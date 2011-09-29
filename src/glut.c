@@ -46,7 +46,7 @@ void standard_keyboard(unsigned char key, int x, int y)
 	float move_factor = 0.1;
 	switch (key) {
 		case 27:
-			exit(0);
+			quit(0);
 		case 's':
 			copy_vec3f(&tmp, &cam_dir);
 			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
