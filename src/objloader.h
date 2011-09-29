@@ -1,6 +1,10 @@
 #ifndef __OBJLOADER_H__ 
 #define __OBJLOADER_H__ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libmcm-0.0.1/vectors.h>
 
 typedef struct {
@@ -8,25 +12,32 @@ typedef struct {
 } vec3i;
 
 typedef struct {
-	int indices;
-	vec3i *v_ids, *n_ids, *t_ids;
-} group;
+	char *name;
+	vec3f col_amb, col_diff, col_spec;
+	char *tex_a, *tex_d, *tex_s, *tex_bump;
+} obj_mtl;
 
 typedef struct {
+	char *name;
+	int indices;
+	vec3i *v_ids, *n_ids, *t_ids;
+	obj_mtl *mtl;
+} obj_group;
+
+typedef struct {
+	char *name;
 	int vertices;
 	vec3f *vertex_data;
 	vec3f *normal_data;
 	vec2f *texcoord_data;
 	int number_of_groups;
-	group *groups;
+	obj_group *groups;
+	int number_of_materials;
+	obj_mtl *materials;
 } obj_data;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-	void load_objfile(const char *name, obj_data *output);
+void load_objfile(const char *name, const char *filename, obj_data *output);
 
 #ifdef __cplusplus
 }

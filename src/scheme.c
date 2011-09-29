@@ -1,3 +1,5 @@
+#ifdef WITH_GUILE
+
 #include "scheme.h"
 
 #include <libguile.h>
@@ -34,3 +36,6 @@ void load_configfile(const char *filename) {
 
 	free(buffer);
 }
+
+#endif
+

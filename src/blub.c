@@ -15,6 +15,7 @@
 #include "texture.h"
 #include "framebuffer.h"
 #include "glut.h"
+#include "objloader.h"
 
 #include <libmcm-0.0.1/vectors.h>
 #include <libmcm-0.0.1/matrix.h>
@@ -65,7 +66,6 @@ void make_shaders() // {{{
 		"in vec3 normal_wc;\n"
 		"out vec4 out_col;\n"
 		"uniform vec3 light_pos;\n"
-		"uniform vec2 h_min_max;\n"
 		"\n"
 		"void main(void)\n"
 		"{\n"
@@ -73,9 +73,7 @@ void make_shaders() // {{{
 		"	vec3 to_light = normalize(light_pos - pos_wc.xyz);\n"
 		"	float n_dot_l = dot(normal_wc, to_light);\n"
 		"	out_col = vec4(n_dot_l,0,0,1);\n"
-		"   float r = (pos_wc.y - h_min_max.x) / (h_min_max.y - h_min_max.x);\n"
-		"	out_col = vec4(r,0,0,1);\n"
-		"	//out_col = vec4(1,0,0,1.0);\n"
+// 		"	out_col = vec4(1,0,0,1.0);\n"
 		"}\n";
 	
 
@@ -316,7 +314,7 @@ static void display(void)
 	
 
 
-	bind_shader(tex_shader);
+// 	bind_shader(tex_shader);
 
 	/*
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "proj");
@@ -328,11 +326,24 @@ static void display(void)
 	loc = glGetUniformLocation(gl_shader_object(tex_shader), "the_tex");
 	glUniform1i(loc, 0);
 
+*/
+	bind_shader(my_shader);
+	
+	loc = glGetUniformLocation(gl_shader_object(my_shader), "proj");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, projection_matrix_of_cam(current_camera())->col_major);
+	loc = glGetUniformLocation(gl_shader_object(my_shader), "moview");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, gl_view_matrix_of_cam(current_camera())->col_major);
+	loc = glGetUniformLocation(gl_shader_object(my_shader), "light_pos");
+	static float lp[3] = { 0, 20, 0};
+	glUniform3fv(loc, 1, lp);
+		
 	bind_mesh_to_gl(test_mesh);
 	glDrawElements(GL_TRIANGLES, index_buffer_length_of_mesh(test_mesh), GL_UNSIGNED_INT, 0);
 	unbind_mesh_from_gl(test_mesh);
-	unbind_shader(tex_shader);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	unbind_shader(my_shader);
+
+// 	unbind_shader(tex_shader);
+/*	glBindTexture(GL_TEXTURE_2D, 0);
 	*/
 
 // 	unbind_framebuffer(framebuffer);
@@ -732,15 +743,15 @@ void actual_main()
 	add_index_buffer_to_mesh(ortho_test, 12, ortho_ids, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(ortho_test);
 
-	vec3f testmesh_v[3] = { {0,0,10}, {0,1,10}, {1,1,10} };
-	vec2f testmesh_t[3] = { {0,0}, {0,1}, {1,1} };
-	unsigned int testmesh_i[3] = {0,1,2};
-	test_mesh = make_mesh("test", 2);
-	bind_mesh_to_gl(test_mesh);
-	add_vertex_buffer_to_mesh(test_mesh, "vt", GL_FLOAT, 3, 3, testmesh_v, GL_STATIC_DRAW);
-	add_vertex_buffer_to_mesh(test_mesh, "tx", GL_FLOAT, 3, 2, testmesh_t, GL_STATIC_DRAW);
-	add_index_buffer_to_mesh(test_mesh, 3, testmesh_i, GL_STATIC_DRAW);
-	unbind_mesh_from_gl(test_mesh);
+// 	vec3f testmesh_v[3] = { {0,0,10}, {0,1,10}, {1,1,10} };
+// 	vec2f testmesh_t[3] = { {0,0}, {0,1}, {1,1} };
+// 	unsigned int testmesh_i[3] = {0,1,2};
+// 	test_mesh = make_mesh("test", 2);
+// 	bind_mesh_to_gl(test_mesh);
+// 	add_vertex_buffer_to_mesh(test_mesh, "vt", GL_FLOAT, 3, 3, testmesh_v, GL_STATIC_DRAW);
+// 	add_vertex_buffer_to_mesh(test_mesh, "tx", GL_FLOAT, 3, 2, testmesh_t, GL_STATIC_DRAW);
+// 	add_index_buffer_to_mesh(test_mesh, 3, testmesh_i, GL_STATIC_DRAW);
+// 	unbind_mesh_from_gl(test_mesh);
 
 	test_texture = find_texture("gnutex"); //make_texture("mytex", "/home/kai/Desktop/a-gnu.png", GL_TEXTURE_2D);
 	/*
@@ -764,6 +775,17 @@ void actual_main()
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+	glDisable(GL_CULL_FACE);
+
+	obj_data obj;
+	load_objfile("bunny", "/home/kai/render-data/models/bunny-70k.obj", &obj);
+	test_mesh = make_mesh("test", 2);
+	bind_mesh_to_gl(test_mesh);
+	add_vertex_buffer_to_mesh(test_mesh, "vt", GL_FLOAT, obj.vertices, 3, obj.vertex_data, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(test_mesh, "nm", GL_FLOAT, obj.vertices, 3, obj.normal_data, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(test_mesh, 3*obj.groups[0].indices, (unsigned int*)obj.groups[0].v_ids, GL_STATIC_DRAW);
+	unbind_mesh_from_gl(test_mesh);
+	
 
 	enter_glut_main_loop();
 }
