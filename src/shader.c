@@ -262,6 +262,21 @@ SCM_DEFINE(s_valid_shader_ref, "valid-shader-ref", 1, 0, 0, (SCM id), "") {
 		return SCM_BOOL_T;
 	return SCM_BOOL_F;
 }
+SCM_DEFINE(s_vertex_shader_info_log, "vertex-shader-info-log", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	const char *log = vertex_shader_info_log(ref);
+	return scm_from_locale_string(log ? log : (const char*)"nil");
+}
+SCM_DEFINE(s_fragment_shader_info_log, "fragment-shader-info-log", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	const char *log = fragment_shader_info_log(ref);
+	return scm_from_locale_string(log ? log : (const char*)"nil");
+}
+SCM_DEFINE(s_shader_link_info_log, "shader-link-info-log", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	const char *log = shader_info_log(ref);
+	return scm_from_locale_string(log ? log : (const char*)"nil");
+}
 
 void register_scheme_functions_for_shaders() {
 #ifndef SCM_MAGIC_SNARFER
