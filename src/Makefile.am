@@ -38,7 +38,7 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impe
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(OBJL_CPPFLAGS)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(OBJL_CPPFLAGS) $(AM_CPPFLAGS)
 libcgl_la_LIBADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
 
 blub_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
