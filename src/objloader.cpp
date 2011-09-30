@@ -23,7 +23,14 @@ extern "C" {
 		output->vertices = loader.load_verts.size();
 		output->vertex_data = (vec3f*)malloc(sizeof(vec3f) * output->vertices);
 		output->normal_data = (vec3f*)malloc(sizeof(vec3f) * output->vertices);
-		output->texcoord_data = (vec2f*)malloc(sizeof(vec2f) * output->vertices);
+		bool with_tex = false;
+		if (loader.load_texs.size() > 0)
+			with_tex = true;
+		if (with_tex) 
+			output->texcoord_data = (vec2f*)malloc(sizeof(vec2f) * output->vertices);
+		else 
+			output->texcoord_data = 0;
+		
 		for (int i = 0; i < output->vertices; ++i) {
 			output->vertex_data[i].x = loader.load_verts[i].x * 0.1;
 			output->vertex_data[i].y = loader.load_verts[i].y * 0.1;
@@ -33,7 +40,7 @@ extern "C" {
 				output->normal_data[i].y = loader.load_norms[i].y;
 				output->normal_data[i].z = loader.load_norms[i].z;
 			}
-			if (loader.load_texs.size()) {
+			if (with_tex) {
 				output->texcoord_data[i].x = loader.load_texs[i].x;
 				output->texcoord_data[i].y = loader.load_texs[i].y;
 			}
@@ -78,17 +85,20 @@ extern "C" {
 		list<obj_default::ObjFileLoader::Group>::iterator it = loader.groups.begin();
 		for (int i = 0; i < output->number_of_groups; ++i) {
 			::obj_group *group = &output->groups[i];
+			bool group_with_tex = with_tex && it->load_idxs_t.size() && it->load_idxs_t[0].x != obj_default::ObjFileLoader::NOT_PRESENT;
 			std::string gname = string(name) + "/" + it->name;
 			group->name = (char*)malloc(gname.length()+1);
 			strcpy(group->name, gname.c_str());
 			group->triangles = it->load_idxs_v.size();
 			group->v_ids = (vec3i*)malloc(sizeof(vec3i) * group->triangles);
 			group->n_ids = (vec3i*)malloc(sizeof(vec3i) * group->triangles);
-			group->t_ids = (vec3i*)malloc(sizeof(vec3i) * group->triangles);
+			group->t_ids = group_with_tex ? (vec3i*)malloc(sizeof(vec3i) * group->triangles) : 0;
 			for (int j = 0; j < group->triangles; ++j) {
 				group->v_ids[j].x = it->load_idxs_v[j].x;   group->v_ids[j].y = it->load_idxs_v[j].y;   group->v_ids[j].z = it->load_idxs_v[j].z;
 				group->n_ids[j].x = it->load_idxs_n[j].x;   group->n_ids[j].y = it->load_idxs_n[j].y;   group->n_ids[j].z = it->load_idxs_n[j].z;
-// 				group->t_ids[j].x = it->load_idxs_t[j].x;   group->t_ids[j].y = it->load_idxs_t[j].y;   group->t_ids[j].z = it->load_idxs_t[j].z;
+				if (group_with_tex) {
+					group->t_ids[j].x = it->load_idxs_t[j].x;   group->t_ids[j].y = it->load_idxs_t[j].y;   group->t_ids[j].z = it->load_idxs_t[j].z;
+				}
 			}
 			if (it->mat) {
 				for (int i = 0; i < output->number_of_materials; ++i)
