@@ -47,7 +47,7 @@ extern "C" {
 		}
 		
 		// copy material database
-		output->materials = (obj_mtl*)malloc(sizeof(obj_mtl*)*loader.materials.size());
+		output->materials = (obj_mtl*)malloc(sizeof(obj_mtl)*loader.materials.size());
 		output->number_of_materials = loader.materials.size();
 		int i = 0;
 		for (std::map<std::string, ObjLoader::Mtl*>::iterator mit = loader.materials.begin(); mit != loader.materials.end(); ++mit) {
@@ -77,6 +77,7 @@ extern "C" {
 				strcpy(output->materials[i].tex_bump, mit->second->tex_bump.c_str());
 			}
 			else output->materials[i].tex_bump = 0;
+			++i;
 		}
 		
 		// copy vertex indices, link groups to materials
