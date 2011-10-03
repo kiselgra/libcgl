@@ -6,7 +6,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  camera.x \
                         cgl.c          cgl.h          \
                         drawelement.c  drawelement.h  \
                         framebuffer.c  framebuffer.h  \
-                        glut.c         glut.h     \
+                        glut.c         glut.h     glut.x \
                         impex.cpp      impex.h      \
                         mesh.c         mesh.h  \
 						objloader.cpp  objloader.h \
@@ -45,5 +45,5 @@ blub_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
 bezier_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
 bspline_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
 
-scheme.c: shader.x camera.x texture.x
+scheme.c: shader.x camera.x texture.x glut.x
 

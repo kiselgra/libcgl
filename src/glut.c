@@ -34,6 +34,7 @@ void register_keyboard_function(    void (*fn)(unsigned char, int, int)) { glutK
 void register_mouse_motion_function(void (*fn)(int, int))                { glutMotionFunc(fn); }
 void register_mouse_function(       void (*fn)(int, int, int, int))      { glutMouseFunc(fn); }
 
+float move_factor = 0.1;
 void standard_keyboard(unsigned char key, int x, int y)
 {
 	vec3f tmp;
@@ -43,7 +44,6 @@ void standard_keyboard(unsigned char key, int x, int y)
 	extract_dir_vec3f_of_matrix(&cam_dir, lookat_matrix);
 	extract_up_vec3f_of_matrix(&cam_up, lookat_matrix);
 	extract_right_vec3f_of_matrix(&cam_right, lookat_matrix);
-	float move_factor = 0.1;
 	switch (key) {
 		case 27:
 			quit(0);
@@ -123,3 +123,24 @@ void swap_buffers() {
 void enter_glut_main_loop() {
 	glutMainLoop();
 }
+
+#ifdef WITH_GUILE
+#include <libguile.h>
+
+SCM_DEFINE(s_set_move_factor, "set-move-factor!", 1, 0, 0, (SCM val), "") {
+	if (!scm_is_number(val)) {
+		fprintf(stderr, "provided value is not a number!\n");
+		return SCM_BOOL_F;
+	}
+	double fact = scm_to_double(val);
+	move_factor = fact;
+	return SCM_BOOL_T;
+}
+
+void register_scheme_functions_for_glut() {
+#ifndef SCM_MAGIC_SNARFER
+#include "glut.x"
+#endif
+}
+
+#endif

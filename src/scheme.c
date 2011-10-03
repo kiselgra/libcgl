@@ -7,11 +7,13 @@
 void register_scheme_functions_for_shaders();
 void register_scheme_functions_for_cameras();
 void register_scheme_functions_for_textures();
+void register_scheme_functions_for_glut();
 
 void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();
 	register_scheme_functions_for_cameras();
 	register_scheme_functions_for_textures();
+	register_scheme_functions_for_glut();
 }
 
 void start_console_thread() {
