@@ -19,6 +19,7 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 void register_display_function(     void (*fn)());
 void register_idle_function(        void (*fn)());
 void register_keyboard_function(    void (*fn)(unsigned char, int, int));
+void register_keyboard_up_function( void (*fn)(unsigned char, int, int));
 void register_mouse_motion_function(void (*fn)(int, int));
 void register_mouse_function(       void (*fn)(int, int, int, int));
 
