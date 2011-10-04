@@ -1,17 +1,19 @@
 lib_LTLIBRARIES = libcgl.la
 noinst_PROGRAMS = bezier blub bspline
 
+BUILT_SOURCES=camera.x glut.x shader.x texture.x
+
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
-libcgl_la_SOURCES = 	camera.c       camera.h  camera.x \
+libcgl_la_SOURCES = 	camera.c       camera.h  \
                         cgl.c          cgl.h          \
                         drawelement.c  drawelement.h  \
                         framebuffer.c  framebuffer.h  \
-                        glut.c         glut.h     glut.x \
+                        glut.c         glut.h     \
                         impex.cpp      impex.h      \
                         mesh.c         mesh.h  \
 						objloader.cpp  objloader.h \
 						scheme.c       scheme.h \
-                        shader.c       shader.h  shader.x \
+                        shader.c       shader.h  \
                         texture.c      texture.h
 
 
@@ -38,16 +40,16 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impe
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(OBJL_CPPFLAGS) $(AM_CPPFLAGS)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(AM_CPPFLAGS)
 libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
 
 blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bspline_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 
-blub_LDADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
-bezier_LDADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
-bspline_LDADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+blub_LDADD = $(GUILE_LDFLAGS)
+bezier_LDADD = $(GUILE_LDFLAGS)
+bspline_LDADD = $(GUILE_LDFLAGS)
 
 scheme.c camera.c shader.c texture.c glut.c: shader.x camera.x texture.x glut.x
 
