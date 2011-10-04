@@ -22,12 +22,16 @@ extern "C" {
 		// copy raw vertex data
 		output->vertices = loader.load_verts.size();
 		output->vertex_data = (vec3f*)malloc(sizeof(vec3f) * output->vertices);
-		output->normal_data = (vec3f*)malloc(sizeof(vec3f) * output->vertices);
+		output->normals = loader.load_norms.size();
+		output->normal_data = (vec3f*)malloc(sizeof(vec3f) * output->normals);
 		bool with_tex = false;
+		output->texcoords = 0;
 		if (loader.load_texs.size() > 0)
 			with_tex = true;
-		if (with_tex) 
-			output->texcoord_data = (vec2f*)malloc(sizeof(vec2f) * output->vertices);
+		if (with_tex) {
+			output->texcoords = loader.load_texs.size();
+			output->texcoord_data = (vec2f*)malloc(sizeof(vec2f) * output->texcoords);
+		}
 		else 
 			output->texcoord_data = 0;
 		
@@ -35,15 +39,15 @@ extern "C" {
 			output->vertex_data[i].x = loader.load_verts[i].x * 0.1;
 			output->vertex_data[i].y = loader.load_verts[i].y * 0.1;
 			output->vertex_data[i].z = loader.load_verts[i].z * 0.1;
-			if (loader.load_norms.size()) {
-				output->normal_data[i].x = loader.load_norms[i].x;
-				output->normal_data[i].y = loader.load_norms[i].y;
-				output->normal_data[i].z = loader.load_norms[i].z;
-			}
-			if (with_tex) {
-				output->texcoord_data[i].x = loader.load_texs[i].x;
-				output->texcoord_data[i].y = loader.load_texs[i].y;
-			}
+		}
+		for (int i = 0; i < output->normals; ++i) {
+			output->normal_data[i].x = loader.load_norms[i].x;
+			output->normal_data[i].y = loader.load_norms[i].y;
+			output->normal_data[i].z = loader.load_norms[i].z;
+		}
+		for (int i = 0; i < output->texcoords; ++i) {
+			output->texcoord_data[i].x = loader.load_texs[i].x;
+			output->texcoord_data[i].y = loader.load_texs[i].y;
 		}
 		
 		// copy material database

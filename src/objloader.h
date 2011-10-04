@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
 	char *name;
-	int vertices;
+	int vertices, normals, texcoords;
 	vec3f *vertex_data;
 	vec3f *normal_data;
 	vec2f *texcoord_data;
