@@ -20,7 +20,7 @@ bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
 bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
 
-snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS)
+snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS)
 SUFFIXES: .x
 .c.x:
 	guile-snarf -o $@ $< $(snarf_opts)
@@ -39,11 +39,15 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impe
 
 # setting c preprocessor flags for main project
 libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(OBJL_CPPFLAGS) $(AM_CPPFLAGS)
-libcgl_la_LIBADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
+libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
 
-blub_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
-bezier_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
-bspline_LDADD = $(GUILE_LIBS) $(OBJL_LDFLAGS)
+blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
+bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
+bspline_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 
-scheme.c: shader.x camera.x texture.x glut.x
+blub_LDADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+bezier_LDADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+bspline_LDADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+
+scheme.c camera.c shader.c texture.c glut.c: shader.x camera.x texture.x glut.x
 
