@@ -36,9 +36,9 @@ extern "C" {
 			output->texcoord_data = 0;
 		
 		for (int i = 0; i < output->vertices; ++i) {
-			output->vertex_data[i].x = loader.load_verts[i].x * 0.1;
-			output->vertex_data[i].y = loader.load_verts[i].y * 0.1;
-			output->vertex_data[i].z = loader.load_verts[i].z * 0.1;
+			output->vertex_data[i].x = loader.load_verts[i].x;
+			output->vertex_data[i].y = loader.load_verts[i].y;
+			output->vertex_data[i].z = loader.load_verts[i].z;
 		}
 		for (int i = 0; i < output->normals; ++i) {
 			output->normal_data[i].x = loader.load_norms[i].x;

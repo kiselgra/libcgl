@@ -33,5 +33,7 @@ void standard_mouse_func(int button, int state, int x, int y);
 void swap_buffers();
 void enter_glut_main_loop();
 
+extern float move_factor;
+
 #endif
 

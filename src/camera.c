@@ -35,7 +35,7 @@ camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, f
 	struct camera *camera = cameras + ref.id;
 	camera->name = malloc(strlen(name)+1);
 	strcpy(camera->name, name);
-	make_projection_matrixf(&camera->projection_matrix, 45, 1, 0.01, 10000);
+	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
 	recompute_gl_matrices_of_cam(ref);
 	return ref;
