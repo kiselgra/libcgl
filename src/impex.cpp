@@ -14,7 +14,7 @@ vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h) {
 	vec3f *pixels = (vec3f*)malloc(sizeof(vec3f)**w**h);
 	for (size_t y = 0; y < *h; ++y)
 		for (size_t x = 0; x < *w; ++x) {
-			png::rgb_pixel px = image.get_pixel(x, y);
+			png::rgb_pixel px = image.get_pixel(x, *h-y-1);
 			make_vec3f(pixels+y**w+x, px.red/255.0f, px.green/255.0f, px.blue/255.0f);
 		}
 	return pixels;
@@ -25,7 +25,7 @@ void save_png3f(const vec3f *data, unsigned int w, unsigned int h, const char *f
 	for (size_t y = 0; y < h; ++y)
 		for (size_t x = 0; x < w; ++x) {
 			const vec3f *v = data+y*w+x;
-			image[y][x] = png::rgb_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f);
+			image[h-y-1][x] = png::rgb_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f);
 		}
 	image.write(filename);
 }
@@ -35,7 +35,7 @@ void save_png4f(const vec4f *data, unsigned int w, unsigned int h, const char *f
 	for (size_t y = 0; y < h; ++y)
 		for (size_t x = 0; x < w; ++x) {
 			const vec4f *v = data+y*w+x;
-			image[y][x] = png::rgba_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f, v->w*255.0f);
+			image[h-y-1][x] = png::rgba_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f, v->w*255.0f);
 		}
 	image.write(filename);
 }

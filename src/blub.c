@@ -647,7 +647,7 @@ void initialize_picking(int w, int h) {
 	picking_tex = make_empty_texture("pick-ids", w, h, GL_TEXTURE_2D, GL_R32UI, GL_UNSIGNED_INT, GL_RGB_INTEGER);
 	picking_fbo = make_framebuffer("picking-fbo", w, h);
 	bind_framebuffer(picking_fbo);
-	bind_texture(picking_tex);
+	bind_texture(picking_tex, 0);
 	attach_texture_as_colorbuffer(picking_fbo, "content", picking_tex);
 	attach_depth_buffer(picking_fbo);
 	check_framebuffer_setup(picking_fbo);

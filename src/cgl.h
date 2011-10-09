@@ -8,6 +8,7 @@
 
 enum { without_guile, with_guile, guile_cfg_only };
 
+// initfile may be 0.
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile);
 
 // error handling. the gl debuggin extension should replace this...

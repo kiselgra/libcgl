@@ -107,7 +107,7 @@ extern "C" {
 			}
 			if (it->mat) {
 				for (int i = 0; i < output->number_of_materials; ++i)
-					if (strcmp(it->mat->name.c_str(), output->materials[i].name) == 0) {
+					if ((std::string(name) + "/" + it->mat->name) == std::string(output->materials[i].name)) {
 						group->mtl = output->materials+i;
 						break;
 					}

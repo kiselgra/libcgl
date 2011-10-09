@@ -95,14 +95,22 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	return ref;
 }
 
-void bind_texture(texture_ref ref)   { textures[ref.id].bound = true; glBindTexture(textures[ref.id].target, textures[ref.id].texid); }
-void unbind_texture(texture_ref ref) { textures[ref.id].bound = false; glBindTexture(GL_TEXTURE_2D, 0); }
+void bind_texture(texture_ref ref, int unit) {
+	textures[ref.id].bound = true; 
+	glActiveTexture(unit);
+	glBindTexture(textures[ref.id].target, textures[ref.id].texid); 
+}
+
+void unbind_texture(texture_ref ref) { 
+	textures[ref.id].bound = false; 
+	glBindTexture(GL_TEXTURE_2D, 0); 
+}
 
 void save_texture_as_rgb_png(texture_ref ref, const char *filename) {
 	struct texture *texture = textures + ref.id;
 	bool was_bound = false;
 	if (!texture->bound)
-		bind_texture(ref);
+		bind_texture(ref, 0);
 	else
 		was_bound = true;
 

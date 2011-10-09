@@ -216,6 +216,15 @@ bool valid_shader_ref(shader_ref ref) {
 	return ref.id >= 0;
 }
 
+shader_ref make_invalid_shader() {
+	shader_ref r = { -1 };
+	return r;
+}
+
+const char* shader_name(shader_ref ref) {
+	return shaders[ref.id].name;
+}
+
 #ifdef WITH_GUILE
 #include <libguile.h>
 

@@ -14,7 +14,7 @@
 
 static void hop(void *data, int argc, char **argv) {
 	load_snarfed_definitions();
-	load_configfile(argv[0]);
+	if (argv[0]) load_configfile(argv[0]);
 	start_console_thread();
 
 	((void(*)())data)();	// run the user supplied 'inner main'
@@ -22,7 +22,7 @@ static void hop(void *data, int argc, char **argv) {
 
 static void cfg_only(void *data) {
 	load_snarfed_definitions();
-	load_configfile((char*)data);
+	if (data) load_configfile((char*)data);
 }
 
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile) {
