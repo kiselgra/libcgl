@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 struct texture {
 	char *name;
@@ -39,10 +40,17 @@ static void allocate_texture() {
 
 texture_ref make_texture(const char *name, const char *filename, int target) {
 	unsigned int w, h;
-	vec3f *data = load_png3f(filename, &w, &h);
+	char *actual_name = find_file(filename);
+	texture_ref ref;
+	if (!actual_name) {
+		fprintf(stderr, "File '%s' not found in any registered search directory.\n", filename);
+		ref.id = -1;
+		return ref;
+	}
+	vec3f *data = load_png3f(actual_name, &w, &h);
+	free(actual_name);
 	
 	allocate_texture();
-	texture_ref ref;
 	ref.id = next_texture_index++;
 	struct texture *texture = textures+ref.id;
 	texture->name = malloc(strlen(name)+1);
@@ -97,13 +105,13 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 
 void bind_texture(texture_ref ref, int unit) {
 	textures[ref.id].bound = true; 
-	glActiveTexture(unit);
+	glActiveTexture(GL_TEXTURE0+unit);
 	glBindTexture(textures[ref.id].target, textures[ref.id].texid); 
 }
 
 void unbind_texture(texture_ref ref) { 
 	textures[ref.id].bound = false; 
-	glBindTexture(GL_TEXTURE_2D, 0); 
+	glBindTexture(textures[ref.id].target, 0); 
 }
 
 void save_texture_as_rgb_png(texture_ref ref, const char *filename) {
