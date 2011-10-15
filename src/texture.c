@@ -38,7 +38,7 @@ static void allocate_texture() {
 	}
 }
 
-texture_ref make_texture(const char *name, const char *filename, int target) {
+texture_ref make_texture(const char *name, const char *filename, int target, bool mipmap) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
 	texture_ref ref;
@@ -61,13 +61,24 @@ texture_ref make_texture(const char *name, const char *filename, int target) {
 	glBindTexture(target, texture->texid);
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	if (mipmap) {
+	check_for_gl_errors("000");
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+	check_for_gl_errors("aaa");	
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	check_for_gl_errors("bbb");
+	}
+	else {
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
 	texture->bound = false;
 
 	texture->width = w;
 	texture->height = h;
 	glTexImage2D(target, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGB, GL_FLOAT, data);
+	if (mipmap)
+		glGenerateMipmap(target);
 
 	glBindTexture(target, 0);
 
@@ -140,6 +151,14 @@ int texture_id(texture_ref ref) {
 	return textures[ref.id].texid;
 }
 
+unsigned int texture_width(texture_ref ref) {
+	return textures[ref.id].width;
+}
+
+unsigned int texture_height(texture_ref ref) {
+	return textures[ref.id].height;
+}
+
 texture_ref find_texture(const char *name) {
 	texture_ref ref = { -1 };
 	if (strlen(name) == 0) return ref;
@@ -159,18 +178,30 @@ bool valid_texture_ref(texture_ref ref) {
 #include <libguile.h>
 #include <stdio.h>
 
-SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 3, 0, 0, (SCM name, SCM filename, SCM target), "") {
+SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 4, 0, 0, (SCM name, SCM filename, SCM target, SCM mm), "") {
 	char *n = scm_to_locale_string(name);
 	char *fn = scm_to_locale_string(filename);
 	unsigned int t = -1;
 	if (scm_is_symbol(target)) {
 		char *n = scm_to_locale_string(scm_symbol_to_string(target));
 		if (strcmp("tex2d", n) == 0) t = GL_TEXTURE_2D;
+		else fprintf(stderr, "ERROR: unknown tex target '%s' at scheme level.\n", n);
 	}
 	else 
 		t = scm_to_uint32(target);
-	texture_ref ref = make_texture(n, fn, t);
+	bool mipmap = scm_to_bool(mm);
+	texture_ref ref = make_texture(n, fn, t, mm);
 	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_texture_w, "texture-width", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	return scm_from_unsigned_integer(texture_width(ref));
+}
+
+SCM_DEFINE(s_texture_h, "texture-height", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	return scm_from_unsigned_integer(texture_height(ref));
 }
 
 void register_scheme_functions_for_textures() {
