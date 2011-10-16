@@ -69,15 +69,20 @@ extern "C" {
 
 	char* find_file(const char *basename)
 	{
-		for (std::list<std::string>::const_iterator it = image_paths.begin(); it != image_paths.end(); ++it)
-		{
-			string p = *it;
-			if (p[p.length()-1] != '/')
-				p += "/";
-			p += basename;
-			if (file_exists(p.c_str()))
-				return strdup(p.c_str());
+		if (basename[0] == '/') {
+			if (file_exists(basename))
+				return strdup(basename);
 		}
+		else
+			for (std::list<std::string>::const_iterator it = image_paths.begin(); it != image_paths.end(); ++it)
+			{
+				string p = *it;
+				if (p[p.length()-1] != '/')
+					p += "/";
+				p += basename;
+				if (file_exists(p.c_str()))
+					return strdup(p.c_str());
+			}
 		return 0;
 	}
 
