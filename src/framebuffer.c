@@ -99,7 +99,7 @@ void attach_depth_buffer(framebuffer_ref ref) {
 
 void check_framebuffer_setup(framebuffer_ref ref) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
-	if (!framebuffer->depthbuffer) {
+	if (!framebuffer->depthbuffer_name) {
 		fprintf(stderr, "Framebuffer %s does not contain a depthbuffer.\n", framebuffer->name);
 		exit(-1);
 	}
