@@ -28,6 +28,16 @@ extern "C" {
 		return pixels;
 	}
 
+	void save_png1f(const float *data, unsigned int w, unsigned int h, const char *filename) {
+		png::image<png::rgb_pixel> image(w, h);
+		for (size_t y = 0; y < h; ++y)
+			for (size_t x = 0; x < w; ++x) {
+				float val = data[y*w+x] * 255.0f;
+				image[h-y-1][x] = png::rgb_pixel(val, val, val);
+			}
+		image.write(filename);
+	}
+
 	void save_png3f(const vec3f *data, unsigned int w, unsigned int h, const char *filename) {
 		png::image<png::rgb_pixel> image(w, h);
 		for (size_t y = 0; y < h; ++y)

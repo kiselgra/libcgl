@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <GL/glew.h>
 
+enum { invalid_ref = -1 };
 enum { without_guile, with_guile, guile_cfg_only };
 
 // initfile may be 0.

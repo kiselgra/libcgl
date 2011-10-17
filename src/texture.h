@@ -13,7 +13,7 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 int texture_id(texture_ref ref);
 void bind_texture(texture_ref ref, int unit);
 void unbind_texture(texture_ref ref);
-void save_texture_as_rgb_png(texture_ref ref, const char *filename);
+void save_texture_as_png(texture_ref ref, const char *filename);
 
 unsigned int texture_height(texture_ref ref);
 unsigned int texture_width(texture_ref ref);

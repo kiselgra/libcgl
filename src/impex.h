@@ -11,6 +11,7 @@ extern "C" {
 
 
 vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h);
+void save_png1f(const float *data, unsigned int w, unsigned int h, const char *filename);
 void save_png3f(const vec3f *data, unsigned int w, unsigned int h, const char *filename);
 void save_png4f(const vec4f *data, unsigned int w, unsigned int h, const char *filename);
 	

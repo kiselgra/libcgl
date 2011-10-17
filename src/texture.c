@@ -16,6 +16,7 @@ struct texture {
 	GLuint texid;
 	GLuint target;
 	bool use_mipmapping;
+	unsigned int format; // GL_RGB...
 	GLenum param_min, param_mag, param_wrap_s, param_wrap_t;
 	unsigned int width, height;
 	bool bound;
@@ -62,11 +63,8 @@ texture_ref make_texture(const char *name, const char *filename, int target, boo
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	if (mipmap) {
-	check_for_gl_errors("000");
 		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
-	check_for_gl_errors("aaa");	
 		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	check_for_gl_errors("bbb");
 	}
 	else {
 		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -76,6 +74,7 @@ texture_ref make_texture(const char *name, const char *filename, int target, boo
 
 	texture->width = w;
 	texture->height = h;
+	texture->format = GL_RGB;
 	glTexImage2D(target, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGB, GL_FLOAT, data);
 	if (mipmap)
 		glGenerateMipmap(target);
@@ -107,6 +106,7 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 
 	texture->width = w;
 	texture->height = h;
+	texture->format = format;
 	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
 
 	glBindTexture(target, 0);
@@ -125,7 +125,7 @@ void unbind_texture(texture_ref ref) {
 	glBindTexture(textures[ref.id].target, 0); 
 }
 
-void save_texture_as_rgb_png(texture_ref ref, const char *filename) {
+void save_texture_as_png(texture_ref ref, const char *filename) {
 	struct texture *texture = textures + ref.id;
 	bool was_bound = false;
 	if (!texture->bound)
@@ -138,9 +138,17 @@ void save_texture_as_rgb_png(texture_ref ref, const char *filename) {
 	glGetTexImage(texture->target, 0, GL_RGBA, GL_FLOAT, data);
 	save_png4f(data, texture->width, texture->height, filename);
 	*/
-	vec3f *data = malloc(sizeof(vec3f)*texture->width*texture->height);
-	glGetTexImage(texture->target, 0, GL_RGB, GL_FLOAT, data);
-	save_png3f(data, texture->width, texture->height, filename);
+	if (texture->format == GL_RGB) {
+		vec3f *data = malloc(sizeof(vec3f)*texture->width*texture->height);
+		glGetTexImage(texture->target, 0, GL_RGB, GL_FLOAT, data);
+		save_png3f(data, texture->width, texture->height, filename);
+	}
+	else if (texture->format == GL_DEPTH_COMPONENT) {
+		float *data = malloc(sizeof(float)*texture->width*texture->height);
+		glGetTexImage(texture->target, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
+		save_png1f(data, texture->width, texture->height, filename);
+	}
+	else fprintf(stderr, "Don't know how to save texture of format %ud.\n", texture->format);
 
 	if (!was_bound)
 		unbind_texture(ref);

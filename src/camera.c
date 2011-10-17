@@ -5,6 +5,7 @@
 
 struct camera {
 	char *name;
+	float near, far;
 	matrix4x4f projection_matrix, 
 			   lookat_matrix, 
 			   gl_view_matrix;
@@ -34,6 +35,8 @@ camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, f
 	ref.id = next_camera_index++;
 	struct camera *camera = cameras + ref.id;
 	camera->name = malloc(strlen(name)+1);
+	camera->near = near;
+	camera->far = far;
 	strcpy(camera->name, name);
 	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
@@ -50,6 +53,8 @@ camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up,
 	ref.id = next_camera_index++;
 	struct camera *camera = cameras + ref.id;
 	camera->name = malloc(strlen(name)+1);
+	camera->near = near;
+	camera->far = far;
 	strcpy(camera->name, name);
 	make_orthographic_matrixf(&camera->projection_matrix, right, left, top, bottom, near, far);
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
@@ -60,6 +65,8 @@ camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up,
 matrix4x4f* projection_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].projection_matrix; }
 matrix4x4f* lookat_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].lookat_matrix; }
 matrix4x4f* gl_view_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].gl_view_matrix; }
+float camera_near(camera_ref ref) { return cameras[ref.id].near; }
+float camera_far(camera_ref ref)  { return cameras[ref.id].far; }
 
 void recompute_gl_matrices_of_cam(camera_ref ref) {
 	struct camera *camera = cameras + ref.id;
