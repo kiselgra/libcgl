@@ -22,6 +22,10 @@
 #include <libmcm-0.0.1/camera-matrices.h>
 
 
+static void gl_error(unsigned int source, unsigned int type, unsigned int id, unsigned int severity, int length, const char* message, void *p) {
+	check_for_gl_errors("OpenGL Error Callback (gl_error)\n$ gdb src/bbm\n$ break gl_error\n$ run");
+}
+
 
 shader_ref my_shader;
 shader_ref line_shader = { 0 };
@@ -695,6 +699,8 @@ void actual_main()
 	register_mouse_function(mouse_button);
 	register_mouse_motion_function(mouse_motion);
 	
+	glDebugMessageCallbackARB(gl_error, 0);
+
 
 	make_shaders();
 

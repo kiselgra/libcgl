@@ -25,6 +25,7 @@ int texture_id(texture_ref ref);
 void bind_texture(texture_ref ref, int unit);
 void unbind_texture(texture_ref ref);
 void save_texture_as_png(texture_ref ref, const char *filename);
+void set_texture_params(texture_ref ref, tex_params_t *params);
 
 unsigned int texture_height(texture_ref ref);
 unsigned int texture_width(texture_ref ref);

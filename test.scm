@@ -32,4 +32,4 @@
 
 (make-perspective-camera "cam-name" (list 0 0 5) (list 0 0 1) (list 0 1 0) 45 1 0.1 1000)
 
-(texture-from-file "gnutex" "/home/kai/render-data/images/floor.png" 'tex2d)
+(texture-from-file "gnutex" "/home/kai/render-data/images/floor.png" 'tex2d #f)

@@ -1,5 +1,6 @@
 #include "texture.h"
 #include "impex.h"
+#include "scheme.h"
 #include "cgl.h"
 
 #include <libmcm-0.0.1/vectors.h>
@@ -83,18 +84,15 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 	texture->name = malloc(strlen(name)+1);
 	strcpy(texture->name, name);
 	
-	incorporate_params(texture, params);
+	glGenTextures(1, &texture->texid);
+	
+	glBindTexture(target, texture->texid);
+	texture->target = target;
 	texture->format = GL_RGB; // data comes in this format
 	texture->internal_format = GL_RGBA; // data is stored in this format
 	texture->type = GL_FLOAT; // data is expected to come as float
-
-	glGenTextures(1, &texture->texid);
-	texture->target = target;
-	glBindTexture(target, texture->texid);
-	glTexParameteri(target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
-	glTexParameteri(target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture->params.min);
+	texture->bound = true;           // ---v
+	set_texture_params(ref, params); // does bind and unbind.
 	texture->bound = false;
 
 	texture->width = w;
@@ -120,15 +118,12 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	texture->name = malloc(strlen(name)+1);
 	strcpy(texture->name, name);
 
-	incorporate_params(texture, params);
-	
 	glGenTextures(1, &texture->texid);
 	texture->target = target;
 	glBindTexture(target, texture->texid);
-	glTexParameteri(target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
-	glTexParameteri(target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture->params.min);
+	
+	texture->bound = true;
+	set_texture_params(ref, params);
 	texture->bound = false;
 
 	texture->width = w;
@@ -141,6 +136,19 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	glBindTexture(target, 0);
 	check_for_gl_errors(__FUNCTION__);
 	return ref;
+}
+
+void set_texture_params(texture_ref ref, tex_params_t *params) {
+	struct texture *texture = textures+ref.id;
+	bool was_bound = false;
+	if (!texture->bound) glBindTexture(texture->target, texture->texid);
+	else                 was_bound = true;
+	incorporate_params(texture, params);
+	glTexParameteri(texture->target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
+	glTexParameteri(texture->target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
+	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
+	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, texture->params.min);
+	if (!was_bound)  glBindTexture(texture->target, 0);
 }
 
 void resize_texture(texture_ref ref, unsigned int w, unsigned int h) {
@@ -228,20 +236,41 @@ bool valid_texture_ref(texture_ref ref) {
 SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 4, 0, 0, (SCM name, SCM filename, SCM target, SCM mm), "") {
 	char *n = scm_to_locale_string(name);
 	char *fn = scm_to_locale_string(filename);
-	unsigned int t = -1;
-	if (scm_is_symbol(target)) {
-		char *n = scm_to_locale_string(scm_symbol_to_string(target));
-		if (strcmp("tex2d", n) == 0) t = GL_TEXTURE_2D;
-		else fprintf(stderr, "ERROR: unknown tex target '%s' at scheme level.\n", n);
-	}
-	else 
-		t = scm_to_uint32(target);
+	GLenum t = scheme_symbol_to_gl_enum(&target);
 	bool mipmap = scm_to_bool(mm);
 	tex_params_t p;
 	if (mipmap) p = default_tex_params();
 	else        p = default_fbo_tex_params();
+// 	printf("calling mt with %s %s\n", fn, gl_enum_string(t));
 	texture_ref ref = make_texture(n, fn, t, &p);
 	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_make_empty_texture, "make-texture-without-file", 7, 0, 0, (SCM name, SCM trg, SCM w, SCM h, SCM f, SCM inf, SCM ty), "") {
+	char *n = scm_to_locale_string(name);
+	unsigned int t = -1;
+	GLenum target = scheme_symbol_to_gl_enum(&trg);
+	GLenum format = scheme_symbol_to_gl_enum(&f);
+	GLenum int_format = scheme_symbol_to_gl_enum(&inf);
+	GLenum type = scheme_symbol_to_gl_enum(&ty);
+	unsigned int width = scm_to_uint(w),
+				 height = scm_to_uint(h);
+	tex_params_t p = default_fbo_tex_params();
+// 	printf("make texture %s with t=%s   f=%s   if=%s   ty=%s   w=%d   h=%d\n", n, gl_enum_string(target), gl_enum_string(format), gl_enum_string(int_format), gl_enum_string(type), width, height);
+	texture_ref ref = make_empty_texture(n, width, height, target, int_format, type, format, &p);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_set_tex_params, "tex-params!", 6, 0, 0, (SCM id, SCM mm, SCM min, SCM mag, SCM wrap_s, SCM wrap_t), "") {
+	texture_ref ref = { scm_to_int(id) };
+	tex_params_t p;
+	p.mipmapping = scm_to_bool(mm);
+	p.mag = scheme_symbol_to_gl_enum(&mag);
+	p.min = scheme_symbol_to_gl_enum(&min);
+	p.wrap_s = scheme_symbol_to_gl_enum(&wrap_s);
+	p.wrap_t = scheme_symbol_to_gl_enum(&wrap_t);
+	set_texture_params(ref, &p);
+	return id;
 }
 
 SCM_DEFINE(s_texture_w, "texture-width", 1, 0, 0, (SCM id), "") {

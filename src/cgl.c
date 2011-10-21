@@ -20,9 +20,10 @@ static void hop(void *data, int argc, char **argv) {
 	((void(*)())data)();	// run the user supplied 'inner main'
 }
 
-static void cfg_only(void *data) {
+static void* cfg_only(void *data) {
 	load_snarfed_definitions();
 	if (data) load_configfile((char*)data);
+	return 0;
 }
 
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile) {
@@ -45,7 +46,7 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 #ifdef WITH_GUILE
 	if (use_guile == with_guile) {
 		char *p[2] = { (char*)initfile, 0 };
-		scm_boot_guile(1, p, hop, (void*)call);
+		scm_boot_guile(initfile?1:0, p, hop, (void*)call);
 	}
 	else if (use_guile == guile_cfg_only) {
 		scm_with_guile(cfg_only, (char*)initfile);
