@@ -5,7 +5,7 @@
 
 struct camera {
 	char *name;
-	float near, far;
+	float near, far, aspect, fovy;
 	matrix4x4f projection_matrix, 
 			   lookat_matrix, 
 			   gl_view_matrix;
@@ -35,10 +35,8 @@ camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, f
 	ref.id = next_camera_index++;
 	struct camera *camera = cameras + ref.id;
 	camera->name = malloc(strlen(name)+1);
-	camera->near = near;
-	camera->far = far;
 	strcpy(camera->name, name);
-	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
+	change_projection_of_cam(ref, fovy, aspect, near, far);
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
 	recompute_gl_matrices_of_cam(ref);
 	return ref;
@@ -55,6 +53,8 @@ camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up,
 	camera->name = malloc(strlen(name)+1);
 	camera->near = near;
 	camera->far = far;
+	camera->aspect = (float)(top-bottom) / (float)(right-left);
+	camera->fovy = 0;
 	strcpy(camera->name, name);
 	make_orthographic_matrixf(&camera->projection_matrix, right, left, top, bottom, near, far);
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
@@ -72,6 +72,28 @@ void recompute_gl_matrices_of_cam(camera_ref ref) {
 	struct camera *camera = cameras + ref.id;
 	make_gl_viewing_matrixf(&camera->gl_view_matrix, &camera->lookat_matrix);
 }
+
+float camera_fovy(camera_ref ref) {
+	struct camera *camera = cameras + ref.id;
+	return camera->fovy;
+}
+
+float camera_aspect(camera_ref ref) {
+	struct camera *camera = cameras + ref.id;
+	return camera->aspect;
+}
+
+void change_projection_of_cam(camera_ref ref, float fovy, float aspect, float near, float far) {
+	struct camera *camera = cameras + ref.id;
+	camera->near = near;
+	camera->far = far;
+	camera->aspect = aspect;
+	camera->fovy = fovy;
+	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
+}
+
+
+
 
 static camera_ref current_cam_ref = { -1 };
 void use_camera(camera_ref ref) {
@@ -94,6 +116,10 @@ camera_ref find_camera(const char *name) {
 
 bool valid_camera_ref(camera_ref ref) {
 	return ref.id >= 0;
+}
+
+bool is_perspective_camera(camera_ref ref) {
+	return camera_fovy(ref) != 0;
 }
 
 
