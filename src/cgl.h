@@ -24,5 +24,7 @@ void quit(int status);
 typedef void (*error_handler_t)(GLenum error, const char *where);
 void register_error_handler(error_handler_t h);
 
+char* gl_enum_string(GLenum e);
+
 #endif
 

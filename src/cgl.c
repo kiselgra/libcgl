@@ -99,3 +99,23 @@ void quit(int status) {
 	scm_c_eval_string("(join-thread repl-thread)");
 	exit(status);
 }
+
+
+char* gl_enum_string(GLenum e) {
+#define c(X) case X: return #X;
+	switch (e) {
+	// textures
+	c(GL_TEXTURE_2D)
+	c(GL_RGB)
+	c(GL_RGB8)
+	c(GL_RGBA)
+	c(GL_RGBA8)
+	c(GL_DEPTH_COMPONENT)
+	c(GL_DEPTH_COMPONENT24)
+	c(GL_DEPTH_COMPONENT32)
+	c(GL_DEPTH_COMPONENT32F)
+	c(GL_FLOAT)
+	}
+	return "not handled yet";
+}
+

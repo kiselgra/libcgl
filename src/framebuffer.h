@@ -14,6 +14,7 @@ void attach_depth_buffer(framebuffer_ref ref);
 void check_framebuffer_setup(framebuffer_ref ref);
 void bind_framebuffer(framebuffer_ref ref);
 void unbind_framebuffer(framebuffer_ref ref);
+void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int height);
 
 
 #endif

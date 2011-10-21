@@ -22,12 +22,14 @@ void register_keyboard_function(    void (*fn)(unsigned char, int, int));
 void register_keyboard_up_function( void (*fn)(unsigned char, int, int));
 void register_mouse_motion_function(void (*fn)(int, int));
 void register_mouse_function(       void (*fn)(int, int, int, int));
+void register_resize_function(      void (*fn)(int, int));
 
 // these are the standard functions which you can call from your own handlers
 // to get some default behaviour.
 void standard_keyboard(unsigned char key, int x, int y);
 void standard_mouse_motion(int x, int y);
 void standard_mouse_func(int button, int state, int x, int y);
+void standard_resize_func(int w, int h);
 
 // ok, this is getting strange...
 void swap_buffers();

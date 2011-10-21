@@ -15,9 +15,11 @@ struct framebuffer {
 	GLuint fbo_id;
 	bool bound;
 	GLenum *color_attachments; // gl requires an array, so we might as well save it.
+	texture_ref *color_textures;
 	char **color_attachment_names;
 	unsigned int attachments_in_use;
 	GLuint depthbuffer;
+	texture_ref depth_tex;
 	char *depthbuffer_name;
 };
 
@@ -49,9 +51,11 @@ framebuffer_ref make_framebuffer(char *name, unsigned int width, unsigned int he
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &framebuffer->max_number_of_color_attachments);
 	framebuffer->color_attachments = malloc(sizeof(GLenum) * framebuffer->max_number_of_color_attachments);
 	framebuffer->color_attachment_names = malloc(sizeof(char*) * framebuffer->max_number_of_color_attachments);
+	framebuffer->color_textures = malloc(sizeof(texture_ref) * framebuffer->max_number_of_color_attachments);
 	framebuffer->attachments_in_use = 0;
 	framebuffer->width = width;
 	framebuffer->height = height;
+	framebuffer->depth_tex.id = -1;
 	glGenFramebuffers(1, &framebuffer->fbo_id);
 	framebuffer->bound = false;
 	framebuffer->depthbuffer = 0;
@@ -69,6 +73,7 @@ void attach_texture_as_colorbuffer(framebuffer_ref ref, char *name, texture_ref 
 	int id = framebuffer->attachments_in_use++;
 	framebuffer->color_attachment_names[id] = malloc(strlen(name)+1);
 	strcpy(framebuffer->color_attachment_names[id], name);
+	framebuffer->color_textures[id] = texture;
 	printf("attaching texture id %d to framebuffer %s as att #%d.\n", texture_id(texture), framebuffer->name, id);
 	framebuffer->color_attachments[id] = GL_COLOR_ATTACHMENT0 + id;
 	glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D, texture_id(texture), 0);
@@ -78,6 +83,7 @@ void attach_texture_as_colorbuffer(framebuffer_ref ref, char *name, texture_ref 
 void attach_texture_as_depthbuffer(framebuffer_ref ref, char *name, texture_ref texture) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 	framebuffer->depthbuffer_name = malloc(strlen(name)+1);
+	framebuffer->depth_tex = texture;
 	strcpy(framebuffer->depthbuffer_name, name);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_id(texture), 0);
 }
@@ -132,3 +138,12 @@ void unbind_framebuffer(framebuffer_ref ref) {
 	glViewport(old_vp[0], old_vp[1], old_vp[2],  old_vp[3]);
 }
 
+void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int height) {
+	struct framebuffer *framebuffer = framebuffers+ref.id;
+	framebuffer->width = width;
+	framebuffer->height = height;
+	for (int i = 0; i < framebuffer->attachments_in_use; ++i)
+		resize_texture(framebuffer->color_textures[i], width, height);
+	if (valid_texture_ref(framebuffer->depth_tex))
+		resize_texture(framebuffer->depth_tex, width, height);
+}

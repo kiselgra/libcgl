@@ -644,7 +644,8 @@ framebuffer_ref picking_fbo;
 texture_ref picking_tex;
 
 void initialize_picking(int w, int h) {
-	picking_tex = make_empty_texture("pick-ids", w, h, GL_TEXTURE_2D, GL_R32UI, GL_UNSIGNED_INT, GL_RGB_INTEGER);
+	tex_params_t p = default_fbo_tex_params();
+	picking_tex = make_empty_texture("pick-ids", w, h, GL_TEXTURE_2D, GL_R32UI, GL_UNSIGNED_INT, GL_RGB_INTEGER, &p);
 	picking_fbo = make_framebuffer("picking-fbo", w, h);
 	bind_framebuffer(picking_fbo);
 	bind_texture(picking_tex, 0);

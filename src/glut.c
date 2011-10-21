@@ -34,6 +34,7 @@ void register_keyboard_function(    void (*fn)(unsigned char, int, int)) { glutK
 void register_keyboard_up_function( void (*fn)(unsigned char, int, int)) { glutKeyboardUpFunc(fn); }
 void register_mouse_motion_function(void (*fn)(int, int))                { glutMotionFunc(fn); }
 void register_mouse_function(       void (*fn)(int, int, int, int))      { glutMouseFunc(fn); }
+void register_resize_function(      void (*fn)(int, int))                { glutReshapeFunc(fn); }
 
 float move_factor = 0.1;
 void standard_keyboard(unsigned char key, int x, int y)
@@ -116,6 +117,13 @@ void standard_mouse_func(int button, int state, int x, int y)
 {
 	if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON)
 		last_mouse_x = x, last_mouse_y = y;
+}
+
+void standard_resize_func(int w, int h) {
+	glViewport(0,0,w,h);
+	camera_ref cc = current_camera();
+	if (valid_camera_ref(cc) && is_perspective_camera(current_camera()))
+		change_projection_of_cam(current_camera(), camera_fovy(cc), h==0?1:(float)w/(float)h, camera_near(cc), camera_far(cc));
 }
 
 void swap_buffers() {

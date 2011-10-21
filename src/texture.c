@@ -15,11 +15,12 @@ struct texture {
 	char *name;
 	GLuint texid;
 	GLuint target;
-	bool use_mipmapping;
-	unsigned int format; // GL_RGB...
-	GLenum param_min, param_mag, param_wrap_s, param_wrap_t;
+	tex_params_t params;
 	unsigned int width, height;
 	bool bound;
+	GLenum internal_format,  // GL_RGBA32F ...
+		   format,           // GL_RGB ...
+		   type;             // GL_FLOAT ...
 };
 
 static struct texture *textures = 0;
@@ -39,7 +40,32 @@ static void allocate_texture() {
 	}
 }
 
-texture_ref make_texture(const char *name, const char *filename, int target, bool mipmap) {
+tex_params_t default_tex_params() {
+	tex_params_t p;
+	p.mipmapping = true;
+	p.min = GL_LINEAR_MIPMAP_LINEAR;
+	p.mag = GL_LINEAR;
+	p.wrap_s = GL_REPEAT;
+	p.wrap_t = GL_REPEAT;
+	return p;
+}
+
+tex_params_t default_fbo_tex_params() {
+	tex_params_t p;
+	p.mipmapping = false;
+	p.min = GL_LINEAR;
+	p.mag = GL_LINEAR;
+	p.wrap_s = GL_REPEAT;
+	p.wrap_t = GL_REPEAT;
+	return p;
+}
+
+static void incorporate_params(struct texture *tex, tex_params_t *params) {
+	if (params) tex->params = *params;
+	else        tex->params = default_tex_params();
+}
+
+texture_ref make_texture(const char *name, const char *filename, int target, tex_params_t *params) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
 	texture_ref ref;
@@ -57,26 +83,25 @@ texture_ref make_texture(const char *name, const char *filename, int target, boo
 	texture->name = malloc(strlen(name)+1);
 	strcpy(texture->name, name);
 	
+	incorporate_params(texture, params);
+	texture->format = GL_RGB; // data comes in this format
+	texture->internal_format = GL_RGBA; // data is stored in this format
+	texture->type = GL_FLOAT; // data is expected to come as float
+
 	glGenTextures(1, &texture->texid);
 	texture->target = target;
 	glBindTexture(target, texture->texid);
-	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	if (mipmap) {
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	}
-	else {
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	}
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture->params.min);
 	texture->bound = false;
 
 	texture->width = w;
 	texture->height = h;
 	texture->format = GL_RGB;
-	glTexImage2D(target, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGB, GL_FLOAT, data);
-	if (mipmap)
+	glTexImage2D(target, 0, texture->internal_format, texture->width, texture->height, 0, texture->format, texture->type, data);
+	if (texture->params.mipmapping)
 		glGenerateMipmap(target);
 
 	glBindTexture(target, 0);
@@ -87,31 +112,45 @@ texture_ref make_texture(const char *name, const char *filename, int target, boo
 	return ref;
 }
 
-texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format) {
+texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
 	allocate_texture();
 	texture_ref ref;
 	ref.id = next_texture_index++;
 	struct texture *texture = textures+ref.id;
 	texture->name = malloc(strlen(name)+1);
 	strcpy(texture->name, name);
+
+	incorporate_params(texture, params);
 	
 	glGenTextures(1, &texture->texid);
 	texture->target = target;
 	glBindTexture(target, texture->texid);
-	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture->params.min);
 	texture->bound = false;
 
 	texture->width = w;
 	texture->height = h;
 	texture->format = format;
+	texture->internal_format = internal_format;
+	texture->type = type;
 	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
 
 	glBindTexture(target, 0);
 	check_for_gl_errors(__FUNCTION__);
 	return ref;
+}
+
+void resize_texture(texture_ref ref, unsigned int w, unsigned int h) {
+	struct texture *texture = textures + ref.id;
+	glBindTexture(texture->target, texture->texid);
+	texture->width = w;
+	texture->height = h;
+	glTexImage2D(texture->target, 0, texture->internal_format, w, h, 0, texture->format, texture->type, 0);
+	glBindTexture(texture->target, 0);
+	check_for_gl_errors(__FUNCTION__);
 }
 
 void bind_texture(texture_ref ref, int unit) {
@@ -133,11 +172,6 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 	else
 		was_bound = true;
 
-	/*
-	vec4f *data = malloc(sizeof(vec4f)*texture->width*texture->height);
-	glGetTexImage(texture->target, 0, GL_RGBA, GL_FLOAT, data);
-	save_png4f(data, texture->width, texture->height, filename);
-	*/
 	if (texture->format == GL_RGB) {
 		vec3f *data = malloc(sizeof(vec3f)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_RGB, GL_FLOAT, data);
@@ -147,6 +181,7 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 		float *data = malloc(sizeof(float)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
 		save_png1f(data, texture->width, texture->height, filename);
+		unbind_texture(ref);
 	}
 	else fprintf(stderr, "Don't know how to save texture of format %ud.\n", texture->format);
 
@@ -165,6 +200,10 @@ unsigned int texture_width(texture_ref ref) {
 
 unsigned int texture_height(texture_ref ref) {
 	return textures[ref.id].height;
+}
+
+const tex_params_t* texture_params(texture_ref ref) {
+	return &textures[ref.id].params;
 }
 
 texture_ref find_texture(const char *name) {
@@ -198,7 +237,10 @@ SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 4, 0, 0, (SCM name, SC
 	else 
 		t = scm_to_uint32(target);
 	bool mipmap = scm_to_bool(mm);
-	texture_ref ref = make_texture(n, fn, t, mm);
+	tex_params_t p;
+	if (mipmap) p = default_tex_params();
+	else        p = default_fbo_tex_params();
+	texture_ref ref = make_texture(n, fn, t, &p);
 	return scm_from_int(ref.id);
 }
 
