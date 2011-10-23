@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libcgl.la
-noinst_PROGRAMS = bezier blub bspline
+#noinst_PROGRAMS = bezier blub bspline
 
-BUILT_SOURCES=camera.x glut.x shader.x texture.x
+BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
 libcgl_la_SOURCES = 	camera.c       camera.h  \

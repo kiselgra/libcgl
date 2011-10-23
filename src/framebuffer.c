@@ -40,7 +40,7 @@ static void allocate_framebuffer() {
 	}
 }
 
-framebuffer_ref make_framebuffer(char *name, unsigned int width, unsigned int height) {
+framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned int height) {
 	allocate_framebuffer();
 	framebuffer_ref ref;
 	ref.id = next_framebuffer_index++;
@@ -64,7 +64,7 @@ framebuffer_ref make_framebuffer(char *name, unsigned int width, unsigned int he
 	return ref;
 }
 
-void attach_texture_as_colorbuffer(framebuffer_ref ref, char *name, texture_ref texture) {
+void attach_texture_as_colorbuffer(framebuffer_ref ref, const char *name, texture_ref texture) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 	if (framebuffer->attachments_in_use == framebuffer->max_number_of_color_attachments) {
 		fprintf(stderr, "Cannot attach yet another buffer (%s) (the %d th) to the fbo %s.", name, framebuffer->max_number_of_color_attachments, framebuffer->name);
@@ -80,7 +80,7 @@ void attach_texture_as_colorbuffer(framebuffer_ref ref, char *name, texture_ref 
 	check_for_gl_errors(__FUNCTION__);
 }
 
-void attach_texture_as_depthbuffer(framebuffer_ref ref, char *name, texture_ref texture) {
+void attach_texture_as_depthbuffer(framebuffer_ref ref, const char *name, texture_ref texture) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 	framebuffer->depthbuffer_name = malloc(strlen(name)+1);
 	framebuffer->depth_tex = texture;
@@ -147,3 +147,73 @@ void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int he
 	if (valid_texture_ref(framebuffer->depth_tex))
 		resize_texture(framebuffer->depth_tex, width, height);
 }
+
+framebuffer_ref find_framebuffer(const char *name) {
+	framebuffer_ref ref = { -1 };
+	if (strlen(name) == 0) return ref;
+	for (int i = 0; i < next_framebuffer_index; ++i)
+		if (strcmp(framebuffers[i].name, name) == 0) {
+			ref.id = i;
+			return ref;
+		}
+	return ref;
+}
+
+#ifdef WITH_GUILE
+#include  <libguile.h>
+#include <stdio.h>
+
+SCM_DEFINE(s_make_framebuffer, "make-framebuffer", 3, 0, 0, (SCM n, SCM w, SCM h), "") {
+	const char *name = scm_to_locale_string(n);
+	int width = scm_to_int(w), height = scm_to_int(h);
+	framebuffer_ref ref = make_framebuffer(name, width, height);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_attach_tex_as_cb, "attach-texture-as-colorbuffer", 3, 0, 0, (SCM tofbo, SCM n, SCM atex), "") {
+	const char *name = scm_to_locale_string(n);
+	framebuffer_ref fbo = { scm_to_int(tofbo) };
+	texture_ref tex = { scm_to_int(atex) };
+	attach_texture_as_colorbuffer(fbo, name, tex);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_attach_tex_as_db, "attach-texture-as-depthbuffer", 3, 0, 0, (SCM tofbo, SCM n, SCM atex), "") {
+	const char *name = scm_to_locale_string(n);
+	framebuffer_ref fbo = { scm_to_int(tofbo) };
+	texture_ref tex = { scm_to_int(atex) };
+	attach_texture_as_depthbuffer(fbo, name, tex);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_attach_db, "attach-depthbuffer", 1, 0, 0, (SCM tofbo), "") {
+	framebuffer_ref fbo = { scm_to_int(tofbo) };
+	attach_depth_buffer(fbo);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_check_fbo, "check-framebuffer-setup", 1, 0, 0, (SCM offbo), "") {
+	framebuffer_ref fbo = { scm_to_int(offbo) };
+	check_framebuffer_setup(fbo);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_bind_fbo, "bind-framebuffer", 1, 0, 0, (SCM afbo), "") {
+	framebuffer_ref fbo = { scm_to_int(afbo) };
+	bind_framebuffer(fbo);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_unbind_fbo, "unbind-framebuffer", 1, 0, 0, (SCM afbo), "") {
+	framebuffer_ref fbo = { scm_to_int(afbo) };
+	unbind_framebuffer(fbo);
+	return SCM_BOOL_T;
+}
+
+void register_scheme_functions_for_framebuffers() {
+#ifndef SCM_MAGIC_SNARFER
+#include "framebuffer.x"
+#endif
+}
+
+#endif

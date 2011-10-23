@@ -273,6 +273,19 @@ SCM_DEFINE(s_set_tex_params, "tex-params!", 6, 0, 0, (SCM id, SCM mm, SCM min, S
 	return id;
 }
 
+SCM_DEFINE(s_bind_tex, "bind-texture", 2, 0, 0, (SCM id, SCM unit), "") {
+	texture_ref ref = { scm_to_int(id) };
+	bind_texture(ref, scm_to_int(unit));
+	return scm_from_unsigned_integer(texture_width(ref));
+}
+
+SCM_DEFINE(s_unbind_tex, "unbind-texture", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	unbind_texture(ref);
+	return scm_from_unsigned_integer(texture_width(ref));
+}
+
+
 SCM_DEFINE(s_texture_w, "texture-width", 1, 0, 0, (SCM id), "") {
 	texture_ref ref = { scm_to_int(id) };
 	return scm_from_unsigned_integer(texture_width(ref));

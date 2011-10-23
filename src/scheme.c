@@ -15,6 +15,7 @@ void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();
 	register_scheme_functions_for_cameras();
 	register_scheme_functions_for_textures();
+	register_scheme_functions_for_framebuffers();
 	register_scheme_functions_for_glut();
 }
 
