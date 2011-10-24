@@ -64,6 +64,7 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 	case ("tex-2d", GL_TEXTURE_2D);
 	case ("texture-2d", GL_TEXTURE_2D);
 	case ("float", GL_FLOAT);
+	case ("unsigned-byte", GL_UNSIGNED_BYTE);
 	case ("rgb", GL_RGB);
 	case ("rgb-8", GL_RGB8);
 	case ("rgba", GL_RGBA);
