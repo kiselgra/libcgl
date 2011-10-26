@@ -17,6 +17,7 @@ void recompute_gl_matrices_of_cam(camera_ref ref);
 matrix4x4f* projection_matrix_of_cam(camera_ref ref);
 matrix4x4f* lookat_matrix_of_cam(camera_ref ref);
 matrix4x4f* gl_view_matrix_of_cam(camera_ref ref);
+matrix4x4f* gl_normal_matrix_for_view_of(camera_ref ref);
 float camera_near(camera_ref ref);
 float camera_far(camera_ref ref);
 float camera_fovy(camera_ref ref);

@@ -8,7 +8,8 @@ struct camera {
 	float near, far, aspect, fovy;
 	matrix4x4f projection_matrix, 
 			   lookat_matrix, 
-			   gl_view_matrix;
+			   gl_view_matrix,
+			   gl_view_normal_matrix;
 };
 
 static struct camera *cameras = 0;
@@ -65,12 +66,16 @@ camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up,
 matrix4x4f* projection_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].projection_matrix; }
 matrix4x4f* lookat_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].lookat_matrix; }
 matrix4x4f* gl_view_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].gl_view_matrix; }
+matrix4x4f* gl_normal_matrix_for_view_of(camera_ref ref) { return &cameras[ref.id].gl_view_normal_matrix; }
 float camera_near(camera_ref ref) { return cameras[ref.id].near; }
 float camera_far(camera_ref ref)  { return cameras[ref.id].far; }
 
 void recompute_gl_matrices_of_cam(camera_ref ref) {
 	struct camera *camera = cameras + ref.id;
 	make_gl_viewing_matrixf(&camera->gl_view_matrix, &camera->lookat_matrix);
+	matrix4x4f tmp;
+	invert_matrix4x4f(&tmp, &camera->gl_view_matrix);
+	transpose_matrix4x4f(&camera->gl_view_normal_matrix, &tmp);
 }
 
 float camera_fovy(camera_ref ref) {
