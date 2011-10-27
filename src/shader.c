@@ -6,36 +6,79 @@
 
 #include <GL/glew.h>
 
+/* A note on consistent shader reloading.
+ *
+ * When a shader is deleted it's index-slot is free to take by another shader.
+ * As long as the list of free indices is not empty the next shader will be
+ * allocated the index put last on the list.
+ * This means it is safe to assume a shader keeps its id when reload is
+ * implemented as follows:
+ *   shader_ref old_ref = find_shader("my-shader");
+ *   destroy_shader(old_ref);
+ *   shader_ref new_ref = make_shader("my-shader", ...);
+ *   --> old_ref.id == new_ref.id
+ */
+
+
 struct shader {
 	char *name;
 	char *vertex_source,
-	     *fragment_source;
-	GLuint vertex_program, fragment_program;
+	     *fragment_source,
+		 *geometry_source;
+	GLuint vertex_program, fragment_program, geometry_program;
 	GLuint shader_program;
 	char **input_var_names;
 	unsigned int *input_var_ids;
 	int input_vars;
 	int next_input_var;
 	bool bound, built_ok;
-	char *vert_info_log, *frag_info_log, *program_info_log;
+	char *vert_info_log, *frag_info_log, *geom_info_log, *program_info_log;
 };
 
 static struct shader *shaders = 0;
 static unsigned int shaders_allocated = 0,
                     next_shader_index = 0;
 
+struct free_entry {
+	int id;
+	struct free_entry *next;
+};
+static struct free_entry *free_list = 0;
+
+void put_on_free_list(int id) {
+	struct free_entry *old = free_list;
+	free_list = malloc(sizeof(struct free_entry));
+	free_list->next = old;
+	free_list->id = id;
+}
+
+int get_from_free_list() {
+	if (!free_list) return -1;
+	int ret = free_list->id;
+	struct free_list *old = free_list;
+	free_list = free_list->next;
+	free(old);
+	return ret;
+}
+
+bool element_available_on_free_list() { return free_list != 0; }
+
 shader_ref make_shader(const char *name, int input_vars) {
-	if (next_shader_index >= shaders_allocated) {
-		struct shader *old_array = shaders;
-		unsigned int allocate = 1.5 * (shaders_allocated + 1);
-		shaders = malloc(sizeof(struct shader) * allocate);
-		for (int i = 0; i < shaders_allocated; ++i)
-			shaders[i] = old_array[i];
-		shaders_allocated = allocate;
-		free(old_array);
-	}
 	shader_ref ref;
-	ref.id = next_shader_index++;
+	if (element_available_on_free_list())
+		ref.id = get_from_free_list();
+	else {
+		if (next_shader_index >= shaders_allocated) {
+			struct shader *old_array = shaders;
+			unsigned int allocate = 1.5 * (shaders_allocated + 1);
+			shaders = malloc(sizeof(struct shader) * allocate);
+			for (int i = 0; i < shaders_allocated; ++i)
+				shaders[i] = old_array[i];
+			shaders_allocated = allocate;
+			free(old_array);
+		}
+		ref.id = next_shader_index++;
+	}
 	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
 	strcpy(shader->name, name);
@@ -50,9 +93,28 @@ shader_ref make_shader(const char *name, int input_vars) {
 		shader->input_var_names[i] = 0;
 		shader->input_var_ids[i] = 0;
 	}
-	shader->vertex_source = shader->fragment_source = 0;
-	shader->vertex_program = shader->fragment_program = shader->shader_program = 0;
+	shader->vertex_source = shader->fragment_source = shader->geometry_source = 0;
+	shader->vertex_program = shader->fragment_program = shader->geometry_program = shader->shader_program = 0;
 	return ref;
+}
+
+void destroy_shader(shader_ref ref) {
+	if (!valid_shader_ref(ref)) return;
+	struct shader *shader = shaders+ref.id;
+	for (int i = 0; i < shader->next_input_var; ++i) {
+		free(shader->input_var_names[i]);
+	}
+	free(shader->input_var_names);               shader->input_var_names = 0;
+	free(shader->input_var_ids);                 shader->input_var_ids = 0;
+	free(shader->name);                          shader->name = 0;
+	free(shader->vertex_source);                 shader->vertex_source = 0;
+	free(shader->fragment_source);               shader->fragment_source = 0;
+	free(shader->geometry_source);               shader->geometry_source = 0;
+	glDeleteProgram(shader->shader_program);     shader->shader_program = 0;
+	glDeleteShader(shader->vertex_program);      shader->vertex_program = 0;
+	glDeleteShader(shader->fragment_program);    shader->fragment_program = 0;
+	glDeleteShader(shader->geometry_program);    shader->geometry_program = 0;
+	put_on_free_list(ref.id);
 }
 
 void add_shader_source(char **destination, const char *add) {
@@ -77,6 +139,11 @@ void add_vertex_source(shader_ref ref, const char *src) {
 void add_fragment_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
 	add_shader_source(&shader->fragment_source, src);
+}
+
+void add_geometry_source(shader_ref ref, const char *src) {
+	struct shader *shader = shaders+ref.id;
+	add_shader_source(&shader->geometry_source, src);
 }
 
 bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
@@ -117,7 +184,7 @@ void store_info_log(char **target, GLuint object) {
 
 bool compile_and_link_shader(shader_ref ref) {
 	struct shader *shader = shaders+ref.id;
-	const GLchar *src[2];
+	const GLchar *src[3];
 	GLint compile_res;
 
 	// compile shader source
@@ -129,12 +196,20 @@ bool compile_and_link_shader(shader_ref ref) {
 	glShaderSource(shader->fragment_program, 1, src+1, 0);
 	glCompileShader(shader->vertex_program);
 	glCompileShader(shader->fragment_program);
+	
+	if (shader->geometry_source) {
+		shader->geometry_program = glCreateShader(GL_GEOMETRY_SHADER);
+		src[2] = shader->geometry_source;
+		glShaderSource(shader->geometry_program, 1, src+2, 0);
+		glCompileShader(shader->geometry_program);
+	}
 
 	glGetShaderiv(shader->vertex_program, GL_COMPILE_STATUS, &compile_res);
 	if (compile_res == GL_FALSE) {
 		store_info_log(&shader->vert_info_log, shader->vertex_program);
 		glDeleteShader(shader->vertex_program);
 		glDeleteShader(shader->fragment_program);
+		if (shader->geometry_source) glDeleteShader(shader->geometry_program);
 		fprintf(stderr, "failed to compile vertex shader of %s\n", shader->name);
 		return false;
 	}
@@ -144,13 +219,27 @@ bool compile_and_link_shader(shader_ref ref) {
 		store_info_log(&shader->frag_info_log, shader->fragment_program);
 		glDeleteShader(shader->vertex_program);
 		glDeleteShader(shader->fragment_program);
+		if (shader->geometry_source) glDeleteShader(shader->geometry_program);
 		fprintf(stderr, "failed to compile fragment shader of %s\n", shader->name);
 		return false;
+	}
+
+	if (shader->geometry_source) {
+		glGetShaderiv(shader->geometry_program, GL_COMPILE_STATUS, &compile_res);
+		if (compile_res == GL_FALSE) {
+			store_info_log(&shader->geom_info_log, shader->geometry_program);
+			glDeleteShader(shader->vertex_program);
+			glDeleteShader(shader->fragment_program);
+			glDeleteShader(shader->geometry_program);
+			fprintf(stderr, "failed to compile fragment shader of %s\n", shader->name);
+			return false;
+		}
 	}
 
 	shader->shader_program = glCreateProgram();
 	glAttachShader(shader->shader_program, shader->vertex_program);
 	glAttachShader(shader->shader_program, shader->fragment_program);
+	if (shader->geometry_program) glAttachShader(shader->shader_program, shader->geometry_program);
 
 	// bind locations
 	for (int i = 0; i < shader->input_vars; ++i) {
@@ -190,6 +279,10 @@ const char *vertex_shader_info_log(shader_ref ref) {
 
 const char *fragment_shader_info_log(shader_ref ref) {
 	return shaders[ref.id].frag_info_log;
+}
+
+const char *geometry_shader_info_log(shader_ref ref) {
+	return shaders[ref.id].geom_info_log;
 }
 
 const char *shader_info_log(shader_ref ref) {
@@ -234,6 +327,12 @@ SCM_DEFINE(s_make_shader, "make-shader", 2, 0, 0, (SCM name, SCM input_n), "crea
 	shader_ref ref = make_shader(na, nu);
 	return scm_from_int(ref.id);
 }
+SCM_DEFINE(s_destroy_shader, "destroy-shader", 1, 0, 0, (SCM shader), "") {
+	shader_ref ref = { scm_to_int(shader) };
+	bool valid = valid_shader_ref(ref);
+	destroy_shader(ref);
+	return valid ? SCM_BOOL_T : SCM_BOOL_F;
+}
 SCM_DEFINE(s_add_vertex_source, "add-vertex-source", 2, 0, 0, (SCM shader, SCM src), "add vertex shader source to the shader object.") {
 	shader_ref ref = { scm_to_int(shader) };
 	const char *source = scm_to_locale_string(src);
@@ -244,6 +343,12 @@ SCM_DEFINE(s_add_fragment_source, "add-fragment-source", 2, 0, 0, (SCM shader, S
 	shader_ref ref = { scm_to_int(shader) };
 	const char *source = scm_to_locale_string(src);
 	add_fragment_source(ref, source);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_add_geometry_source, "add-geometry-source", 2, 0, 0, (SCM shader, SCM src), "add geometry shader source to the shader object.") {
+	shader_ref ref = { scm_to_int(shader) };
+	const char *source = scm_to_locale_string(src);
+	add_geometry_source(ref, source);
 	return SCM_BOOL_T;
 }
 SCM_DEFINE(s_add_shader_input, "add-shader-input", 3, 0, 0, (SCM shader, SCM varname, SCM index), "") {
@@ -279,6 +384,11 @@ SCM_DEFINE(s_vertex_shader_info_log, "vertex-shader-info-log", 1, 0, 0, (SCM id)
 SCM_DEFINE(s_fragment_shader_info_log, "fragment-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = fragment_shader_info_log(ref);
+	return scm_from_locale_string(log ? log : (const char*)"nil");
+}
+SCM_DEFINE(s_geometry_shader_info_log, "geometry-shader-info-log", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	const char *log = geometry_shader_info_log(ref);
 	return scm_from_locale_string(log ? log : (const char*)"nil");
 }
 SCM_DEFINE(s_shader_link_info_log, "shader-link-info-log", 1, 0, 0, (SCM id), "") {
