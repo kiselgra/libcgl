@@ -60,11 +60,22 @@ void unbind_mesh_from_gl(mesh_ref mr) {
 	meshes[mr.id].bound = true;
 }
 
-bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
-	if (content_type != GL_FLOAT) {
-		fprintf(stderr, "Only float vertex buffers supported, atm.\n");
+int size_of_gl_type(GLenum content_type) {
+	if (content_type == GL_FLOAT) 
+		return sizeof(GLfloat);
+	else if (content_type == GL_INT)
+		return sizeof(int);
+// 		return sizeof(GLint);
+	else if (content_type == GL_UNSIGNED_INT)
+		return sizeof(GLuint);
+	else {
+		fprintf(stderr, "unsupported enum for vertex buffer allocation/modification. suported are: GL_FLOAT, GL_INT, GL_UNSIGNED_INT.\n");
 		exit(-1);
 	}
+}
+
+bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
+	int unit_size = size_of_gl_type(content_type);
 	struct mesh *mesh = meshes+mr.id;
 	if (mesh->vertices) {
 		if (mesh->vertices != vertices) {
@@ -74,7 +85,7 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	}
 	else
 		mesh->vertices = vertices;
-	unsigned int size_in_bytes = sizeof(GLfloat) * vertices * element_dim;
+	unsigned int size_in_bytes = unit_size * vertices * element_dim;
 	int vbo_id = mesh->next_vbo++;
 	if (vbo_id > mesh->vertex_buffers) {
 		fprintf(stderr, "Too many vbos bound to mesh %s.\n", mesh->name);
@@ -101,7 +112,8 @@ bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_typ
 		fprintf(stderr, "In change_vertex_buffer_data: Mesh does not have a vbo called %s.\n", name);
 		exit(-1);
 	}
-	unsigned int size_in_bytes = sizeof(GLfloat) * mesh->vertices * element_dim;
+	int unit_size = size_of_gl_type(content_type);
+	unsigned int size_in_bytes = unit_size * mesh->vertices * element_dim;
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
 	glEnableVertexAttribArray(vbo_id);
 	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
