@@ -5,8 +5,6 @@
 
 #include <libmcm-0.0.1/vectors.h>
 
-#include <GL/glew.h>
-
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -173,6 +171,7 @@ void unbind_texture(texture_ref ref) {
 }
 
 void save_texture_as_png(texture_ref ref, const char *filename) {
+#if CGL_GL_VERSION == GL3
 	struct texture *texture = textures + ref.id;
 	bool was_bound = false;
 	if (!texture->bound)
@@ -201,6 +200,9 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 	if (!was_bound)
 		unbind_texture(ref);
 	check_for_gl_errors(__FUNCTION__);
+#else
+	fprintf(stderr, "Cannot download textures on gles, yet.\n");
+#endif
 }
 
 int texture_id(texture_ref ref) {

@@ -3,8 +3,6 @@
 #include "glut.h"
 #include "scheme.h"
 
-#include <GL/glew.h>
-#include <GL/glxew.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -29,6 +27,7 @@ static void* cfg_only(void *data) {
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile) {
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
 	
+#if CGL_GL_VERSION == GL3
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
 	ignore_gl_error("glew-init");
@@ -42,6 +41,7 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 		dump_gl_info();
 		printf("Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 	}
+#endif
 
 #ifdef WITH_GUILE
 	if (use_guile == with_guile) {
@@ -82,7 +82,11 @@ void standard_error_handler(GLenum error, const char *where) {
 void ignore_gl_error(const char *function)
 {
 	GLenum error = glGetError();
+#if CGL_GL_VERSION == GL3
 	fprintf(stderr, "Ignoring GL error %s (for %s).\n", gluErrorString(error), function);
+#else
+	fprintf(stderr, "Ignoring GL error %d (for %s) (is glu supported here?).\n", error, function);
+#endif
 }
 
 void dump_gl_info(void)
@@ -96,8 +100,10 @@ void dump_gl_info(void)
 }
 
 void quit(int status) {
+#ifdef WITH_GUILE
 	scm_c_eval_string("(cancel-thread repl-thread)");
 	scm_c_eval_string("(join-thread repl-thread)");
+#endif
 	exit(status);
 }
 
@@ -108,13 +114,15 @@ char* gl_enum_string(GLenum e) {
 	// textures
 	c(GL_TEXTURE_2D)
 	c(GL_RGB)
-	c(GL_RGB8)
 	c(GL_RGBA)
-	c(GL_RGBA8)
 	c(GL_DEPTH_COMPONENT)
+#if CGL_GL_VERSION == GL3
+	c(GL_RGB8)
+	c(GL_RGBA8)
 	c(GL_DEPTH_COMPONENT24)
 	c(GL_DEPTH_COMPONENT32)
 	c(GL_DEPTH_COMPONENT32F)
+#endif
 	c(GL_FLOAT)
 	}
 	return "not handled yet";

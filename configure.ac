@@ -29,11 +29,28 @@ AC_PROG_LIBTOOL
 
 # Checks for libraries.
 AC_CHECK_LIB([mcm], [make_vec3f])
-AC_CHECK_LIB([GL], [main])
-AC_CHECK_LIB([GLU], [main])
-AC_CHECK_LIB([glut], [main])
-AC_CHECK_LIB([GLEW], [main])
 AC_CHECK_LIB([png], [main])
+
+AC_ARG_WITH([gl], [AS_HELP_STRING([--with-gl=X], [Choose which gl version you want. Options: gl, gles (meaning gles2), use lowercase.])], glver=$withval, glver="gl")
+AS_IF([test "x$glver" == "xgl"],
+	[
+		AC_CHECK_LIB([GL], [main])
+		AC_CHECK_LIB([GLU], [main])
+		AC_CHECK_LIB([glut], [main])
+		AC_CHECK_LIB([GLEW], [main])
+		AC_SUBST([GL_VERSION], [GL3])
+	],
+	[test "x$glver" == "xgles"],
+	[
+		AC_CHECK_LIB([X11], [main])
+		AC_CHECK_LIB([eglut_x11], [main])
+		AC_CHECK_LIB([EGL], [main])
+		AC_CHECK_LIB([GLESv2], [main])
+		AC_SUBST([GL_VERSION], [GLES2])
+	],
+	[
+		AC_MSG_ERROR([Invalid gl version. Use (literally) gl or gles.])
+	])
 
 AC_CHECK_LIB([objloader], [main])
 #AC_PATH_PROG([OBJL_CONFIG], [libobjloader-config])

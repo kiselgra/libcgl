@@ -14,11 +14,17 @@
 
 #include <libmcm-0.0.1/matrix.h>
 
+#include "cgl.h"
+
 void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y);
 
 void register_display_function(     void (*fn)());
 void register_idle_function(        void (*fn)());
+#if CGL_GL_VERSION == GL3
 void register_keyboard_function(    void (*fn)(unsigned char, int, int));
+#else
+void register_keyboard_function(    void (*fn)(unsigned char));
+#endif
 void register_keyboard_up_function( void (*fn)(unsigned char, int, int));
 void register_mouse_motion_function(void (*fn)(int, int));
 void register_mouse_function(       void (*fn)(int, int, int, int));
@@ -26,7 +32,11 @@ void register_resize_function(      void (*fn)(int, int));
 
 // these are the standard functions which you can call from your own handlers
 // to get some default behaviour.
+#if CGL_GL_VERSION == GL3
 void standard_keyboard(unsigned char key, int x, int y);
+#else
+void standard_keyboard(unsigned char key);
+#endif
 void standard_mouse_motion(int x, int y);
 void standard_mouse_func(int button, int state, int x, int y);
 void standard_resize_func(int w, int h);

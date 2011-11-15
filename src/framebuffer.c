@@ -2,7 +2,6 @@
 
 #include "cgl.h"
 
-#include <GL/glew.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +47,11 @@ framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned 
 	framebuffer->name = malloc(strlen(name)+1);
 	strcpy(framebuffer->name, name);
 
+#if CGL_GL_VERSION == GL3
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &framebuffer->max_number_of_color_attachments);
+#else
+	framebuffer->max_number_of_color_attachments = 1;
+#endif
 	framebuffer->color_attachments = malloc(sizeof(GLenum) * framebuffer->max_number_of_color_attachments);
 	framebuffer->color_attachment_names = malloc(sizeof(char*) * framebuffer->max_number_of_color_attachments);
 	framebuffer->color_textures = malloc(sizeof(texture_ref) * framebuffer->max_number_of_color_attachments);
@@ -97,7 +100,11 @@ void attach_depth_buffer(framebuffer_ref ref) {
 
 	glGenRenderbuffers(1, &framebuffer->depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->depthbuffer);
+#if CGL_GL_VERSION == GL3
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
+#else
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, framebuffer->width, framebuffer->height);
+#endif
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer->depthbuffer);
 	// unbind renderbuffer?
 	check_for_gl_errors(__FUNCTION__);
@@ -127,7 +134,9 @@ void bind_framebuffer(framebuffer_ref ref) {
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->fbo_id);
 	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->depthbuffer);
+#if CGL_GL_VERSION == GL3
 	glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
+#endif
 	framebuffer->bound = true;
 }
 

@@ -22,7 +22,7 @@ bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
 bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
 
-snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS)
+snarf_opts = $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 SUFFIXES: .x
 .c.x:
 	guile-snarf -o $@ $< $(snarf_opts)
@@ -31,7 +31,7 @@ SUFFIXES: .x
 # AM_CPPFLAGS = -Isrc/
 # AM_YFLAGS = -d -p__yacc_prefix__
 # AM_LFLAGS = -P__lex_prefix__ -o lex.yy.c
-AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE
+CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE -D CGL_GL_VERSION=$(GL_VERSION)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
 library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impex.h mesh.h shader.h texture.h objloader.h scheme.h
@@ -40,7 +40,8 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h impe
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(AM_CPPFLAGS)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+
 libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
 
 blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)

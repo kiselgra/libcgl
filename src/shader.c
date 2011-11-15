@@ -1,10 +1,10 @@
+#include "cgl.h"
 #include "shader.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <GL/glew.h>
 
 /* A note on consistent shader reloading.
  *
@@ -86,7 +86,7 @@ shader_ref make_shader(const char *name, int input_vars) {
 	shader->built_ok = false;
 	shader->input_vars = input_vars;
 	shader->next_input_var = 0;
-	shader->vert_info_log = shader->frag_info_log = 0;
+	shader->vert_info_log = shader->frag_info_log = shader->geom_info_log = shader->program_info_log = 0;
 	shader->input_var_names = malloc(sizeof(char*) * input_vars);
 	shader->input_var_ids = malloc(sizeof(unsigned int*) * input_vars);
 	for (int i = 0; i < input_vars; ++i) {
@@ -197,12 +197,14 @@ bool compile_and_link_shader(shader_ref ref) {
 	glCompileShader(shader->vertex_program);
 	glCompileShader(shader->fragment_program);
 	
+#if CGL_GL_VERSION == GL3
 	if (shader->geometry_source) {
 		shader->geometry_program = glCreateShader(GL_GEOMETRY_SHADER);
 		src[2] = shader->geometry_source;
 		glShaderSource(shader->geometry_program, 1, src+2, 0);
 		glCompileShader(shader->geometry_program);
 	}
+#endif
 
 	glGetShaderiv(shader->vertex_program, GL_COMPILE_STATUS, &compile_res);
 	if (compile_res == GL_FALSE) {
@@ -224,6 +226,7 @@ bool compile_and_link_shader(shader_ref ref) {
 		return false;
 	}
 
+#if CGL_GL_VERSION == GL3
 	if (shader->geometry_source) {
 		glGetShaderiv(shader->geometry_program, GL_COMPILE_STATUS, &compile_res);
 		if (compile_res == GL_FALSE) {
@@ -231,15 +234,18 @@ bool compile_and_link_shader(shader_ref ref) {
 			glDeleteShader(shader->vertex_program);
 			glDeleteShader(shader->fragment_program);
 			glDeleteShader(shader->geometry_program);
-			fprintf(stderr, "failed to compile fragment shader of %s\n", shader->name);
+			fprintf(stderr, "failed to compile geometry shader of %s\n", shader->name);
 			return false;
 		}
 	}
+#endif
 
 	shader->shader_program = glCreateProgram();
 	glAttachShader(shader->shader_program, shader->vertex_program);
 	glAttachShader(shader->shader_program, shader->fragment_program);
+#if CGL_GL_VERSION == GL3
 	if (shader->geometry_program) glAttachShader(shader->shader_program, shader->geometry_program);
+#endif
 
 	// bind locations
 	for (int i = 0; i < shader->input_vars; ++i) {

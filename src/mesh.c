@@ -15,6 +15,11 @@ struct mesh {
 	char **vertex_buffer_names;
 	int next_vbo;
 	bool bound;
+#if CGL_GL_VERSION == GLES2
+	bool done;
+	unsigned int *element_dim;
+	GLenum *content_type;
+#endif
 };
 
 static struct mesh *meshes = 0;
@@ -45,18 +50,49 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	mesh->vertex_buffer_ids = malloc(sizeof(GLuint) * vertex_buffers);
 	mesh->vertex_buffers = vertex_buffers;
 	mesh->vertex_buffer_names = malloc(sizeof(char*) * vertex_buffers);
+#if CGL_GL_VERSION == GL3
 	glGenVertexArrays(1, &mesh->vao_id);
+#else
+	mesh->done = false;
+	mesh->element_dim = malloc(sizeof(unsigned int) * vertex_buffers);
+	mesh->content_type = malloc(sizeof(GLenum) * vertex_buffers);
+#endif
 	glGenBuffers(vertex_buffers, mesh->vertex_buffer_ids);
 	return ref;
 }
 
 void bind_mesh_to_gl(mesh_ref mr) {
+#if CGL_GL_VERSION == GL3
 	glBindVertexArray(meshes[mr.id].vao_id);
+#else
+	struct mesh *mesh = meshes+mr.id;
+	if (mesh->done) {
+		for (int i = 0; i < mesh->vertex_buffers; ++i) {
+			glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[i]);
+			glVertexAttribPointer(i, mesh->element_dim[i], mesh->content_type[i], GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(i);
+		}
+		if (mesh->index_buffer_id) {
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer_id);
+		}
+	}
+#endif
 	meshes[mr.id].bound = true;
 }
 
 void unbind_mesh_from_gl(mesh_ref mr) {
+#if CGL_GL_VERSION == GL3
 	glBindVertexArray(0);
+#else
+	struct mesh *mesh = meshes+mr.id;
+	if (mesh->done) {
+		for (int i = 0; i < mesh->vertex_buffers; ++i)
+			glDisableVertexAttribArray(i);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+	if (!mesh->done)
+		mesh->done = true;
+#endif
 	meshes[mr.id].bound = true;
 }
 
@@ -94,9 +130,14 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	mesh->vertex_buffer_names[vbo_id] = malloc(strlen(name)+1),
 	strcpy(mesh->vertex_buffer_names[vbo_id], name);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
-	glEnableVertexAttribArray(vbo_id);
 	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
+#if CGL_GL_VERSION == GL3
+	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+#else
+	mesh->element_dim[vbo_id] = element_dim;
+	mesh->content_type[vbo_id] = content_type;
+#endif
 	return true;
 }
 
@@ -115,9 +156,11 @@ bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_typ
 	int unit_size = size_of_gl_type(content_type);
 	unsigned int size_in_bytes = unit_size * mesh->vertices * element_dim;
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
-	glEnableVertexAttribArray(vbo_id);
 	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
+#if CGL_GL_VERSION == GL3
+	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+#endif
 	return true;
 }
 

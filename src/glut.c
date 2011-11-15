@@ -5,11 +5,25 @@
 #include <libmcm-0.0.1/matrix.h>
 #include <libmcm-0.0.1/camera-matrices.h>
 
+
+#if CGL_GL_VERSION == GL3
 #include <GL/freeglut.h>
+#elif CGL_GL_VERSION == GLES2
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <eglut.h>
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+
 #include <stdio.h>
 
 void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
 {
+#if CGL_GL_VERSION == GL3
 	glutInit(&argc, argv);
 	glutInitContextVersion (gl_maj, gl_min);
 	glutInitContextFlags (GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
@@ -19,25 +33,62 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 	if (title) glutCreateWindow(title);
 	else       glutCreateWindow("a gl window");
 	
-	glViewport(0,0,res_x,res_y);
-
 	glutMouseFunc(standard_mouse_func);
 	glutMotionFunc(standard_mouse_motion);
 	// glutReshapeFunc(reshape);
 	// glutReshapeFunc(reshape);
 	glutKeyboardFunc (standard_keyboard);
+#else
+	eglutInitWindowSize (res_x, res_y); 
+	eglutInitAPIMask(EGLUT_OPENGL_ES2_BIT);
+	eglutInit(argc, argv);
+// 	eglutInitContextVersion (gl_maj, gl_min);
+// 	eglutInitWindowPosition (100, 100);
+	if (title) eglutCreateWindow(title);
+	else       eglutCreateWindow("a gl window");
+	
+	eglutMouseFunc(standard_mouse_func);
+	eglutMotionFunc(standard_mouse_motion);
+	// glutReshapeFunc(reshape);
+	// glutReshapeFunc(reshape);
+	eglutKeyboardFunc (standard_keyboard);
+#endif
+	glViewport(0,0,res_x,res_y);
+
 }
+
+#if CGL_GL_VERSION == GLES2
+#define glutDisplayFunc eglutDisplayFunc
+#define glutIdleFunc eglutIdleFunc
+#define glutReshapeFunc eglutReshapeFunc
+#define glutKeyboardFunc eglutKeyboardFunc
+#define glutMotionFunc eglutMotionFunc
+#define glutMainLoop eglutMainLoop
+#define GLUT_DOWN EGLUT_DOWN
+#define GLUT_UP EGLUT_UP
+#define GLUT_LEFT_BUTTON EGLUT_LEFT_BUTTON
+#endif
 
 void register_display_function(     void (*fn)())                        { glutDisplayFunc(fn); }
 void register_idle_function(        void (*fn)())                        { glutIdleFunc(fn); }
+#if CGL_GL_VERSION == GL3
 void register_keyboard_function(    void (*fn)(unsigned char, int, int)) { glutKeyboardFunc(fn); }
+#else
+void register_keyboard_function(    void (*fn)(unsigned char)) { glutKeyboardFunc(fn); }
+#endif
+#if CGL_GL_VERSION == GL3
 void register_keyboard_up_function( void (*fn)(unsigned char, int, int)) { glutKeyboardUpFunc(fn); }
-void register_mouse_motion_function(void (*fn)(int, int))                { glutMotionFunc(fn); }
 void register_mouse_function(       void (*fn)(int, int, int, int))      { glutMouseFunc(fn); }
+#endif
+void register_mouse_motion_function(void (*fn)(int, int))                { glutMotionFunc(fn); }
 void register_resize_function(      void (*fn)(int, int))                { glutReshapeFunc(fn); }
 
 float move_factor = 0.1;
+#if CGL_GL_VERSION == GL3
 void standard_keyboard(unsigned char key, int x, int y)
+#else
+void standard_keyboard(unsigned char key)
+#endif
 {
 	vec3f tmp;
 	vec3f cam_right, cam_pos, cam_dir, cam_up;
@@ -127,7 +178,10 @@ void standard_resize_func(int w, int h) {
 }
 
 void swap_buffers() {
+// eglut does so after drawing
+#if CGL_GL_VERSION == GL3
 	glutSwapBuffers();
+#endif
 }
 void enter_glut_main_loop() {
 	glutMainLoop();

@@ -2,7 +2,7 @@
 #define __MESH_H__ 
 
 #include <stdbool.h>
-#include <GL/glew.h>
+#include "cgl.h"
 
 typedef struct {
 	int id;

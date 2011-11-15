@@ -3,8 +3,20 @@
 
 // #include <libguile.h>
 
+#define GL3 0x7c03
+#define GLES2 0x7c51302
+
 #include <stdbool.h>
+
+#if CGL_GL_VERSION == GL3
 #include <GL/glew.h>
+#include <GL/glxew.h>
+#elif CGL_GL_VERSION == GLES2
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#else
+#error No valid GL version specified in CGL_GL_VERSION!
+#endif
 
 enum { invalid_ref = -1 };
 enum { without_guile, with_guile, guile_cfg_only };
