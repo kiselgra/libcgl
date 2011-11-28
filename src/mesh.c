@@ -150,6 +150,13 @@ mesh_ref find_mesh(const char *name) {
 	return ref;
 }
 
+void draw_mesh(mesh_ref ref, GLenum primitive_type) {
+	struct mesh *mesh = meshes+ref.id;
+	if (mesh->index_buffer_id)
+		glDrawElements(primitive_type, mesh->indices, GL_UNSIGNED_INT, 0);
+	else
+		glDrawArrays(primitive_type, 0, mesh->vertices);
+}
 
 #ifdef WITH_GUILE
 #include <libguile.h>
@@ -203,6 +210,13 @@ SCM_DEFINE(s_add_vb_to_mesh, "add-vertex-buffer-to-mesh", 7, 0, 0,
 	return meshid;
 }
 
+SCM_DEFINE(s_draw_mesh, "draw-mesh", 2, 0, 0, (SCM id, SCM prim_t), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	GLenum prim = scheme_symbol_to_gl_enum(&prim_t);
+	draw_mesh(ref, prim);
+	return SCM_BOOL_T;
+}
+	
 void register_scheme_functions_for_meshes() {
 #ifndef SCM_MAGIC_SNARFER
 #include "mesh.x"

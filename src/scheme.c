@@ -77,6 +77,9 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 	case ("nearest", GL_NEAREST);
 	case ("repeat", GL_REPEAT);
 	case ("static-draw", GL_STATIC_DRAW);
+	case ("triangles", GL_TRIANGLES);
+	case ("triangle-strip", GL_TRIANGLE_STRIP);
+	case ("points", GL_POINTS);
 	fprintf(stderr, "invalid schme symbol for glenum: %s.\n", symb);
 	exit(-1);
 }

@@ -18,6 +18,7 @@ unsigned int index_buffer_length_of_mesh(mesh_ref mr);
 unsigned int vertex_buffer_length_of_mesh(mesh_ref mr);
 char* mesh_name(mesh_ref mr);
 mesh_ref find_mesh(const char *name);
+void draw_mesh(mesh_ref mr, GLenum primitive_type);//!< attention: very general, you own draw call might be faster.
 
 #endif
 
