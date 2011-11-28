@@ -173,6 +173,10 @@ void unbind_texture(texture_ref ref) {
 }
 
 void save_texture_as_png(texture_ref ref, const char *filename) {
+	if (!valid_texture_ref(ref)) {
+		fprintf(stderr, "cannot save. invalid texref (destination was %s)\n", filename);
+		return;
+	}
 	struct texture *texture = textures + ref.id;
 	bool was_bound = false;
 	if (!texture->bound)
