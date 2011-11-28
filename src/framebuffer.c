@@ -103,6 +103,16 @@ void attach_depth_buffer(framebuffer_ref ref) {
 	check_for_gl_errors(__FUNCTION__);
 }
 
+void draw_buffers_done(framebuffer_ref ref) {
+	struct framebuffer *framebuffer = framebuffers+ref.id;
+	if (framebuffers->attachments_in_use == 0) {
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+	}
+	else
+		glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
+}
+
 void check_framebuffer_setup(framebuffer_ref ref) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 	if (!framebuffer->depthbuffer_name) {
@@ -111,7 +121,7 @@ void check_framebuffer_setup(framebuffer_ref ref) {
 	}
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
-		fprintf(stderr, "Frammebuffer %s is not complete. Errorcode %d\n", framebuffer->name, status);
+		fprintf(stderr, "Frammebuffer %s is not complete. Errorcode %d: %s\n", framebuffer->name, status, gl_enum_string(status));
 		exit(-1);
 	}
 	check_for_gl_errors(__FUNCTION__);
@@ -127,7 +137,10 @@ void bind_framebuffer(framebuffer_ref ref) {
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->fbo_id);
 	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->depthbuffer);
-	glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
+	if (framebuffer->attachments_in_use)
+		glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
+	else
+		glDrawBuffer(GL_NONE);
 	framebuffer->bound = true;
 }
 
@@ -197,6 +210,11 @@ SCM_DEFINE(s_attach_db, "attach-depthbuffer", 1, 0, 0, (SCM tofbo), "") {
 	return SCM_BOOL_T;
 }
 
+SCM_DEFINE(s_fin_db, "draw-buffers-done", 1, 0, 0, (SCM afbo), "") {
+	framebuffer_ref fbo = { scm_to_int(afbo) };
+	draw_buffers_done(fbo);
+	return SCM_BOOL_T;
+}
 SCM_DEFINE(s_check_fbo, "check-framebuffer-setup", 1, 0, 0, (SCM offbo), "") {
 	framebuffer_ref fbo = { scm_to_int(offbo) };
 	check_framebuffer_setup(fbo);

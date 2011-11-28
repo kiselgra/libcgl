@@ -53,7 +53,8 @@ extern "C" {
 		for (size_t y = 0; y < h; ++y)
 			for (size_t x = 0; x < w; ++x) {
 				const vec4f *v = data+y*w+x;
-				image[h-y-1][x] = png::rgba_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f, v->w*255.0f);
+// 				image[h-y-1][x] = png::rgba_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f, v->w*255.0f);
+				image[h-y-1][x] = png::rgba_pixel(v->x*255.0f, v->y*255.0f, v->z*255.0f, 255);
 			}
 		image.write(filename);
 	}
