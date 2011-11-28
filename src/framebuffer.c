@@ -172,6 +172,11 @@ framebuffer_ref find_framebuffer(const char *name) {
 	return ref;
 }
 
+bool valid_framebuffer_ref(framebuffer_ref ref) {
+	return ref.id >= 0;
+}
+
+
 #ifdef WITH_GUILE
 #include  <libguile.h>
 #include <stdio.h>
