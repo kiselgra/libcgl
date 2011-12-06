@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libcgl.la
 #noinst_PROGRAMS = bezier blub bspline
 
-BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x
+BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
 libcgl_la_SOURCES = 	camera.c       camera.h  \
@@ -53,5 +53,5 @@ blub_LDADD = $(GUILE_LDFLAGS)
 bezier_LDADD = $(GUILE_LDFLAGS)
 bspline_LDADD = $(GUILE_LDFLAGS)
 
-scheme.c camera.c shader.c texture.c glut.c: shader.x camera.x texture.x glut.x
+scheme.c camera.c shader.c texture.c glut.c mesh.c: shader.x camera.x texture.x glut.x mesh.x
 

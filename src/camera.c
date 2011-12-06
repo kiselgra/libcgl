@@ -162,6 +162,12 @@ SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name
 	return scm_from_int(ref.id);
 }
 
+SCM_DEFINE(s_use_cam, "use-camera", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	use_camera(ref);
+	return SCM_BOOL_T;
+}
+
 void register_scheme_functions_for_cameras() {
 #ifndef SCM_MAGIC_SNARFER
 #include "camera.x"

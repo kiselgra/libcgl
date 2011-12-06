@@ -9,6 +9,7 @@ void register_scheme_functions_for_shaders();
 void register_scheme_functions_for_cameras();
 void register_scheme_functions_for_textures();
 void register_scheme_functions_for_glut();
+void register_scheme_functions_for_meshes();
 
 void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();
@@ -16,6 +17,7 @@ void load_snarfed_definitions() {
 	register_scheme_functions_for_textures();
 	register_scheme_functions_for_framebuffers();
 	register_scheme_functions_for_glut();
+	register_scheme_functions_for_meshes();
 }
 
 void start_console_thread() {
@@ -69,6 +71,12 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 #endif
 	case ("nearest", GL_NEAREST);
 	case ("repeat", GL_REPEAT);
+	case ("static-draw", GL_STATIC_DRAW);
+	case ("triangles", GL_TRIANGLES);
+	case ("triangle-strip", GL_TRIANGLE_STRIP);
+	case ("lines", GL_LINES);
+	case ("line-strip", GL_LINE_STRIP);
+	case ("points", GL_POINTS);
 	fprintf(stderr, "invalid schme symbol for glenum: %s.\n", symb);
 	exit(-1);
 }

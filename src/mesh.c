@@ -110,7 +110,7 @@ int size_of_gl_type(GLenum content_type) {
 	}
 }
 
-bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, void *data, GLenum usage_hint) {
+bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, const void *data, GLenum usage_hint) {
 	int unit_size = size_of_gl_type(content_type);
 	struct mesh *mesh = meshes+mr.id;
 	if (mesh->vertices) {
@@ -141,7 +141,7 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	return true;
 }
 
-bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_type, unsigned int element_dim, void *data, GLenum usage_hint) {
+bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_type, unsigned int element_dim, const void *data, GLenum usage_hint) {
 	struct mesh *mesh = meshes+mr.id;
 	int vbo_id = -1;
 	for (int i = 0; i < mesh->next_vbo; ++i)
@@ -164,7 +164,7 @@ bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_typ
 	return true;
 }
 
-void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, unsigned int *data, GLenum usage_hint) {
+void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, const unsigned int *data, GLenum usage_hint) {
 	struct mesh *mesh = meshes+mr.id;
 	mesh->indices = number_of_indices;
 	glGenBuffers(1, &mesh->index_buffer_id);
@@ -181,3 +181,90 @@ unsigned int vertex_buffer_length_of_mesh(mesh_ref mr) {
 char* mesh_name(mesh_ref mr) {
 	return meshes[mr.id].name;
 }
+
+mesh_ref find_mesh(const char *name) {
+	mesh_ref ref = { -1 };
+	if (strlen(name) == 0) return ref;
+	for (int i = 0; i < next_mesh_index; ++i)
+		if (strcmp(meshes[i].name, name) == 0) {
+			ref.id = i;
+			return ref;
+		}
+	return ref;
+}
+
+void draw_mesh(mesh_ref ref, GLenum primitive_type) {
+	struct mesh *mesh = meshes+ref.id;
+	if (mesh->index_buffer_id)
+		glDrawElements(primitive_type, mesh->indices, GL_UNSIGNED_INT, 0);
+	else
+		glDrawArrays(primitive_type, 0, mesh->vertices);
+}
+
+#ifdef WITH_GUILE
+#include <libguile.h>
+#include <stdio.h>
+#include "scheme.h"
+
+SCM_DEFINE(s_make_mesh, "make-mesh", 2, 0, 0, (SCM name, SCM vertex_buffers), "") {
+	char *n = scm_to_locale_string(name);
+	unsigned int b = scm_to_uint(vertex_buffers);
+	mesh_ref ref = make_mesh(n, b);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_bind_mesh, "bind-mesh", 1, 0, 0, (SCM id), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	bind_mesh_to_gl(ref);
+	return id;
+}
+
+SCM_DEFINE(s_unbind_mesh, "unbind-mesh", 1, 0, 0, (SCM id), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	unbind_mesh_from_gl(ref);
+	return id;
+}
+
+SCM_DEFINE(s_add_vb_to_mesh, "add-vertex-buffer-to-mesh", 7, 0, 0, 
+           (SCM meshid, SCM vb_name, SCM content_type, SCM vertices, SCM elem_dim, SCM data, SCM usage_hint), "") {
+	// check the array first.
+	if (!scm_is_array(data)) { 
+		fprintf(stderr, "Data passed to add-vertex-buffer-to-mesh is not an array!\n"); 
+		return SCM_BOOL_F; 
+	}
+	if (!scm_is_typed_array(data, scm_from_locale_symbol("f32"))) { 
+		fprintf(stderr, "Data passed to add-vertex-buffer-to-mesh is not an array of type f32!\n"); 
+		return SCM_BOOL_F; 
+	}
+
+	mesh_ref ref = { scm_to_int(meshid) };
+	char *n = scm_to_locale_string(vb_name);
+	GLenum content = scheme_symbol_to_gl_enum(&content_type);
+	unsigned int verts = scm_to_uint(vertices);
+	unsigned int elem_dimension = scm_to_uint(elem_dim);
+	scm_t_array_handle handle;
+	scm_array_get_handle(data, &handle);
+	const float *float_data = scm_array_handle_f32_elements(&handle);
+	GLenum usage = scheme_symbol_to_gl_enum(&usage_hint);
+
+	add_vertex_buffer_to_mesh(ref, n, content, verts, elem_dimension, float_data, usage);
+	
+	scm_array_handle_release(&handle);
+	return meshid;
+}
+
+SCM_DEFINE(s_draw_mesh, "draw-mesh", 2, 0, 0, (SCM id, SCM prim_t), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	GLenum prim = scheme_symbol_to_gl_enum(&prim_t);
+	draw_mesh(ref, prim);
+	return SCM_BOOL_T;
+}
+	
+void register_scheme_functions_for_meshes() {
+#ifndef SCM_MAGIC_SNARFER
+#include "mesh.x"
+#endif
+}
+
+#endif
+
