@@ -111,7 +111,7 @@ texture_ref make_texture_ub(const char *name, const char *filename, int target, 
 	unsigned char *data = load_png3ub(actual_name, &w, &h);
 	free(actual_name);
 	
-	internal_make_tex(name, target, params, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, w, h, data);
+	ref = internal_make_tex(name, target, params, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, w, h, data);
 	free(data);
 
 	check_for_gl_errors(__FUNCTION__);
@@ -130,7 +130,7 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 	vec3f *data = load_png3f(actual_name, &w, &h);
 	free(actual_name);
 	
-	internal_make_tex(name, target, params, GL_RGBA, GL_RGB, GL_FLOAT, w, h, data);
+	ref = internal_make_tex(name, target, params, GL_RGBA, GL_RGB, GL_FLOAT, w, h, data);
 	free(data);
 
 	check_for_gl_errors(__FUNCTION__);
