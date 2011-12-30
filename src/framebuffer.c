@@ -103,7 +103,7 @@ void attach_depth_buffer(framebuffer_ref ref) {
 #if CGL_GL_VERSION == GL3
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
 #else
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, framebuffer->width, framebuffer->height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, framebuffer->width, framebuffer->height);
 #endif
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer->depthbuffer);
 	// unbind renderbuffer?

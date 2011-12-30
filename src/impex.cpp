@@ -120,5 +120,13 @@ extern "C" {
 	void prepend_image_path(const char *path) {
 		image_paths.push_front(path);
 	}
+
+	void pop_image_path_front() {
+		image_paths.pop_front();
+	}
+
+	void pop_image_path_back() {
+		image_paths.pop_back();
+	}
 }
 

@@ -15,7 +15,8 @@ libcgl_la_SOURCES = 	camera.c       camera.h  \
 						objloader.cpp  objloader.h \
 						scheme.c       scheme.h \
                         shader.c       shader.h  \
-                        texture.c      texture.h
+                        texture.c      texture.h \
+						mm.h
 
 
 blub_SOURCES = $(libcgl_la_SOURCES) blub.c
@@ -35,7 +36,7 @@ SUFFIXES: .x
 CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE -D CGL_GL_VERSION=$(GL_VERSION)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
-library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h mesh.h shader.h texture.h objloader.h scheme.h
+library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h mesh.h shader.h texture.h objloader.h scheme.h mm.h
 
 # setting c++ flags:
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg

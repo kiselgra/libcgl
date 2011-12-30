@@ -47,9 +47,16 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	mesh->bound = false;
 	mesh->name = malloc(strlen(name)+1);
 	strcpy(mesh->name, name);
-	mesh->vertex_buffer_ids = malloc(sizeof(GLuint) * vertex_buffers);
 	mesh->vertex_buffers = vertex_buffers;
-	mesh->vertex_buffer_names = malloc(sizeof(char*) * vertex_buffers);
+	if (vertex_buffers) {
+		mesh->vertex_buffer_ids = malloc(sizeof(GLuint) * vertex_buffers);
+		mesh->vertex_buffer_names = malloc(sizeof(char*) * vertex_buffers);
+		glGenBuffers(vertex_buffers, mesh->vertex_buffer_ids);
+	}
+#if CGL_GL_VERSION == GLES
+	else fprintf(stderr, "Warning: Meshes with external vertex buffers are not supported on gles, yet.\n");
+#endif
+
 #if CGL_GL_VERSION == GL3
 	glGenVertexArrays(1, &mesh->vao_id);
 #else
@@ -57,7 +64,6 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	mesh->element_dim = malloc(sizeof(unsigned int) * vertex_buffers);
 	mesh->content_type = malloc(sizeof(GLenum) * vertex_buffers);
 #endif
-	glGenBuffers(vertex_buffers, mesh->vertex_buffer_ids);
 	return ref;
 }
 
@@ -137,6 +143,27 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 #else
 	mesh->element_dim[vbo_id] = element_dim;
 	mesh->content_type[vbo_id] = content_type;
+#endif
+	return true;
+}
+
+bool add_existing_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, GLuint vboid) {
+	struct mesh *mesh = meshes+mr.id;
+	if (mesh->vertices) {
+		if (mesh->vertices != vertices) {
+			fprintf(stderr, "The mesh %s has a vbo of %d elements bound to it already, so you can't bind another one of size %d\n", mesh->name, mesh->vertices, vertices);
+			exit(-1);
+		}
+	}
+	else
+		mesh->vertices = vertices;
+	int vbo_id = mesh->next_vbo++;
+	glBindBuffer(GL_ARRAY_BUFFER, vboid);
+#if CGL_GL_VERSION == GL3
+	glEnableVertexAttribArray(vbo_id);
+	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+#else
+#warning "adding existing vbos to meshes is not supported on gles, yet."
 #endif
 	return true;
 }
