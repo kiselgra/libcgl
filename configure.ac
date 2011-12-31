@@ -7,7 +7,7 @@ AM_INIT_AUTOMAKE
 # name one of your source files here
 AC_CONFIG_SRCDIR([src/mesh.c])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES(Makefile src/Makefile libcgl.pc)
+AC_CONFIG_FILES(Makefile src/Makefile scheme/Makefile libcgl.pc)
 
 # Checks for programs.
 AC_PROG_CXX

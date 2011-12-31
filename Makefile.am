@@ -1,5 +1,5 @@
 
-SUBDIRS = src #doc lib-config-src # man
+SUBDIRS = src scheme #doc lib-config-src # man
 
 #.PHONY: doc
 #doc:
