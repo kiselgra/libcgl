@@ -129,7 +129,7 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 		mesh->vertices = vertices;
 	unsigned int size_in_bytes = unit_size * vertices * element_dim;
 	int vbo_id = mesh->next_vbo++;
-	if (vbo_id > mesh->vertex_buffers) {
+	if (vbo_id >= mesh->vertex_buffers) {
 		fprintf(stderr, "Too many vbos bound to mesh %s.\n", mesh->name);
 		return false;
 	}
