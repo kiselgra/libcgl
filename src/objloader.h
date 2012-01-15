@@ -1,6 +1,8 @@
 #ifndef __OBJLOADER_H__ 
 #define __OBJLOADER_H__ 
 
+#if HAVE_LIBOBJLOADER == 1
+
 #include <libmcm-0.0.1/vectors.h>
 
 #ifdef __cplusplus
@@ -43,6 +45,8 @@ void load_objfile(const char *name, const char *filename, obj_data *output);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif
