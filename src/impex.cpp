@@ -1,6 +1,7 @@
 #include "impex.h"
+#include "cgl-config.h"
 
-#ifdef HAVE_LIBPNG
+#if LIBCGL_HAVE_LIBPNG == 1
 #include <png++/png.hpp>
 #endif
 
@@ -8,6 +9,7 @@
 #include <stdlib.h>
 #include <list>
 #include <string>
+#include <string.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,7 +19,7 @@ using namespace std;
 
 extern "C" {
 
-#ifdef HAVE_LIBPNG
+#if LIBCGL_HAVE_LIBPNG == 1
 	vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h) {
 		png::image<png::rgb_pixel> image(filename);
 		*w = image.get_width(),

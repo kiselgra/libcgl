@@ -97,6 +97,7 @@ static texture_ref internal_make_tex(const char *name, GLenum target, tex_params
 	return ref;
 }
 
+#if LIBCGL_HAVE_LIBPNG == 1
 texture_ref make_texture_ub(const char *name, const char *filename, int target, tex_params_t *params) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
@@ -272,6 +273,7 @@ bool valid_texture_ref(texture_ref ref) {
 #include <libguile.h>
 #include <stdio.h>
 
+#if LIBCGL_HAVE_LIBPNG == 1
 SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 4, 0, 0, (SCM name, SCM filename, SCM target, SCM mm), "") {
 	char *n = scm_to_locale_string(name);
 	char *fn = scm_to_locale_string(filename);
@@ -297,6 +299,7 @@ SCM_DEFINE(s_make_texture_from_file_ub, "texture-from-file-ub", 4, 0, 0, (SCM na
 	texture_ref ref = make_texture_ub(n, fn, t, &p);
 	return scm_from_int(ref.id);
 }
+#endif
 
 SCM_DEFINE(s_make_empty_texture, "make-texture-without-file", 7, 0, 0, (SCM name, SCM trg, SCM w, SCM h, SCM f, SCM inf, SCM ty), "") {
 	char *n = scm_to_locale_string(name);

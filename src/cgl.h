@@ -1,6 +1,7 @@
 #ifndef __CGL_H__ 
 #define __CGL_H__ 
 
+#include "cgl-config.h"
 #include "gl-version.h"
 #include <stdbool.h>
 

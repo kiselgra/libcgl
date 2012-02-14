@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "cgl-config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,7 +25,7 @@ tex_params_t default_tex_params();
 tex_params_t default_fbo_tex_params();
 
 
-#ifdef HAVE_LIBPNG
+#if LIBCGL_HAVE_LIBPNG == 1
 texture_ref make_texture(const char *name, const char *filename, int target, tex_params_t *params);
 texture_ref make_texture_ub(const char *name, const char *filename, int target, tex_params_t *params);
 #endif

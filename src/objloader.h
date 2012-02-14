@@ -1,7 +1,7 @@
 #ifndef __OBJLOADER_H__ 
 #define __OBJLOADER_H__ 
 
-#include <cgl-config.h>
+#include "cgl-config.h"
 
 #if LIBCGL_HAVE_LIBOBJLOADER == 1
 
