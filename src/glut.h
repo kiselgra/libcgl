@@ -44,7 +44,6 @@ void enter_glut_main_loop();
 
 extern float move_factor;
 
-
 #ifdef __cplusplus
 }
 #endif

@@ -21,14 +21,22 @@ extern "C" {
 
 #include <stdio.h>
 
+static bool forward = true;
+void please_use_a_backward_gl_context() {
+	forward = false;
+}
+
+
 void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
 {
 #if CGL_GL_VERSION == GL3
 	glutInit(&argc, argv);
 	glutInitContextVersion (gl_maj, gl_min);
-	glutInitContextFlags (GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
-	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-	glutInitWindowSize (res_x, res_y); 
+	unsigned int flags = GLUT_DEBUG;
+	if (forward) flags |= GLUT_FORWARD_COMPATIBLE;
+	glutInitContextFlags(flags);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutInitWindowSize(res_x, res_y); 
 	glutInitWindowPosition (100, 100);
 	if (title) glutCreateWindow(title);
 	else       glutCreateWindow("a gl window");

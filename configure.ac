@@ -4,10 +4,14 @@ AC_PREREQ(2.61)
 AC_INIT([libcgl], [0.0.1], [((lambda (x y z) (string-append x "@" y "." z ".org")) "stuff" "projects" "selgrad")])
 AM_INIT_AUTOMAKE
 
+AC_CONFIG_MACRO_DIR([m4])
+
 # name one of your source files here
 AC_CONFIG_SRCDIR([src/mesh.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES(Makefile src/Makefile scheme/Makefile libcgl.pc)
+
+AX_PREFIX_CONFIG_H(src/cgl-config.h)
 
 # Checks for programs.
 AC_PROG_CXX

@@ -1,7 +1,9 @@
 #ifndef __OBJLOADER_H__ 
 #define __OBJLOADER_H__ 
 
-#if HAVE_LIBOBJLOADER == 1
+#include <cgl-config.h>
+
+#if LIBCGL_HAVE_LIBOBJLOADER == 1
 
 #include <libmcm-0.0.1/vectors.h>
 

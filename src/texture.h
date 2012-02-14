@@ -23,8 +23,10 @@ tex_params_t default_tex_params();
 tex_params_t default_fbo_tex_params();
 
 
+#ifdef HAVE_LIBPNG
 texture_ref make_texture(const char *name, const char *filename, int target, tex_params_t *params);
 texture_ref make_texture_ub(const char *name, const char *filename, int target, tex_params_t *params);
+#endif
 texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params);
 void resize_texture(texture_ref ref, unsigned int w, unsigned int h);
 int texture_id(texture_ref ref);

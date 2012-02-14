@@ -163,7 +163,10 @@ bool add_existing_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum co
 	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 #else
-#warning "adding existing vbos to meshes is not supported on gles, yet."
+	mesh->vertex_buffer_ids[vbo_id] = vboid;
+	mesh->element_dim[vbo_id] = element_dim;
+	mesh->content_type[vbo_id] = content_type;
+#warning "adding existing vbos to meshes is experimental on gles, yet."
 #endif
 	return true;
 }

@@ -1,6 +1,8 @@
 #include "impex.h"
 
+#ifdef HAVE_LIBPNG
 #include <png++/png.hpp>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +17,7 @@ using namespace std;
 
 extern "C" {
 
+#ifdef HAVE_LIBPNG
 	vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h) {
 		png::image<png::rgb_pixel> image(filename);
 		*w = image.get_width(),
@@ -74,6 +77,7 @@ extern "C" {
 			}
 		image.write(filename);
 	}
+#endif
 
 	std::list<std::string> image_paths;
 	struct initial_paths

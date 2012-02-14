@@ -1,6 +1,6 @@
 #include "objloader.h"
 
-#if HAVE_LIBOBJLOADER == 1
+#if LIBCGL_HAVE_LIBOBJLOADER == 1
 //#include "librc-test/vecs.h"
 
 #include <libobjloader-0.0.1/objloader.h>

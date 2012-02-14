@@ -1,7 +1,7 @@
 #include "cgl.h"
 
-#include "glut.h"
-#include "scheme.h"
+// #include "glut.h"
+// #include "scheme.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,21 +11,27 @@
 #endif
 
 static void hop(void *data, int argc, char **argv) {
+#ifdef WITH_GUILE
 	load_snarfed_definitions();
 	if (argv[0]) load_configfile(argv[0]);
 	start_console_thread();
+#endif
 
 	((void(*)())data)();	// run the user supplied 'inner main'
 }
 
 static void* cfg_only(void *data) {
+#ifdef WITH_GUILE
 	load_snarfed_definitions();
 	if (data) load_configfile((char*)data);
+#endif
 	return 0;
 }
 
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile) {
+#ifdef HAVE_GLUT
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
+#endif
 	
 #if CGL_GL_VERSION == GL3
 	glewExperimental = GL_TRUE;

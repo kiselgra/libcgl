@@ -8,8 +8,13 @@
 #include <GL/glew.h>
 #include <GL/glxew.h>
 #elif CGL_GL_VERSION == GLES2
+#ifdef __IPHONE_5_0
+#import <OpenGLES/ES2/gl.h>
+#import <OpenGLES/ES2/glext.h>
+#else
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#endif
 #else
 #error No valid GL version specified in CGL_GL_VERSION!
 #endif

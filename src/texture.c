@@ -1,6 +1,8 @@
 #include "texture.h"
 #include "impex.h"
+#ifdef WITH_GUILE
 #include "scheme.h"
+#endif
 #include "cgl.h"
 
 #include <libmcm-0.0.1/vectors.h>
@@ -72,10 +74,8 @@ static texture_ref internal_make_tex(const char *name, GLenum target, tex_params
 	texture->name = malloc(strlen(name)+1);
 	strcpy(texture->name, name);
 	
-	check_for_gl_errors("1");
 	glGenTextures(1, &texture->texid);
 	
-	check_for_gl_errors("2");
 	glBindTexture(target, texture->texid);
 	texture->target = target;
 	texture->format = format; // data comes in this format
@@ -85,16 +85,14 @@ static texture_ref internal_make_tex(const char *name, GLenum target, tex_params
 	set_texture_params(ref, params); // does bind and unbind.
 	texture->bound = false;
 
-	check_for_gl_errors("3");
 	texture->width = w;
 	texture->height = h;
 	glTexImage2D(target, 0, texture->internal_format, texture->width, texture->height, 0, texture->format, texture->type, data);
-	check_for_gl_errors("4");
 	if (texture->params.mipmapping)
 		glGenerateMipmap(target);
 
 	glBindTexture(target, 0);
-	check_for_gl_errors("5");
+	check_for_gl_errors("after internal-make-texture");
 
 	return ref;
 }
@@ -136,6 +134,7 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 	check_for_gl_errors(__FUNCTION__);
 	return ref;
 }
+#endif
 
 texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
 	allocate_texture();
