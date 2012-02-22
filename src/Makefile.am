@@ -1,7 +1,9 @@
 lib_LTLIBRARIES = libcgl.la
 #noinst_PROGRAMS = bezier blub bspline
 
+if CAN_USE_GUILE
 BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x
+endif
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
 libcgl_la_SOURCES = 	camera.c       camera.h  \
@@ -17,6 +19,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  \
                         shader.c       shader.h  \
                         texture.c      texture.h \
 						mm.h \
+						prepared.cpp   prepared.h \
 						cgl-config.h
 
 
@@ -24,28 +27,29 @@ blub_SOURCES = $(libcgl_la_SOURCES) blub.c
 bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
 bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
-
-snarf_opts = -D WITH_GUILE $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+if CAN_USE_GUILE
+snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 SUFFIXES: .x
 .c.x:
 	guile-snarf -o $@ $< $(snarf_opts)
+endif
 
 # for bison/flex
 # AM_CPPFLAGS = -Isrc/
 # AM_YFLAGS = -d -p__yacc_prefix__
 # AM_LFLAGS = -P__lex_prefix__ -o lex.yy.c
-CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) -D WITH_GUILE -D CGL_GL_VERSION=$(GL_VERSION)
+CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) @GUILE_DEF@ -D CGL_GL_VERSION=$(GL_VERSION)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
-library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h
+library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h
 
 # setting c++ flags:
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) -D DATADIR=\"$(pkgdatadir)\" -D WITH_GUILE $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) -D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 
-libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+# libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
 
 blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
@@ -55,5 +59,7 @@ blub_LDADD = $(GUILE_LDFLAGS)
 bezier_LDADD = $(GUILE_LDFLAGS)
 bspline_LDADD = $(GUILE_LDFLAGS)
 
+if CAN_USE_GUILE
 scheme.c camera.c shader.c texture.c glut.c mesh.c: shader.x camera.x texture.x glut.x mesh.x
+endif
 

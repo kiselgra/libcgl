@@ -18,8 +18,6 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_C99
 
-GUILE_FLAGS
-
 # PKG_CHECK_MODULES([GUILE], [guile-2.0])
 # AC_SUBST([GUILE_CFLAGS])
 # AC_SUBST([GUILE_LIBS])
@@ -34,6 +32,19 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 AC_CHECK_LIB([mcm], [make_vec3f])
 AC_CHECK_LIB([png], [main])
+
+AC_TRY_CPP([#include <libguile.h>],
+           can_include_guile=yes,
+           can_include_guile=no)
+
+if test "x$can_include_guile" = "xyes" ; then
+	GUILE_FLAGS
+	GUILE_DEF="-DWITH_GUILE"
+else
+	GUILE_DEF=""
+fi
+AC_SUBST([GUILE_DEF])
+AM_CONDITIONAL([CAN_USE_GUILE], [test "x$can_include_guile" = "xyes"])
 
 AC_ARG_WITH([gl], [AS_HELP_STRING([--with-gl=X], [Choose which gl version you want. Options: gl, gles (meaning gles2), use lowercase.])], glver=$withval, glver="gl")
 AS_IF([test "x$glver" == "xgl"],

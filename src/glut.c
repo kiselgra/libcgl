@@ -1,5 +1,6 @@
 #include "glut.h"
 #include "camera.h"
+#include "cgl-config.h"
 
 #include <libmcm-0.0.1/vectors.h>
 #include <libmcm-0.0.1/matrix.h>
@@ -7,15 +8,17 @@
 
 
 #if CGL_GL_VERSION == GL3
-#include <GL/freeglut.h>
+	#include <GL/freeglut.h>
 #elif CGL_GL_VERSION == GLES2
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <eglut.h>
-#ifdef __cplusplus
-}
-#endif
+	#if LIBCGL_HAVE_EGLUT_X11 == 1
+		#ifdef __cplusplus
+		extern "C" {
+		#endif
+		#include <eglut.h>
+		#ifdef __cplusplus
+		}
+		#endif
+	#endif
 #endif
 
 
@@ -26,6 +29,7 @@ void please_use_a_backward_gl_context() {
 	forward = false;
 }
 
+#if CGL_GL_VERSION == GL3 || LIBCGL_HAVE_EGLUT_X11 == 1
 
 void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
 {
@@ -46,7 +50,7 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 	// glutReshapeFunc(reshape);
 	// glutReshapeFunc(reshape);
 	glutKeyboardFunc (standard_keyboard);
-#else
+#elif LIBCGL_HAVE_EGLUT_X11
 	eglutInitWindowSize (res_x, res_y); 
 	eglutInitAPIMask(EGLUT_OPENGL_ES2_BIT);
 	eglutInit(argc, argv);
@@ -205,5 +209,7 @@ void register_scheme_functions_for_glut() {
 #include "glut.x"
 #endif
 }
+
+#endif
 
 #endif

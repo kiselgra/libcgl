@@ -16,3 +16,5 @@ revision_DATA = revision
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libcgl.pc
 EXTRA_DIST = libcgl.pc revision
+
+ACLOCAL_AMFLAGS = -I m4
