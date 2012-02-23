@@ -100,7 +100,7 @@ extern "C" {
 			return false;
 	}
 
-	char* find_file(const char *basename)
+	char* find_file_default_version(const char *basename)
 	{
 		if (basename[0] == '/') {
 			if (file_exists(basename))
@@ -134,5 +134,11 @@ extern "C" {
 	void pop_image_path_back() {
 		image_paths.pop_back();
 	}
+
+	static char* (*file_lookup_function)(const char*) = find_file_default_version;
+	void register_file_lookup_function(char*(*func)(const char*)) {
+		file_lookup_function = func;
+	}
+
 }
 

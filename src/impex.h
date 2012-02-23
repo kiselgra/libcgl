@@ -20,8 +20,10 @@ void prepend_image_path(const char *path);
 void pop_image_path_front();
 void pop_image_path_back();
 bool file_exists(const char *name);
+char* find_file_default_version(const char *basename);
 char* find_file(const char *basename);
 
+void register_file_lookup_function(char*(*)(const char*));
 
 #ifdef __cplusplus
 }
