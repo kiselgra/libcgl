@@ -67,7 +67,18 @@ AS_IF([test "x$glver" == "xgl"],
 		AC_MSG_ERROR([Invalid gl version. Use (literally) gl or gles.])
 	])
 
-AC_CHECK_LIB([objloader], [main])
+AC_ARG_WITH([objloader],
+            [AS_HELP_STRING([--with-objloader],
+                            [Support loading of wavefront obj files. Does not set any paths. @<:@default=check@:>@])],
+		    [with_objloader=$withval],
+			[with_objloader=check])
+AS_CASE(["$with_objloader"],
+		[check], [AC_CHECK_LIB([objloader], [main])],
+		[no], [],
+		[AC_DEFINE([HAVE_LIBOBJLOADER], [1], [Via --with-objloader=PATH])])
+
+
+
 AC_CHECK_LIB([3dmath], [main])
 #AC_PATH_PROG([OBJL_CONFIG], [libobjloader-config])
 #if test "x$ac_cv_path_OBJL_CONFIG" = "x"; then
