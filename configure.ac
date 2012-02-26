@@ -31,7 +31,7 @@ AC_PROG_LIBTOOL
 
 # Checks for libraries.
 AC_CHECK_LIB([mcm], [make_vec3f])
-AC_CHECK_LIB([png], [main])
+#AC_CHECK_LIB([png], [main])
 
 AC_TRY_CPP([#include <libguile.h>],
            can_include_guile=yes,
@@ -76,6 +76,17 @@ AS_CASE(["$with_objloader"],
 		[check], [AC_CHECK_LIB([objloader], [main])],
 		[no], [],
 		[AC_DEFINE([HAVE_LIBOBJLOADER], [1], [Via --with-objloader=PATH])])
+
+
+AC_ARG_WITH([png],
+            [AS_HELP_STRING([--with-png],
+                            [Support loading of png files through libpng and png++. Does not set any paths. @<:@default=check@:>@])],
+		    [with_png=$withval],
+			[with_png=check])
+AS_CASE(["$with_png"],
+		[check], [AC_CHECK_LIB([png], [main])],
+		[no], [],
+		[AC_DEFINE([HAVE_LIBPNG], [1], [Via --with-png=PATH])])
 
 
 
