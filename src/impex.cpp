@@ -140,5 +140,9 @@ extern "C" {
 		file_lookup_function = func;
 	}
 
+	char* find_file(const char *basename) {
+		return file_lookup_function(basename);
+	}
+
 }
 
