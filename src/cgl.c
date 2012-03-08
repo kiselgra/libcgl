@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #ifdef WITH_GUILE
 #include <libguile.h>
@@ -67,9 +68,9 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 
 // actually, this should not be necessary as soon as we use the debugging extension...
 
-static error_handler_t error_handler = standard_error_handler;
+static gl_error_handler_t error_handler = standard_gl_error_handler;
 
-void register_error_handler(error_handler_t h) {
+void register_error_handler(gl_error_handler_t h) {
 	error_handler = h;
 }
 
@@ -80,7 +81,7 @@ void check_for_gl_errors(const char *where)
 		error_handler(error, where);
 }
 
-void standard_error_handler(GLenum error, const char *where) {
+void standard_gl_error_handler(GLenum error, const char *where) {
 	fprintf(stderr, "GL error %d detected in %s\n", error, where);
 	exit(-1);
 }
@@ -93,6 +94,20 @@ void ignore_gl_error(const char *function)
 #else
 	fprintf(stderr, "Ignoring GL error %d (for %s) (is glu supported here?).\n", error, function);
 #endif
+}
+
+static error_message_handler_t error_message_handler = standard_error_message_handler;
+void standard_error_message_handler(const char *fmt, va_list ap) {
+	vfprintf(stderr, fmt, ap);
+}
+void register_error_message_handler(error_message_handler_t h) {
+	error_message_handler = h;
+}
+void print_error_message(const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	error_message_handler(fmt, ap);
+	va_end(ap);
 }
 
 void dump_gl_info(void)

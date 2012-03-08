@@ -4,6 +4,7 @@
 #include "cgl-config.h"
 #include "gl-version.h"
 #include <stdbool.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,16 +21,21 @@ void please_use_a_backward_gl_context();
 // error handling. the gl debuggin extension should replace this...
 
 void check_for_gl_errors(const char *function);
-void standard_error_handler(GLenum error, const char *where);
+void standard_gl_error_handler(GLenum error, const char *where);
 void ignore_gl_error(const char *function);
 void dump_gl_info(void);
 
 void quit(int status);
 
-typedef void (*error_handler_t)(GLenum error, const char *where);
-void register_error_handler(error_handler_t h);
+typedef void (*gl_error_handler_t)(GLenum error, const char *where);
+void register_gl_error_handler(gl_error_handler_t h);
 
 char* gl_enum_string(GLenum e);
+
+typedef void (*error_message_handler_t)(const char *fmt, va_list ap);
+void standard_error_message_handler(const char *fmt, va_list ap);
+void register_error_message_handler(error_message_handler_t);
+void print_error_message(const char *fmt, ...);
 
 
 #ifdef __cplusplus
