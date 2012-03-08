@@ -11,6 +11,7 @@
 #include <libmcm-0.0.1/matrix.h>
 
 #include "mesh.h"
+#include "shader.h"
 
 
 #ifdef __cplusplus
@@ -46,6 +47,13 @@ mesh_ref make_cube(const char *name, matrix4x4f *trafo);
 float triangle_area(const vec3f *a, const vec3f *b, const vec3f *c);
 
 vec4f* generate_tangent_space_from_tri_mesh(const vec3f *vertex, const vec3f *normal, const vec2f *tc, unsigned int vertex_data_len, const unsigned int *index, unsigned int indices);
+
+
+
+/*
+ * shader convenience if you have no scheme at hand
+ */
+shader_ref make_shader_from_strings(const char *name, const char *vert, const char *frag, int number_of_inputs, ...);
 
 #ifdef __cplusplus
 }

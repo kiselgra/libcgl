@@ -1,6 +1,9 @@
 #include "prepared.h"
 
 #include <list>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 extern "C" {
 
@@ -263,6 +266,33 @@ vec4f* generate_tangent_space_from_tri_mesh(const vec3f *vertex, const vec3f *no
 
         return tangents;
 }
+
+
+shader_ref make_shader_from_strings(const char *name, const char *vert, const char *frag, int number_of_inputs, ...) {
+	va_list ap;
+	const char **input_name = new const char*[number_of_inputs];
+	va_start(ap, number_of_inputs);
+	for (int i = 0; i < number_of_inputs; ++i)
+		input_name[i] = va_arg(ap, char*);
+	va_end(ap);
+	
+	shader_ref shader = make_shader(name, number_of_inputs);
+	add_vertex_source(shader, vert);
+	add_fragment_source(shader, frag);
+	for (int i = 0; i < number_of_inputs; ++i)
+		add_shader_input(shader, input_name[i], i);
+	if (!compile_and_link_shader(shader)) {
+		const char *vl = vertex_shader_info_log(shader);
+		const char *fl = fragment_shader_info_log(shader);
+		const char *sl = shader_info_log(shader);
+		if (vl) print_error_message("Vertex SHADER ERROR %s\n---------------\n%s\n-------------------\n", name, vl);
+		if (fl) print_error_message("Fragment SHADER ERROR %s\n---------------\n%s\n-------------------\n", name, fl);
+		if (sl) print_error_message("Linker SHADER ERROR %s\n---------------\n%s\n-------------------\n", name, sl);
+	}
+
+	delete [] input_name;
+}
+
 
 }
 
