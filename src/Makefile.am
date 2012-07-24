@@ -13,6 +13,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  \
                         glut.c         glut.h     \
 						gl-version.h \
                         impex.cpp      impex.h      \
+						libcgl.h \
                         mesh.c         mesh.h  \
 						objloader.cpp  objloader.h \
 						scheme.c       scheme.h \
@@ -41,7 +42,7 @@ endif
 CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) @GUILE_DEF@ -D CGL_GL_VERSION=$(GL_VERSION)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
-library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h
+library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h libcgl.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h
 
 # setting c++ flags:
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
@@ -49,7 +50,7 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-v
 # setting c preprocessor flags for main project
 libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) -D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 
-# libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
 
 blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
@@ -62,4 +63,10 @@ bspline_LDADD = $(GUILE_LDFLAGS)
 if CAN_USE_GUILE
 scheme.c camera.c shader.c texture.c glut.c mesh.c: shader.x camera.x texture.x glut.x mesh.x
 endif
+
+# install link
+library_nonversioned_includedir = $(includedir)/$(PACKAGE)
+install-data-hook:
+	@test -L $(library_nonversioned_includedir) && echo "   !!!   The nonversioned library include dir <$(library_nonversioned_includedir)> is already covered by a link. You'll have to update yourself". || true
+	test -L $(library_nonversioned_includedir) || ln -s $(library_includedir) $(library_nonversioned_includedir)
 
