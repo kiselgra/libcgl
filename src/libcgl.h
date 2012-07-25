@@ -11,6 +11,8 @@
 		#include "impex.h"
 		#include "scheme.h"
 		#include "framebuffer.h"
+		
+		#include "prepared.h"
 
 #endif
 
