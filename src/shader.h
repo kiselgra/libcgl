@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include <libmcm/matrix.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +35,13 @@ shader_ref find_shader(const char *name);
 bool valid_shader_ref(shader_ref ref);
 shader_ref make_invalid_shader();
 const char* shader_name(shader_ref ref);
+
+int uniform_location(shader_ref ref, const char *name);
+void uniform3f(shader_ref ref, const char *name, float x, float y, float z);
+void uniform4f(shader_ref ref, const char *name, float x, float y, float z, float w);
+void uniform3fv(shader_ref ref, const char *name, float *v);
+void uniform4fv(shader_ref ref, const char *name, float *v);
+void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m);
 
 
 #ifdef __cplusplus

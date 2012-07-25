@@ -1,5 +1,6 @@
 #include "cgl.h"
 #include "shader.h"
+#include "gl-version.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -333,6 +334,34 @@ shader_ref make_invalid_shader() {
 const char* shader_name(shader_ref ref) {
 	return shaders[ref.id].name;
 }
+
+
+int uniform_location(shader_ref ref, const char *name) {
+	return glGetUniformLocation(gl_shader_object(ref), name);
+}
+
+void uniform3f(shader_ref ref, const char *name, float x, float y, float z) {
+	glUniform3f(uniform_location(ref, name), x, y, z);
+}
+
+void uniform4f(shader_ref ref, const char *name, float x, float y, float z, float w) {
+	glUniform4f(uniform_location(ref, name), x, y, z, w);
+}
+
+void uniform3fv(shader_ref ref, const char *name, float *v) {
+	glUniform3fv(uniform_location(ref, name), 1, v);
+}
+
+void uniform4fv(shader_ref ref, const char *name, float *v) {
+	glUniform4fv(uniform_location(ref, name), 1, v);
+}
+
+void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m) {
+	glUniformMatrix4fv(uniform_location(ref, name), 1, GL_FALSE, m->col_major);
+}
+
+
+
 
 #ifdef WITH_GUILE
 #include <libguile.h>
