@@ -276,7 +276,7 @@ shader_ref make_shader_from_strings(const char *name, const char *vert, const ch
 		input_name[i] = va_arg(ap, char*);
 	va_end(ap);
 	
-	shader_ref shader = make_shader(name, number_of_inputs);
+	shader_ref shader = make_shader(name, number_of_inputs, 0);
 	add_vertex_source(shader, vert);
 	add_fragment_source(shader, frag);
 	for (int i = 0; i < number_of_inputs; ++i)
