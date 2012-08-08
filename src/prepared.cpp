@@ -21,6 +21,7 @@ mesh_ref make_quad(const char *name, matrix4x4f *trafo) {
 			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
 			v[i].x = res.x; v[i].y = res.y; v[i].z = res.z;
 		}
+
 	mesh_ref mesh = make_mesh(name, 1);
 	bind_mesh_to_gl(mesh);
 	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, 6, 3, v, GL_STATIC_DRAW);
@@ -149,6 +150,22 @@ mesh_ref make_cube(const char *name, matrix4x4f *trafo) {
 	              {0,1},    {1,1},    {1,0},    {1,0},    {0,0},    {0,1}, 
 				  {0,1},    {0,0},    {1,0},    {1,0},    {1,1},    {0,1}, 
 	};
+	if (trafo) {
+		matrix4x4f tmp, norm;
+		invert_matrix4x4f(&tmp, trafo);
+		transpose_matrix4x4f(&norm, &tmp);
+		for (int i = 0; i < 36; ++i) {
+			// transform v
+			vec4f cur = { v[i].x, v[i].y, v[i].z, 1 };
+			vec4f res;
+			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
+			v[i].x = res.x; v[i].y = res.y; v[i].z = res.z;
+			// transform n
+			cur.x = n[i].x; cur.y = n[i].y; cur.z = n[i].z; cur.w = 0;
+			multiply_matrix4x4f_vec4f(&res, &norm, &cur);
+			n[i].x = res.x; n[i].y = res.y; n[i].z = res.z;
+		}
+	}
 	mesh_ref mesh = make_mesh(name, 3);
 	bind_mesh_to_gl(mesh);
 	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, 36, 3, v, GL_STATIC_DRAW);
