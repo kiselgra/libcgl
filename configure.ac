@@ -52,7 +52,12 @@ AS_IF([test "x$glver" == "xgl"],
 		AC_CHECK_LIB([GL], [main])
 		AC_CHECK_LIB([GLU], [main])
 		AC_CHECK_LIB([glut], [main])
-		AC_CHECK_LIB([GLEW], [main])
+
+#		AC_CHECK_LIB([GLEW], [main])
+		PKG_CHECK_MODULES(GLEW, glew)
+		AC_SUBST(GLEW_CFLAGS)
+		AC_SUBST(GLEW_LIBS)
+
 		AC_SUBST([GL_VERSION], [GL3])
 	],
 	[test "x$glver" == "xgles"],
