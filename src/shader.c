@@ -1,5 +1,6 @@
 #include "cgl.h"
 #include "shader.h"
+#include "gl-version.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -31,6 +32,10 @@ struct shader {
 	unsigned int *input_var_ids;
 	int input_vars;
 	int next_input_var;
+	char **uniform_names;
+	int *uniform_locations;
+	int uniforms;
+	int next_uniform_id;
 	bool bound, built_ok;
 	char *vert_info_log, *frag_info_log, *geom_info_log, *program_info_log;
 };
@@ -70,7 +75,7 @@ int get_from_free_list() {
 bool element_available_on_free_list() { return free_list != 0; }
 */
 
-shader_ref make_shader(const char *name, int input_vars) {
+shader_ref make_shader(const char *name, int input_vars, int uniforms) {
 	/*
 	shader_ref ref;
 	if (element_available_on_free_list())
@@ -102,6 +107,14 @@ shader_ref make_shader(const char *name, int input_vars) {
 	for (int i = 0; i < input_vars; ++i) {
 		shader->input_var_names[i] = 0;
 		shader->input_var_ids[i] = 0;
+	}
+	shader->uniforms = uniforms;
+	shader->next_uniform_id = 0;
+	shader->uniform_names = malloc(sizeof(char*) * uniforms);
+	shader->uniform_locations = malloc(sizeof(int) * uniforms);
+	for (int i = 0; i < uniforms; ++i) {
+		shader->uniform_names[i] = 0;
+		shader->uniform_locations[i] = -1; // invalid uniform (glGetUniformLocation)
 	}
 	shader->vertex_source = shader->fragment_source = shader->geometry_source = 0;
 	shader->vertex_program = shader->fragment_program = shader->geometry_program = shader->shader_program = 0;
@@ -166,6 +179,18 @@ bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
 	shader->input_var_names[i] = malloc(strlen(varname)+1);
 	strcpy(shader->input_var_names[i], varname);
 	shader->input_var_ids[i] = index;
+	return true;
+}
+
+bool add_shader_uniform(shader_ref ref, const char *name) {
+	struct shader *shader = shaders+ref.id;
+	if (shader->next_uniform_id >= shader->uniforms) {
+		fprintf(stderr, "tried to assign shader uniform (%s, %d) to shader %s when all bindings are set.\n", name, shader->next_uniform_id, shader->name);
+		return false;
+	}
+	int i = shader->next_uniform_id++;
+	shader->uniform_names[i] = malloc(strlen(name)+1);
+	strcpy(shader->uniform_names[i], name);
 	return true;
 }
 
@@ -276,6 +301,14 @@ bool compile_and_link_shader(shader_ref ref) {
 	}
 	
 	shader->built_ok = true;
+
+	for (int i = 0; i < shader->uniforms; ++i) {
+		int loc = glGetUniformLocation(shader->shader_program, shader->uniform_names[i]);
+		if (loc < 0)
+			fprintf(stderr, "WARNING: Location of uniform %s in shader %s is < 0.\n", shader->uniform_names[i], shader->name);
+		shader->uniform_locations[i] = loc;
+	}
+
 	return true;
 }
 
@@ -325,7 +358,7 @@ bool valid_shader_ref(shader_ref ref) {
 	return ref.id >= 0;
 }
 
-shader_ref make_invalid_shader() {
+shader_ref make_invalid_shader(void) {
 	shader_ref r = { -1 };
 	return r;
 }
@@ -334,13 +367,41 @@ const char* shader_name(shader_ref ref) {
 	return shaders[ref.id].name;
 }
 
+
+int uniform_location(shader_ref ref, const char *name) {
+	return glGetUniformLocation(gl_shader_object(ref), name);
+}
+
+void uniform3f(shader_ref ref, const char *name, float x, float y, float z) {
+	glUniform3f(uniform_location(ref, name), x, y, z);
+}
+
+void uniform4f(shader_ref ref, const char *name, float x, float y, float z, float w) {
+	glUniform4f(uniform_location(ref, name), x, y, z, w);
+}
+
+void uniform3fv(shader_ref ref, const char *name, float *v) {
+	glUniform3fv(uniform_location(ref, name), 1, v);
+}
+
+void uniform4fv(shader_ref ref, const char *name, float *v) {
+	glUniform4fv(uniform_location(ref, name), 1, v);
+}
+
+void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m) {
+	glUniformMatrix4fv(uniform_location(ref, name), 1, GL_FALSE, m->col_major);
+}
+
+
+
+
 #ifdef WITH_GUILE
 #include <libguile.h>
 
 SCM_DEFINE(s_make_shader, "make-shader", 2, 0, 0, (SCM name, SCM input_n), "create shader with name and number of input vars.") {
 	const char *na = scm_to_locale_string(name);
 	int nu = scm_to_int(input_n);
-	shader_ref ref = make_shader(na, nu);
+	shader_ref ref = make_shader(na, nu, 0);
 	return scm_from_int(ref.id);
 }
 SCM_DEFINE(s_destroy_shader, "destroy-shader", 1, 0, 0, (SCM shader), "") {

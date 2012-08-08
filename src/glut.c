@@ -204,6 +204,12 @@ SCM_DEFINE(s_set_move_factor, "set-move-factor!", 1, 0, 0, (SCM val), "") {
 	return SCM_BOOL_T;
 }
 
+SCM_DEFINE(s_viewport, "viewport", 0, 0, 0, (), "") {
+	GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	return scm_values(scm_list_4(scm_from_int(viewport[0]), scm_from_int(viewport[1]), scm_from_int(viewport[2]), scm_from_int(viewport[3])));
+}
+
 void register_scheme_functions_for_glut() {
 #ifndef SCM_MAGIC_SNARFER
 #include "glut.x"
