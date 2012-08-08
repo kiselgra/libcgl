@@ -39,7 +39,7 @@ endif
 # AM_CPPFLAGS = -Isrc/
 # AM_YFLAGS = -d -p__yacc_prefix__
 # AM_LFLAGS = -P__lex_prefix__ -o lex.yy.c
-CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) @GUILE_DEF@ -D CGL_GL_VERSION=$(GL_VERSION)
+CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) @GUILE_DEF@ -D CGL_GL_VERSION=$(GL_VERSION) $(GLEW_CFLAGS)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
 library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h libcgl.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h
@@ -50,7 +50,7 @@ library_include_HEADERS = cgl.h camera.h drawelement.h framebuffer.h glut.h gl-v
 # setting c preprocessor flags for main project
 libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) -D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 
-libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS)
+libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS) $(GLEW_LIBS)
 
 blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
