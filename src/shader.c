@@ -76,6 +76,7 @@ bool element_available_on_free_list() { return free_list != 0; }
 */
 
 shader_ref make_shader(const char *name, int input_vars, int uniforms) {
+	printf("--> %s %d %d\n", name, input_vars, uniforms);
 	/*
 	shader_ref ref;
 	if (element_available_on_free_list())
@@ -367,6 +368,22 @@ const char* shader_name(shader_ref ref) {
 	return shaders[ref.id].name;
 }
 
+int shader_uniforms(shader_ref ref) {
+	struct shader *shader = shaders+ref.id;
+	return shader->uniforms;
+}
+
+const char* shader_uniform_name_by_id(shader_ref ref, unsigned int id) {
+	struct shader *shader = shaders+ref.id;
+	return shader->uniform_names[id];
+}
+
+int shader_uniform_location_by_id(shader_ref ref, unsigned int id) {
+	struct shader *shader = shaders+ref.id;
+	return shader->uniform_locations[id];
+}
+
+
 
 int uniform_location(shader_ref ref, const char *name) {
 	return glGetUniformLocation(gl_shader_object(ref), name);
@@ -398,10 +415,11 @@ void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m) {
 #ifdef WITH_GUILE
 #include <libguile.h>
 
-SCM_DEFINE(s_make_shader, "make-shader", 2, 0, 0, (SCM name, SCM input_n), "create shader with name and number of input vars.") {
+SCM_DEFINE(s_make_shader, "make-shader", 3, 0, 0, (SCM name, SCM input_n, SCM uniform_n), "create shader with name and number of input vars and uniforms.") {
 	const char *na = scm_to_locale_string(name);
-	int nu = scm_to_int(input_n);
-	shader_ref ref = make_shader(na, nu, 0);
+	int ni = scm_to_int(input_n);
+	int nu = scm_to_int(uniform_n);
+	shader_ref ref = make_shader(na, ni, nu);
 	return scm_from_int(ref.id);
 }
 SCM_DEFINE(s_destroy_shader, "destroy-shader", 1, 0, 0, (SCM shader), "") {
@@ -433,6 +451,12 @@ SCM_DEFINE(s_add_shader_input, "add-shader-input", 3, 0, 0, (SCM shader, SCM var
 	const char *vn = scm_to_locale_string(varname);
 	int idx = scm_to_int(index);
 	bool ret = add_shader_input(ref, vn, idx);
+	return ret ? SCM_BOOL_T : SCM_BOOL_F;
+}
+SCM_DEFINE(s_add_shader_uniform, "add-shader-uniform", 2, 0, 0, (SCM shader, SCM varname), "") {
+	shader_ref ref = { scm_to_int(shader) };
+	const char *vn = scm_to_locale_string(varname);
+	bool ret = add_shader_uniform(ref, vn);
 	return ret ? SCM_BOOL_T : SCM_BOOL_F;
 }
 SCM_DEFINE(s_compile_and_link_shader, "compile-and-link-shader", 1, 0, 0, (SCM shader), "") {

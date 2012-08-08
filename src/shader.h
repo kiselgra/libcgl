@@ -37,6 +37,12 @@ bool valid_shader_ref(shader_ref ref);
 shader_ref make_invalid_shader(void);
 const char* shader_name(shader_ref ref);
 
+// these functions handle the uniforms by retrieving the internally stored location.
+int shader_uniforms(shader_ref ref);
+const char* shader_uniform_name_by_id(shader_ref ref, unsigned int id);
+int shader_uniform_location_by_id(shader_ref ref, unsigned int id);
+
+// the following functions retrieve the uniform location for each call.
 int uniform_location(shader_ref ref, const char *name);
 void uniform3f(shader_ref ref, const char *name, float x, float y, float z);
 void uniform4f(shader_ref ref, const char *name, float x, float y, float z, float w);
