@@ -47,11 +47,11 @@ static REF allocate_ref() {
 	return ref;
 }
 
-bool valid_ref(REF ref) {
+static bool valid_ref(REF ref) {
 	return ref.id >= 0;
 }
 
-void free_ref(REF ref) {
+static void free_ref(REF ref) {
 	if (!valid_ref(ref)) return;
 	put_on_free_list(ref.id);
 }
