@@ -1,0 +1,14 @@
+*.[aox]
+missing
+*.swp
+*.log
+*.mpx
+Makefile
+Makefile.in
+config.*
+libtool
+ltmain.sh
+stamp-h1
+depcomp
+install-sh
+*.lo
