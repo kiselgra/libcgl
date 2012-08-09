@@ -42,7 +42,7 @@ void standard_resize_func(int w, int h);
 void swap_buffers();
 void enter_glut_main_loop();
 
-extern float move_factor;
+extern float cgl_cam_move_factor;	// we should prefix global variables (at least). if only C had namespaces...
 
 #ifdef __cplusplus
 }

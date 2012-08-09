@@ -97,6 +97,10 @@ void change_projection_of_cam(camera_ref ref, float fovy, float aspect, float ne
 	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
 }
 
+void change_lookat_of_cam(camera_ref ref, vec3f *pos, vec3f *dir, vec3f *up) {
+	struct camera *camera = cameras + ref.id;
+	make_lookat_matrixf(&cameras->lookat_matrix, pos, dir, up);
+}
 
 
 

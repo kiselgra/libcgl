@@ -91,7 +91,7 @@ void register_mouse_function(       void (*fn)(int, int, int, int))      { glutM
 void register_mouse_motion_function(void (*fn)(int, int))                { glutMotionFunc(fn); }
 void register_resize_function(      void (*fn)(int, int))                { glutReshapeFunc(fn); }
 
-float move_factor = 0.1;
+float cgl_cam_move_factor = 0.1;
 void standard_keyboard(unsigned char key, int x, int y)
 {
 	vec3f tmp;
@@ -106,32 +106,32 @@ void standard_keyboard(unsigned char key, int x, int y)
 			quit(0);
 		case 's':
 			copy_vec3f(&tmp, &cam_dir);
-			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
+			mul_vec3f_by_scalar(&tmp, &tmp, -cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 		case 'w':
 			copy_vec3f(&tmp, &cam_dir);
-			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
+			mul_vec3f_by_scalar(&tmp, &tmp, cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 		case 'a':
 			copy_vec3f(&tmp, &cam_right);
-			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
+			mul_vec3f_by_scalar(&tmp, &tmp, -cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 		case 'd':
 			copy_vec3f(&tmp, &cam_right);
-			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
+			mul_vec3f_by_scalar(&tmp, &tmp, cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 		case 'f':
 			copy_vec3f(&tmp, &cam_up);
-			mul_vec3f_by_scalar(&tmp, &tmp, -move_factor);
+			mul_vec3f_by_scalar(&tmp, &tmp, -cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 		case 'r':
 			copy_vec3f(&tmp, &cam_up);
-			mul_vec3f_by_scalar(&tmp, &tmp, move_factor);
+			mul_vec3f_by_scalar(&tmp, &tmp, cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
 			break;
 		case 'p':
@@ -200,7 +200,7 @@ SCM_DEFINE(s_set_move_factor, "set-move-factor!", 1, 0, 0, (SCM val), "") {
 		return SCM_BOOL_F;
 	}
 	double fact = scm_to_double(val);
-	move_factor = fact;
+	cgl_cam_move_factor = fact;
 	return SCM_BOOL_T;
 }
 
