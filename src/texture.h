@@ -43,6 +43,7 @@ const tex_params_t* texture_params(texture_ref ref);
 
 bool valid_texture_ref(texture_ref ref);
 texture_ref find_texture(const char *name);
+const char* texture_name(texture_ref ref);
 
 
 #ifdef __cplusplus

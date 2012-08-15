@@ -265,6 +265,10 @@ texture_ref find_texture(const char *name) {
 	return ref;
 }
 
+const char* texture_name(texture_ref ref) {
+	return textures[ref.id].name;
+}
+
 bool valid_texture_ref(texture_ref ref) {
 	return ref.id >= 0;
 }
