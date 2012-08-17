@@ -201,7 +201,11 @@ SCM_DEFINE(s_set_move_factor, "set-move-factor!", 1, 0, 0, (SCM val), "") {
 	}
 	double fact = scm_to_double(val);
 	cgl_cam_move_factor = fact;
-	return SCM_BOOL_T;
+	return scm_from_double(fact);;
+}
+
+SCM_DEFINE(s_move_factor, "move-factor", 0, 0, 0, (), "") {
+	return scm_from_double(cgl_cam_move_factor);
 }
 
 SCM_DEFINE(s_viewport, "viewport", 0, 0, 0, (), "") {
