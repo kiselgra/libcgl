@@ -11,6 +11,7 @@ void register_scheme_functions_for_textures();
 void register_scheme_functions_for_glut();
 void register_scheme_functions_for_meshes();
 void register_scheme_functions_for_framebuffers();
+void register_scheme_functions_for_impex();
 
 void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();
@@ -19,6 +20,7 @@ void load_snarfed_definitions() {
 	register_scheme_functions_for_framebuffers();
 	register_scheme_functions_for_glut();
 	register_scheme_functions_for_meshes();
+	register_scheme_functions_for_impex();
 }
 
 void start_console_thread() {

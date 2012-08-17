@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libcgl.la
 #noinst_PROGRAMS = bezier blub bspline
 
 if CAN_USE_GUILE
-BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x
+BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x
 endif
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
@@ -33,6 +33,8 @@ snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL
 SUFFIXES: .x
 .c.x:
 	guile-snarf -o $@ $< $(snarf_opts)
+.cpp.x:
+	guile-snarf -o $@ $< $(snarf_opts)
 endif
 
 # for bison/flex
@@ -61,7 +63,7 @@ bezier_LDADD = $(GUILE_LDFLAGS)
 bspline_LDADD = $(GUILE_LDFLAGS)
 
 if CAN_USE_GUILE
-scheme.c camera.c shader.c texture.c glut.c mesh.c: shader.x camera.x texture.x glut.x mesh.x
+scheme.c camera.c shader.c texture.c glut.c mesh.c impex.cpp: shader.x camera.x texture.x glut.x mesh.x impex.x
 endif
 
 # install link

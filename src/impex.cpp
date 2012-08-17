@@ -143,6 +143,34 @@ extern "C" {
 	char* find_file(const char *basename) {
 		return file_lookup_function(basename);
 	}
+}
+
+#ifdef WITH_GUILE
+#include <libguile.h>
+#include <stdio.h>
+#include "scheme.h"
+
+extern "C" {
+	SCM_DEFINE(s_append_image_path, "append-image-path", 1, 0, 0, (SCM p), "") {
+		char *path = scm_to_locale_string(p);
+		append_image_path(path);
+		return p;
+	}
+
+	SCM_DEFINE(s_prepend_image_path, "prepend-image-path", 1, 0, 0, (SCM p), "") {
+		char *path = scm_to_locale_string(p);
+		prepend_image_path(path);
+		return p;
+	}
+
+	void register_scheme_functions_for_impex() {
+	#ifndef SCM_MAGIC_SNARFER
+	#include "impex.x"
+	#endif
+	}
+
 
 }
+
+#endif
 
