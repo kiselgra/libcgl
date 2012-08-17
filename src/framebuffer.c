@@ -196,6 +196,7 @@ SCM_DEFINE(s_make_framebuffer, "make-framebuffer", 3, 0, 0, (SCM n, SCM w, SCM h
 	const char *name = scm_to_locale_string(n);
 	int width = scm_to_int(w), height = scm_to_int(h);
 	framebuffer_ref ref = make_framebuffer(name, width, height);
+	free(name);
 	return scm_from_int(ref.id);
 }
 
@@ -204,6 +205,7 @@ SCM_DEFINE(s_attach_tex_as_cb, "attach-texture-as-colorbuffer", 3, 0, 0, (SCM to
 	framebuffer_ref fbo = { scm_to_int(tofbo) };
 	texture_ref tex = { scm_to_int(atex) };
 	attach_texture_as_colorbuffer(fbo, name, tex);
+	free(name);
 	return SCM_BOOL_T;
 }
 
@@ -212,6 +214,7 @@ SCM_DEFINE(s_attach_tex_as_db, "attach-texture-as-depthbuffer", 3, 0, 0, (SCM to
 	framebuffer_ref fbo = { scm_to_int(tofbo) };
 	texture_ref tex = { scm_to_int(atex) };
 	attach_texture_as_depthbuffer(fbo, name, tex);
+	free(name);
 	return SCM_BOOL_T;
 }
 

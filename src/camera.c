@@ -163,6 +163,7 @@ SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name
 	float ne = (float)scm_to_double(near);
 	float fa = (float)scm_to_double(far);
 	camera_ref ref = make_perspective_cam(n, &p, &d, &u, fo, as, ne, fa);
+	free(n);
 	return scm_from_int(ref.id);
 }
 

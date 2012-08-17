@@ -58,7 +58,7 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 		exit(-1);
 	}
 	const char *symb = scm_to_locale_string(scm_symbol_to_string(*(SCM*)s));
-	#define case(X, Y) else if (strcmp(X, symb) == 0) return Y
+	#define case(X, Y) else if (strcmp(X, symb) == 0) return free(symb), Y
 	if (0){}
 	case ("tex2d", GL_TEXTURE_2D);
 	case ("tex-2d", GL_TEXTURE_2D);

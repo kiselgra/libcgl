@@ -240,6 +240,7 @@ SCM_DEFINE(s_make_mesh, "make-mesh", 2, 0, 0, (SCM name, SCM vertex_buffers), ""
 	char *n = scm_to_locale_string(name);
 	unsigned int b = scm_to_uint(vertex_buffers);
 	mesh_ref ref = make_mesh(n, b);
+	free(n);
 	return scm_from_int(ref.id);
 }
 
@@ -280,6 +281,7 @@ SCM_DEFINE(s_add_vb_to_mesh, "add-vertex-buffer-to-mesh", 7, 0, 0,
 	add_vertex_buffer_to_mesh(ref, n, content, verts, elem_dimension, float_data, usage);
 	
 	scm_array_handle_release(&handle);
+	free(n);
 	return meshid;
 }
 

@@ -154,12 +154,14 @@ extern "C" {
 	SCM_DEFINE(s_append_image_path, "append-image-path", 1, 0, 0, (SCM p), "") {
 		char *path = scm_to_locale_string(p);
 		append_image_path(path);
+		free(path);
 		return p;
 	}
 
 	SCM_DEFINE(s_prepend_image_path, "prepend-image-path", 1, 0, 0, (SCM p), "") {
 		char *path = scm_to_locale_string(p);
 		prepend_image_path(path);
+		free(path);
 		return p;
 	}
 

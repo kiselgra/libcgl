@@ -288,6 +288,8 @@ SCM_DEFINE(s_make_texture_from_file, "texture-from-file", 4, 0, 0, (SCM name, SC
 	else        p = default_fbo_tex_params();
 // 	printf("calling mt with %s %s\n", fn, gl_enum_string(t));
 	texture_ref ref = make_texture(n, fn, t, &p);
+	free(n);
+	free(fn);
 	return scm_from_int(ref.id);
 }
 
@@ -301,6 +303,8 @@ SCM_DEFINE(s_make_texture_from_file_ub, "texture-from-file-ub", 4, 0, 0, (SCM na
 	else        p = default_fbo_tex_params();
 // 	printf("calling mt with %s %s\n", fn, gl_enum_string(t));
 	texture_ref ref = make_texture_ub(n, fn, t, &p);
+	free(n);
+	free(fn);
 	return scm_from_int(ref.id);
 }
 #endif
@@ -317,6 +321,7 @@ SCM_DEFINE(s_make_empty_texture, "make-texture-without-file", 7, 0, 0, (SCM name
 	tex_params_t p = default_fbo_tex_params();
 // 	printf("make texture %s with t=%s   f=%s   if=%s   ty=%s   w=%d   h=%d\n", n, gl_enum_string(target), gl_enum_string(format), gl_enum_string(int_format), gl_enum_string(type), width, height);
 	texture_ref ref = make_empty_texture(n, width, height, target, int_format, type, format, &p);
+	free(n);
 	return scm_from_int(ref.id);
 }
 
