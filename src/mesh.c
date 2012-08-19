@@ -256,6 +256,11 @@ SCM_DEFINE(s_unbind_mesh, "unbind-mesh", 1, 0, 0, (SCM id), "") {
 	return id;
 }
 
+SCM_DEFINE(s_mesh_name, "mesh-name", 1, 0, 0, (SCM id), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	return scm_from_locale_string(mesh_name(ref));
+}
+
 SCM_DEFINE(s_add_vb_to_mesh, "add-vertex-buffer-to-mesh", 7, 0, 0, 
            (SCM meshid, SCM vb_name, SCM content_type, SCM vertices, SCM elem_dim, SCM data, SCM usage_hint), "") {
 	// check the array first.

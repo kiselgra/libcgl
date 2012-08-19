@@ -40,6 +40,7 @@ void load_configfile(const char *filename) {
 	FILE *stream = open_memstream(&buffer, &bs);
 	fprintf(stream, "(load \"" DATADIR "/scheme/reader-extensions.scm\")", filename);
 	fprintf(stream, "(load \"" DATADIR "/scheme/shader.scm\")", filename);
+	fprintf(stream, "(load \"" DATADIR "/scheme/vecnf.scm\")", filename);
 	fprintf(stream, "(load \"%s\")", filename);
 	fclose(stream);
 
@@ -57,7 +58,7 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 		fprintf(stderr, "--> %s\n", scm_to_locale_string(s));
 		exit(-1);
 	}
-	const char *symb = scm_to_locale_string(scm_symbol_to_string(*(SCM*)s));
+	char *symb = scm_to_locale_string(scm_symbol_to_string(*(SCM*)s));
 	#define case(X, Y) else if (strcmp(X, symb) == 0) return free(symb), Y
 	if (0){}
 	case ("tex2d", GL_TEXTURE_2D);
@@ -85,6 +86,61 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 	fprintf(stderr, "invalid schme symbol for glenum: %s.\n", symb);
 	exit(-1);
 }
+
+vec3f list_to_vec3f(SCM v) {
+	if (scm_is_false(scm_list_p(v)))     scm_throw(scm_from_locale_symbol("vec3f-conversion"), scm_list_2(v, scm_from_locale_string("is not a list")));
+	if (scm_is_null(v))                  scm_throw(scm_from_locale_symbol("vec3f-conversion"), scm_list_1(scm_from_locale_string("the empty list is no valid vec3f")));
+	if (scm_to_int(scm_length(v)) != 3)  scm_throw(scm_from_locale_symbol("vec3f-conversion"), scm_list_2(v, scm_from_locale_string("is not a three component list")));
+	vec3f ret;
+	SCM el;
+	el = scm_list_ref(v, scm_from_int(0));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec3f-conversion"), scm_list_2(el, scm_from_locale_string("(element 0) is not a real number")));
+	ret.x = scm_to_double(el);
+	el = scm_list_ref(v, scm_from_int(1));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec3f-conversion"), scm_list_2(el, scm_from_locale_string("(element 1) is not a real number")));
+	ret.y = scm_to_double(el);
+	el = scm_list_ref(v, scm_from_int(2));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec3f-conversion"), scm_list_2(el, scm_from_locale_string("(element 2) is not a real number")));
+	ret.z = scm_to_double(el);
+	return ret;
+}
+
+vec4f list_to_vec4f(SCM v) {
+	if (scm_is_false(scm_list_p(v)))     scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(v, scm_from_locale_string("is not a list")));
+	if (scm_is_null(v))                  scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_1(scm_from_locale_string("the empty list is no valid vec4f")));
+	if (scm_to_int(scm_length(v)) != 4)  scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(v, scm_from_locale_string("is not a three component list")));
+	vec4f ret;
+	SCM el;
+	el = scm_list_ref(v, scm_from_int(0));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(el, scm_from_locale_string("(element 0) is not a real number")));
+	ret.x = scm_to_double(el);
+	el = scm_list_ref(v, scm_from_int(1));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(el, scm_from_locale_string("(element 1) is not a real number")));
+	ret.y = scm_to_double(el);
+	el = scm_list_ref(v, scm_from_int(2));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(el, scm_from_locale_string("(element 2) is not a real number")));
+	ret.z = scm_to_double(el);
+	el = scm_list_ref(v, scm_from_int(3));
+	if (scm_is_false(scm_real_p(el)))
+		scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(el, scm_from_locale_string("(element 3) is not a real number")));
+	ret.w = scm_to_double(el);
+	return ret;
+}
+
+SCM vec3f_to_list(vec3f *v) {
+	return scm_list_3(scm_from_double(v->x), scm_from_double(v->y), scm_from_double(v->z));
+}
+
+SCM vec4f_to_list(vec4f *v) {
+	return scm_list_4(scm_from_double(v->x), scm_from_double(v->y), scm_from_double(v->z), scm_from_double(v->w));
+}
+
 
 #endif
 

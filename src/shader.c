@@ -504,6 +504,10 @@ SCM_DEFINE(s_shader_link_info_log, "shader-link-info-log", 1, 0, 0, (SCM id), ""
 	const char *log = shader_info_log(ref);
 	return scm_from_locale_string(log ? log : (const char*)"nil");
 }
+SCM_DEFINE(s_shader_name, "shader-name", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	return scm_from_locale_string(shader_name(ref));
+}
 
 void register_scheme_functions_for_shaders() {
 #ifndef SCM_MAGIC_SNARFER
