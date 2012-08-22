@@ -43,6 +43,7 @@ void load_configfile(const char *filename) {
 	fprintf(stream, "(load \"" DATADIR "/scheme/reader-extensions.scm\")", filename);
 	fprintf(stream, "(load \"" DATADIR "/scheme/shader.scm\")", filename);
 	fprintf(stream, "(load \"" DATADIR "/scheme/vecnf.scm\")", filename);
+	fprintf(stream, "(load \"" DATADIR "/scheme/gl.h.scm\")", filename);
 	fprintf(stream, "(load \"%s\")", filename);
 	fclose(stream);
 

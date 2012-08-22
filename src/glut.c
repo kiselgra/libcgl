@@ -214,6 +214,22 @@ SCM_DEFINE(s_viewport, "viewport", 0, 0, 0, (), "") {
 	return scm_values(scm_list_4(scm_from_int(viewport[0]), scm_from_int(viewport[1]), scm_from_int(viewport[2]), scm_from_int(viewport[3])));
 }
 
+static SCM guile_display_handler_ref = SCM_BOOL_T;
+static void guile_display_handler() {
+	scm_call_0(guile_display_handler_ref);
+}
+SCM_DEFINE(s_register_display_function, "register-display-function", 1, 0, 0, (SCM handler), "") {
+	SCM old = guile_display_handler_ref;
+	guile_display_handler_ref = handler;
+	register_display_function(guile_display_handler);
+	return old;
+}
+
+SCM_DEFINE(s_swap_buffers, "glut:swap-buffers", 0, 0, 0, (), "") {
+	swap_buffers();
+	return SCM_BOOL_T;
+}
+
 void register_scheme_functions_for_glut() {
 #ifndef SCM_MAGIC_SNARFER
 #include "glut.x"
