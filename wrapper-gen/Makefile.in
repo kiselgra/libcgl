@@ -1,0 +1,12 @@
+.PHONY: all install uninstall
+
+all: gl.wrappers.c
+
+gl.wrappers.c: parse.lisp Makefile generate.sh
+	sh generate.sh
+	cp gl.wrappers.c gl.wrappers.c.x ../src/
+
+install:
+
+uninstall:
+

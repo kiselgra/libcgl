@@ -9,7 +9,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # name one of your source files here
 AC_CONFIG_SRCDIR([src/mesh.c])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES(Makefile src/Makefile scheme/Makefile libcgl.pc)
+AC_CONFIG_FILES(Makefile wrapper-gen/Makefile src/Makefile scheme/Makefile libcgl.pc)
 
 AX_PREFIX_CONFIG_H(src/cgl-config.h)
 

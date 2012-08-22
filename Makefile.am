@@ -1,5 +1,8 @@
-
-SUBDIRS = src scheme #doc lib-config-src # man
+SUBDIRS = 
+if CAN_USE_GUILE
+SUBDIRS += wrapper-gen
+endif
+SUBDIRS += src scheme #doc lib-config-src # man
 
 #.PHONY: doc
 #doc:

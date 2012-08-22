@@ -21,6 +21,7 @@ libcgl_la_SOURCES = 	camera.c       camera.h  \
                         texture.c      texture.h \
 						mm.h \
 						prepared.cpp   prepared.h \
+						gl.wrappers.c \
 						cgl-config.h
 
 
