@@ -22,6 +22,7 @@ void bind_framebuffer(framebuffer_ref ref);
 void unbind_framebuffer(framebuffer_ref ref);
 void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int height);
 framebuffer_ref find_framebuffer(const char *name);
+char* framebuffer_name(framebuffer_ref ref);
 bool valid_framebuffer_ref(framebuffer_ref ref);
 
 

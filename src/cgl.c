@@ -82,7 +82,14 @@ void check_for_gl_errors(const char *where)
 }
 
 void standard_gl_error_handler(GLenum error, const char *where) {
-	fprintf(stderr, "GL error %d detected in %s\n", error, where);
+    if (error == GL_INVALID_ENUM)
+        fprintf(stderr, "GL error 'Invalid Enum' (%d) detected in %s\n", error, where);
+    else if (error == GL_INVALID_VALUE)
+       fprintf(stderr, "GL error 'Invalid Value' (%d) detected in %s\n", error, where);
+    else if (error == GL_INVALID_OPERATION)
+       fprintf(stderr, "GL error 'Invalid Operation' (%d) detected in %s\n", error, where);
+    else
+        fprintf(stderr, "GL error %d detected in %s\n", error, where);
 	exit(-1);
 }
 

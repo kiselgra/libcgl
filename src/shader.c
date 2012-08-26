@@ -508,6 +508,24 @@ SCM_DEFINE(s_shader_name, "shader-name", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	return scm_from_locale_string(shader_name(ref));
 }
+SCM_DEFINE(s_bind_shader, "bind-shader", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	bind_shader(ref);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_unbind_shader, "unbind-shader", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	unbind_shader(ref);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_shader_uniform_loc, "uniform-location", 2, 0, 0, (SCM id, SCM uni), "") {
+	char *n = scm_to_locale_string(uni);
+	shader_ref ref = { scm_to_int(id) };
+	int loc = uniform_location(ref, n);
+	free(n);
+	return scm_from_int(loc);
+}
 
 void register_scheme_functions_for_shaders() {
 #ifndef SCM_MAGIC_SNARFER

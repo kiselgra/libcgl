@@ -12,6 +12,7 @@ void register_scheme_functions_for_glut();
 void register_scheme_functions_for_meshes();
 void register_scheme_functions_for_framebuffers();
 void register_scheme_functions_for_impex();
+void register_scheme_functions_for_prepared();
 void register_gl_functions();
 
 void load_snarfed_definitions() {
@@ -22,6 +23,7 @@ void load_snarfed_definitions() {
 	register_scheme_functions_for_glut();
 	register_scheme_functions_for_meshes();
 	register_scheme_functions_for_impex();
+    register_scheme_functions_for_prepared();
 	register_gl_functions();
 }
 
@@ -54,6 +56,9 @@ void load_configfile(const char *filename) {
 
 unsigned int scheme_symbol_to_gl_enum(void *s) {
 	if (!scm_is_symbol(*(SCM*)s)) {
+        if (scm_is_number(*(SCM*)s))
+            return scm_to_int(*(SCM*)s);
+        printf("%d\n", __LINE__);
 		fprintf(stderr, "tried to get a glenum from a scheme non-symbol.\n");
 		SCM port = scm_open_output_string();
 		scm_display(*(SCM*)s, port);

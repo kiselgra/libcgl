@@ -256,6 +256,13 @@ SCM_DEFINE(s_unbind_mesh, "unbind-mesh", 1, 0, 0, (SCM id), "") {
 	return id;
 }
 
+SCM_DEFINE(s_find_mesh, "find-mesh", 1, 0, 0, (SCM name), "") {
+	char *n = scm_to_locale_string(name);
+	mesh_ref ref = find_mesh(n);
+	free(n);
+	return scm_from_int(ref.id);
+}
+
 SCM_DEFINE(s_mesh_name, "mesh-name", 1, 0, 0, (SCM id), "") {
 	mesh_ref ref = { scm_to_int(id) };
 	return scm_from_locale_string(mesh_name(ref));

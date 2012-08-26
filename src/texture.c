@@ -226,7 +226,6 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 		float *data = malloc(sizeof(float)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
 		save_png1f(data, texture->width, texture->height, filename);
-		unbind_texture(ref);
 	}
 	else fprintf(stderr, "Don't know how to save texture of format %ud.\n", texture->format);
 
@@ -307,6 +306,15 @@ SCM_DEFINE(s_make_texture_from_file_ub, "texture-from-file-ub", 4, 0, 0, (SCM na
 	free(fn);
 	return scm_from_int(ref.id);
 }
+
+SCM_DEFINE(s_save_texture_as_png, "save-texture/png", 2, 0, 0, (SCM id, SCM to), "") {
+    texture_ref ref = { scm_to_int(id) };
+	char *path = scm_to_locale_string(to);
+    save_texture_as_png(ref, path);
+    free(path);
+    return SCM_BOOL_T;
+}
+
 #endif
 
 SCM_DEFINE(s_make_empty_texture, "make-texture-without-file", 7, 0, 0, (SCM name, SCM trg, SCM w, SCM h, SCM f, SCM inf, SCM ty), "") {
@@ -358,6 +366,11 @@ SCM_DEFINE(s_texture_w, "texture-width", 1, 0, 0, (SCM id), "") {
 SCM_DEFINE(s_texture_h, "texture-height", 1, 0, 0, (SCM id), "") {
 	texture_ref ref = { scm_to_int(id) };
 	return scm_from_unsigned_integer(texture_height(ref));
+}
+
+SCM_DEFINE(s_texture_name, "texture-name", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	return scm_from_locale_string(texture_name(ref));
 }
 
 void register_scheme_functions_for_textures() {
