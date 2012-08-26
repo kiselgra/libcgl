@@ -1,11 +1,12 @@
 (load "yacc.lisp")
 ;(use-package :yacc)
 
-(defparameter *int-types* (list "int" "GLint" "short" "GLshort" "GLsizei" "GLbyte"))
-(defparameter *uint-types* (list "GLuint" "GLushort" "GLubyte" "GLenum" "GLboolean" "GLbitfield"))
+(defparameter *int-types* (list "int" "GLint" "short" "GLshort" "GLsizei" "GLbyte" "GLchar" "GLint64" "GLcharARB" "GLint64EXT"))
+(defparameter *uint-types* (list "GLuint" "GLushort" "GLubyte" "GLenum" "GLboolean" "GLbitfield" "GLuint64" "GLuint64EXT"))
 (defparameter *float-types* (list "float" "GLfloat" "GLclampf"))
 (defparameter *double-types* (list "double" "GLdouble" "GLclampd"))
 (defparameter *void-types* (list "void" "GLvoid"))
+(defparameter *ptr-types* (list "GLsync" "GLsizeiptr" "GLintptr" "GLsizeptrARB" "GLsizeiptrARB" "GLintptrARB" "GLhandleARB"))
 
 (defun parameter-c-basetype (p)
   (cond ((find p *int-types* :test #'string=) '|int|)
@@ -13,6 +14,7 @@
 	((find p *float-types* :test #'string=) '|float|)
 	((find p *double-types* :test #'string=) '|double|)
 	((find p *void-types* :test #'string=) '|void|)
+	((find p *ptr-types* :test #'string=) 'pointer)
 	(t 'invalid)))
 
 (defun scm-to-c-function (basetype)
@@ -28,7 +30,12 @@
     ((|float| |double|) "scm_from_double")))
 
 (defun pointer-type (list)
-  (find "*" list :test #'string=))
+  (if (find "*" list :test #'string=)
+      t
+      (progn 
+	(loop for type in list do (if (eq (parameter-c-basetype type) 'pointer)
+				      (return-from pointer-type t)))
+	nil)))
 
 (defun array-type (list)
   (find-if  (lambda (s) (find #\[ s :test #'char=)) list))
@@ -43,56 +50,61 @@
 	  list
 	  nil)))
      
+(let ((line 1))
+  (defun c-lexer (&optional (stream *standard-input*) (debug *lexer-debug*))
+    (let ((accum-string "")
+	  (accum-number "")
+	  (type-words (list "int" "float" "void" "const" "unsigned" "struct" "extern"
+			    "GLenum" "GLint" "GLfloat" "GLushort" "GLsizei" "GLvoid" "GLclampf" "GLboolean" "GLbitfield" "GLclampd" "GLuint" "GLubyte" "GLbyte" "GLdouble" "GLshort" "GLprogramcallbackMESA" "GLsizeiptr" "GLintptr" "GLchar" "GLint64" "GLsizeptrARB" "GLsizeiptrARB" "GLintptrARB" "GLhandleARB" "GLcharARB" "GLsync" "GLuint64" "_cl_context" "_cl_event" "GLint64EXT" "GLuint64EXT")))
+      (flet ((paste (a b) (format nil "~a~a" a b))
+	     (emit (putback) (cond ((> (length accum-string) 0)
+				    (if putback (unread-char putback stream))
+				    (if debug (format t "EMIT ~a~%" accum-string))
+				    (if (find accum-string type-words :test #'string=)
+					(return-from c-lexer (values 'type-part accum-string))
+					(return-from c-lexer (values 'id accum-string))))
+				   ((> (length accum-number) 0)
+				    (if putback (unread-char putback stream))
+				    (if debug (format t "EMIT ~a~%" accum-number))
+				    (return-from c-lexer (values 'number (parse-integer accum-number))))
+				   (t nil))))
+	(macrolet ((skip-until (condition-and-action with-accum &body body)
+		     `(do ((curr (read-char stream nil nil) (read-char stream nil nil))
+			   (prev #\0 curr)
+			   ,@(if with-accum `((accum "")) nil))
+			  ,condition-and-action
+			(progn ,@(if with-accum `((setf accum (paste accum curr))))
+			       ,@body))))
+	  (loop (let ((c (read-char stream nil nil)))
+		  ;(if debug (format t "current input char is ~a.~%" c))
+		  (cond ((null c) (return-from c-lexer (values nil nil)))
+			((or (alpha-char-p c)
+			     (char= c #\_)) (if (> (length accum-number) 0)
+					      (setf accum-number (paste accum-number c))
+					      (setf accum-string (paste accum-string c))))
+			((digit-char-p c) (if (> (length accum-string) 0)
+					      (setf accum-string (paste accum-string c))
+					      (setf accum-number (paste accum-number c))))
+			((member c '(#\tab #\space)) (emit nil))
+			((char= c #\newline) (incf line) (emit nil))
+			((char= c #\") (skip-until ((and (char= curr #\") (char/= prev #\\))
+						    (return-from c-lexer (values 'string accum))) t))
+			((char= c #\() (emit c) (if debug (format t "EMIT (~%")) (return-from c-lexer (values 'left-paren "(")))
+			((char= c #\)) (emit c) (if debug (format t "EMIT )~%")) (return-from c-lexer (values 'right-paren ")")))
+			((char= c #\;) (emit c) (if debug (format t "EMIT ;~%")) (return-from c-lexer (values 'semicolon ";")))
+			((char= c #\,) (emit c) (if debug (format t "EMIT ,~%")) (return-from c-lexer (values 'comma ",")))
+			((char= c #\#) (skip-until ((and (char= curr #\newline) (char/= prev #\\)) (incf line)) nil)) ; just skip
+			((char= c #\/) (let ((next (read-char stream nil nil)))
+					 (cond ((char= next #\/)
+						(skip-until ((and (char= curr #\newline) (char/= prev #\\)) (incf line)) nil)) ;just skip
+					       ((char= next #\*)
+						(skip-until ((and (char= curr #\/) (char= prev #\*))) nil)))))
+			((char= c #\*) (emit c) (if debug (format t "EMIT *~%")) (return-from c-lexer (values 'type-part "*")))
+			((char= c #\[) (emit c) (skip-until ((char= curr #\]) (return-from c-lexer (values 'array (format nil "[~a]" accum)))) t))
+			)))))))
 
-(defun c-lexer (&optional (stream *standard-input*))
-  (let ((accum-string "")
-	(accum-number "")
-	(type-words (list "int" "float" "void" "const" "unsigned"
-			  "GLenum" "GLint" "GLfloat" "GLushort" "GLsizei" "GLvoid" "GLclampf" "GLboolean" "GLbitfield" "GLclampd" "GLuint" "GLubyte" "GLbyte" "GLdouble" "GLshort" "GLprogramcallbackMESA")))
-    (flet ((paste (a b) (format nil "~a~a" a b))
-	   (emit (putback) (cond ((> (length accum-string) 0)
-				  (if putback (unread-char putback stream))
-				  ;(format t "EMIT ~a~%" accum-string)
-				  (if (find accum-string type-words :test #'string=)
-				      (return-from c-lexer (values 'type-part accum-string))
-				      (return-from c-lexer (values 'id accum-string))))
-				 ((> (length accum-number) 0)
-				  (if putback (unread-char putback stream))
-				  ;(format t "EMIT ~a~%" accum-number)
-				  (return-from c-lexer (values 'number (parse-integer accum-number))))
-				 (t nil))))
-      (macrolet ((skip-until (condition-and-action with-accum &body body)
-		   `(do ((curr (read-char stream nil nil) (read-char stream nil nil))
-			 (prev #\0 curr)
-			 ,@(if with-accum `((accum "")) nil))
-			,condition-and-action
-		      (progn ,@(if with-accum `((setf accum (paste accum curr))))
-			     ,@body))))
-	(loop (let ((c (read-char stream nil nil)))
-		;(format t "current input char is ~a.~%" c)
-		(cond ((null c) (return-from c-lexer (values nil nil)))
-		      ((alpha-char-p c) (if (> (length accum-number) 0)
-					    (setf accum-number (paste accum-number c))
-					    (setf accum-string (paste accum-string c))))
-		      ((digit-char-p c) (if (> (length accum-string) 0)
-					    (setf accum-string (paste accum-string c))
-					    (setf accum-number (paste accum-number c))))
-		      ((member c '(#\newline #\tab #\space)) (emit nil))
-		      ((char= c #\") (skip-until ((and (char= curr #\") (char/= prev #\\))
-						  (return-from c-lexer (values 'string accum)) t)))
-		      ((char= c #\() (emit c) (return-from c-lexer (values 'left-paren "(")))
-		      ((char= c #\)) (emit c) (return-from c-lexer (values 'right-paren ")")))
-		      ((char= c #\;) (emit c) (return-from c-lexer (values 'semicolon ";")))
-		      ((char= c #\,) (emit c) (return-from c-lexer (values 'comma ",")))
-		      ((char= c #\#) (skip-until ((and (char= curr #\newline) (char/= prev #\\))) nil)) ; just skip
-		      ((char= c #\/) (let ((next (read-char stream nil nil)))
-				       (cond ((char= next #\/)
-					      (skip-until ((and (char= curr #\newline) (char/= prev #\\))) nil)) ;just skip
-					     ((char= next #\*)
-					      (skip-until ((and (char= curr #\/) (char= prev #\*))) nil)))))
-		      ((char= c #\*) (emit c) (return-from c-lexer (values 'type-part "*")))
-		      ((char= c #\[) (emit c) (skip-until ((char= curr #\]) (return-from c-lexer (values 'array (format nil "[~a]" accum)))) t))
-		      )))))))
+  (defun lexer-line ()
+    (prog1 line (setf line 1))))
 
 (defclass decl () ((type :initarg :type) (name :initarg :name)))
 (defclass func () ((ret-type :initarg :ret-type) (name :initarg :name) (args :initarg :args)))
@@ -104,8 +116,12 @@
   (:terminals (id number left-paren right-paren string semicolon comma type-part array))
 
   (global-scope
-   function-declaration
-   (function-declaration global-scope))
+   declaration
+   (declaration global-scope))
+
+  (declaration
+   struct-forward-decl
+   function-declaration)
 
   (function-declaration
    (type id left-paren right-paren semicolon
@@ -116,6 +132,9 @@
 	 (lambda (ty i l a r s)
 	   (declare (ignore r l s))
 	   (pushnew (make-instance 'func :ret-type ty :name i :args a) *functions*))))
+
+ (struct-forward-decl
+   (type id semicolon))
    
  (type
   (type-part type (lambda (ty seq) (cons ty seq)))
@@ -223,7 +242,9 @@
       (line "/* generated by cgl's gl wrapper generator. licensed under the terms of the GNU GPL (see the cgl license file). */")
       (line)
       (line "#include <libguile.h>")
+      (line "#define GL_GLEXT_PROTOTYPES")
       (line "#include <GL/gl.h>")
+      (line "#include <GL/glext.h>")
       (line)
       (print-wrappers *functions* stream)
       (line "/* we the actual setup code */")
@@ -235,6 +256,8 @@
       (line "}")
       (line)
       (line "/* we're done now :) */"))))
+
+(defparameter *lexer-debug* nil)
 
 (let ((cmdline (rest sb-ext:*posix-argv*)))
   (setf *invoke-debugger-hook*
