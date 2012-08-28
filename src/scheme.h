@@ -19,6 +19,10 @@ vec3f list_to_vec3f(SCM v);
 vec4f list_to_vec4f(SCM v);
 SCM vec3f_to_list(vec3f *v);
 SCM vec4f_to_list(vec4f *v);
+SCM vec3f_to_scm_vec(vec3f *v);
+SCM vec4f_to_scm_vec(vec4f *v);
+vec3f scm_vec_to_vec3f(SCM v);
+vec4f scm_vec_to_vec4f(SCM v);
 
 #ifdef __cplusplus
 }

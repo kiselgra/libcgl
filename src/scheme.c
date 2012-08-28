@@ -149,6 +149,21 @@ SCM vec4f_to_list(vec4f *v) {
 	return scm_list_4(scm_from_double(v->x), scm_from_double(v->y), scm_from_double(v->z), scm_from_double(v->w));
 }
 
+SCM vec3f_to_scm_vec(vec3f *v) {
+    return vec3f_to_list(v);
+}
+
+SCM vec4f_to_scm_vec(vec4f *v) {
+    return vec4f_to_list(v);
+}
+
+vec4f scm_vec_to_vec4f(SCM v) {
+    return list_to_vec4f(v);
+}
+
+vec3f scm_vec_to_vec3f(SCM v) {
+    return list_to_vec3f(v);
+}
 
 #endif
 
