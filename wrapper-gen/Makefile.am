@@ -1,12 +1,8 @@
-.PHONY: all install uninstall
-
-all: gl.wrappers.c
+BUILT_SOURCES = gl.wrappers.c
+EXTRA_DIST = gl3.h parse.lisp generate.sh yacc.lisp
 
 gl.wrappers.c: parse.lisp Makefile generate.sh
 	sh generate.sh
 	cp gl.wrappers.c gl.wrappers.c.x ../src/
 
-install:
-
-uninstall:
 
