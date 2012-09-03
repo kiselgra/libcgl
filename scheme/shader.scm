@@ -2,12 +2,11 @@
 
 (define make-shader-ll make-shader)
 (define* (make-shader name #:key vertex-shader fragment-shader geometry-shader inputs uniforms)
-  (format #t "make shader ~a ~a ~a~%" name inputs uniforms)
+  ;(format #t "make shader ~a ~a ~a~%" name inputs uniforms)
   (let ((old-shader (find-shader name)))
     (if old-shader
 	    (destroy-shader old-shader)))
   (let* ((uniforms (if uniforms uniforms '()))
-  		 (xxx (format #t "make-ll ~a ~a:~a~%" (length inputs) (length uniforms) uniforms))
 		 (shader (make-shader-ll name (length inputs) (length uniforms))))
     (add-vertex-source shader vertex-shader)
     (add-fragment-source shader fragment-shader)
@@ -16,7 +15,10 @@
       (add-shader-input shader (car rest) i)
       (if (not (null? (cdr rest)))
           (rec (cdr rest) (1+ i))))
-	(for-each (lambda (u) (format #t "adding uniform ~a~%" u) (add-shader-uniform shader u)) uniforms)
+	(for-each (lambda (u) 
+                ;(format #t "adding uniform ~a~%" u) 
+                (add-shader-uniform shader u)) 
+              uniforms)
     (if (not (compile-and-link-shader shader))
 	    (begin
 		  (format #t "info log for shader ~a~%" name)
