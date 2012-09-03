@@ -45,55 +45,7 @@ struct shader {
 #define REF shader_ref
 #include "mm.h"
 
-/*
-static struct shader *shaders = 0;
-static unsigned int shaders_allocated = 0,
-                    next_shader_index = 0;
-
-struct free_entry {
-	int id;
-	struct free_entry *next;
-};
-static struct free_entry *free_list = 0;
-
-void put_on_free_list(int id) {
-	struct free_entry *old = free_list;
-	free_list = malloc(sizeof(struct free_entry));
-	free_list->next = old;
-	free_list->id = id;
-}
-
-int get_from_free_list() {
-	if (!free_list) return -1;
-	int ret = free_list->id;
-	struct free_list *old = free_list;
-	free_list = free_list->next;
-	free(old);
-	return ret;
-}
-
-bool element_available_on_free_list() { return free_list != 0; }
-*/
-
 shader_ref make_shader(const char *name, int input_vars, int uniforms) {
-	printf("--> %s %d %d\n", name, input_vars, uniforms);
-	/*
-	shader_ref ref;
-	if (element_available_on_free_list())
-		ref.id = get_from_free_list();
-	else {
-		if (next_shader_index >= shaders_allocated) {
-			struct shader *old_array = shaders;
-			unsigned int allocate = 1.5 * (shaders_allocated + 1);
-			shaders = malloc(sizeof(struct shader) * allocate);
-			for (int i = 0; i < shaders_allocated; ++i)
-				shaders[i] = old_array[i];
-			shaders_allocated = allocate;
-			free(old_array);
-		}
-		ref.id = next_shader_index++;
-	}
-	*/
 	shader_ref ref = allocate_ref();
 	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
