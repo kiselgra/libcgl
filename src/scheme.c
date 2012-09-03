@@ -14,6 +14,7 @@ void register_scheme_functions_for_framebuffers();
 void register_scheme_functions_for_impex();
 void register_scheme_functions_for_prepared();
 void register_gl_functions();
+void register_math_functions();
 
 void load_snarfed_definitions() {
 	register_scheme_functions_for_shaders();
@@ -25,6 +26,7 @@ void load_snarfed_definitions() {
 	register_scheme_functions_for_impex();
     register_scheme_functions_for_prepared();
 	register_gl_functions();
+    register_math_functions();
 }
 
 void start_console_thread() {
@@ -163,6 +165,53 @@ vec4f scm_vec_to_vec4f(SCM v) {
 
 vec3f scm_vec_to_vec3f(SCM v) {
     return list_to_vec3f(v);
+}
+
+static const int mat_size = 16*sizeof(float);
+
+SCM matrix4x4f_to_scm(matrix4x4f *m) {
+    SCM bv = scm_c_make_bytevector(mat_size);
+    memcpy(SCM_BYTEVECTOR_CONTENTS(bv), m->col_major, mat_size);
+    return bv;
+}
+
+SCM scm_to_matrix4x4f(matrix4x4f *m, SCM bv) {
+    if (!scm_is_bytevector(bv))
+        scm_throw(scm_from_locale_symbol("matrix-error"), scm_list_2(scm_from_locale_string("not a bytevector"), bv));
+    if (scm_c_bytevector_length(bv) != mat_size)
+        scm_throw(scm_from_locale_symbol("matrix-error"), scm_list_2(scm_from_locale_string("bytevector of invalid size"), bv));
+
+    memcpy(m->col_major, SCM_BYTEVECTOR_CONTENTS(bv), mat_size);
+
+    return bv;
+}
+
+SCM_DEFINE(s_make_unit_matrix, "make-unit-matrix", 0, 0, 0, (), "") {
+    matrix4x4f m;
+    make_unit_matrix4x4f(&m);
+    return matrix4x4f_to_scm(&m);
+}
+
+SCM_DEFINE(s_make_rotation_matrix, "make-rotation-matrix", 2, 0, 0, (SCM axis, SCM radians), "Note: the angle is in radians.") {
+    vec3f a = scm_vec_to_vec3f(axis);
+    float r = scm_to_double(radians);
+    matrix4x4f m;
+    make_rotation_matrix4x4f(&m, &a, r);
+    return matrix4x4f_to_scm(&m);
+}
+
+SCM_DEFINE(s_mat_mult, "multiply-matrices", 2, 0, 0, (SCM lhs, SCM rhs), "") {
+    matrix4x4f l, r, res;
+    scm_to_matrix4x4f(&l, lhs);
+    scm_to_matrix4x4f(&r, rhs);
+    multiply_matrices4x4f(&res, &l, &r);
+    return matrix4x4f_to_scm(&res);
+}
+
+void register_math_functions() {
+#ifndef SCM_MAGIC_SNARFER
+#include "scheme.x"
+#endif
 }
 
 #endif
