@@ -5,18 +5,18 @@
 
 #include <libguile.h>
 
-void register_scheme_functions_for_shaders();
-void register_scheme_functions_for_cameras();
-void register_scheme_functions_for_textures();
-void register_scheme_functions_for_glut();
-void register_scheme_functions_for_meshes();
-void register_scheme_functions_for_framebuffers();
-void register_scheme_functions_for_impex();
-void register_scheme_functions_for_prepared();
-void register_gl_functions();
-void register_math_functions();
+void register_scheme_functions_for_shaders(void);
+void register_scheme_functions_for_cameras(void);
+void register_scheme_functions_for_textures(void);
+void register_scheme_functions_for_glut(void);
+void register_scheme_functions_for_meshes(void);
+void register_scheme_functions_for_framebuffers(void);
+void register_scheme_functions_for_impex(void);
+void register_scheme_functions_for_prepared(void);
+void register_gl_functions(void);
+void register_math_functions(void);
 
-void load_snarfed_definitions() {
+void load_snarfed_definitions(void) {
 	register_scheme_functions_for_shaders();
 	register_scheme_functions_for_cameras();
 	register_scheme_functions_for_textures();
@@ -29,7 +29,7 @@ void load_snarfed_definitions() {
     register_math_functions();
 }
 
-void start_console_thread() {
+void start_console_thread(void) {
 	scm_c_eval_string("(define repl-thread (call-with-new-thread (lambda () "
 	                                          "(use-modules (ice-9 readline)) "
 											  "(activate-readline) "
