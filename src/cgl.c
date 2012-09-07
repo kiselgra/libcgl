@@ -1,7 +1,6 @@
 #include "cgl.h"
 
-// #include "glut.h"
-// #include "scheme.h"
+#include "glut.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +8,7 @@
 
 #ifdef WITH_GUILE
 #include <libguile.h>
+#include "scheme.h"
 #endif
 
 static void hop(void *data, int argc, char **argv) {
