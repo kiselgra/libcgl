@@ -6,7 +6,8 @@ BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x pr
 endif
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
-libcgl_la_SOURCES = 	camera.c       camera.h  \
+libcgl_la_SOURCES = 	atomic_buffer.c atomic_buffer.h \
+						camera.c       camera.h  \
                         cgl.c          cgl.h          \
                         drawelement.c  drawelement.h  \
                         framebuffer.c  framebuffer.h  \
