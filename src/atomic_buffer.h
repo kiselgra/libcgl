@@ -22,6 +22,9 @@ void unmap_atomic_buffer(atomic_buffer_ref ref);
 void reset_atomic_buffer(atomic_buffer_ref ref, int value);
 void reset_atomic_bufferu(atomic_buffer_ref ref, unsigned int value);
 
+atomic_buffer_ref find_atomic_buffer(const char *name);
+char* atomic_buffer_name(atomic_buffer_ref ref);
+
 #ifdef __cplusplus
 }
 #endif

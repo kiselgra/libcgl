@@ -15,6 +15,7 @@ void register_scheme_functions_for_impex(void);
 void register_scheme_functions_for_prepared(void);
 void register_gl_functions(void);
 void register_math_functions(void);
+void register_scheme_functions_for_atomic_buffers(void);
 
 void load_snarfed_definitions(void) {
 	register_scheme_functions_for_shaders();
@@ -25,6 +26,7 @@ void load_snarfed_definitions(void) {
 	register_scheme_functions_for_meshes();
 	register_scheme_functions_for_impex();
     register_scheme_functions_for_prepared();
+	register_scheme_functions_for_atomic_buffers();
 	register_gl_functions();
     register_math_functions();
 }

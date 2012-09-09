@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libcgl.la
 #noinst_PROGRAMS = bezier blub bspline
 
 if CAN_USE_GUILE
-BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x
+BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x
 endif
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
