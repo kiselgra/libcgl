@@ -325,6 +325,14 @@ extern "C" {
     }
 
 
+    SCM_DEFINE(s_make_quad, "make-quad", 1, 0, 0, (SCM name), "") {
+        char *n = scm_to_locale_string(name);
+        mesh_ref ref = make_quad(n, 0);
+        free(n);
+        return scm_from_int(ref.id);
+    }
+
+
 
     void register_scheme_functions_for_prepared() {
     #ifndef SCM_MAGIC_SNARFER

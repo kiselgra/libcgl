@@ -256,6 +256,16 @@ SCM_DEFINE(s_fbo_name, "framebuffer-name", 1, 0, 0, (SCM afbo), "") {
 	return scm_from_locale_string(framebuffer_name(fbo));
 }
 
+SCM_DEFINE(s_find_framebuffer, "find-framebuffer", 1, 0, 0, (SCM name), "") {
+	char *n = scm_to_locale_string(name);
+	framebuffer_ref ref = find_framebuffer(n);
+	free(n);
+	if (valid_framebuffer_ref(ref))
+		return scm_from_int(ref.id);
+	return SCM_BOOL_F;
+}
+
+
 void register_scheme_functions_for_framebuffers() {
 #ifndef SCM_MAGIC_SNARFER
 #include "framebuffer.x"
