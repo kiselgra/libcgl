@@ -199,6 +199,18 @@ void unbind_texture(texture_ref ref) {
 	glBindTexture(textures[ref.id].target, 0); 
 }
 
+void bind_texture_as_image(texture_ref ref, int unit, int level, GLenum access, GLenum format) {
+	struct texture *texture = textures + ref.id;
+    texture->bound = true;
+    glBindImageTexture(unit, texture->texid, 0, GL_FALSE, 0, access, format);
+}
+
+void unbind_texture_as_image(texture_ref ref, int unit) {
+	struct texture *texture = textures + ref.id;
+    texture->bound = false;
+    glBindImageTexture(unit, 0, 0, GL_FALSE, 0, 0, 0);
+}
+
 void save_texture_as_png(texture_ref ref, const char *filename) {
 #if CGL_GL_VERSION == GL3
 	if (!valid_texture_ref(ref)) {
@@ -357,6 +369,22 @@ SCM_DEFINE(s_unbind_tex, "unbind-texture", 1, 0, 0, (SCM id), "") {
 	return scm_from_unsigned_integer(texture_width(ref));
 }
 
+SCM_DEFINE(s_bind_texture_as_image, "bind-texture-as-image", 5, 0, 0, (SCM id, SCM unit, SCM level, SCM access, SCM format), "") {
+    texture_ref ref = { scm_to_int(id) };
+    unsigned int u = scm_to_uint(unit),
+                 l = scm_to_uint(level),
+                 a = scm_to_uint(access),
+                 f = scm_to_uint(format);
+    bind_texture_as_image(ref, u, l, a, f);
+    return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_unbind_texture_as_image, "unbind-texture-as-image", 2, 0, 0, (SCM id, SCM unit), "") {
+    texture_ref ref = { scm_to_int(id) };
+    unsigned int u = scm_to_uint(unit);
+    unbind_texture_as_image(ref, u);
+    return SCM_BOOL_T;
+}
 
 SCM_DEFINE(s_texture_w, "texture-width", 1, 0, 0, (SCM id), "") {
 	texture_ref ref = { scm_to_int(id) };
@@ -371,6 +399,15 @@ SCM_DEFINE(s_texture_h, "texture-height", 1, 0, 0, (SCM id), "") {
 SCM_DEFINE(s_texture_name, "texture-name", 1, 0, 0, (SCM id), "") {
 	texture_ref ref = { scm_to_int(id) };
 	return scm_from_locale_string(texture_name(ref));
+}
+
+SCM_DEFINE(s_find_texture, "find-texture", 1, 0, 0, (SCM name), "") {
+	char *n = scm_to_locale_string(name);
+	texture_ref ref = find_texture(n);
+	free(n);
+	if (valid_texture_ref(ref))
+		return scm_from_int(ref.id);
+	return SCM_BOOL_F;
 }
 
 void register_scheme_functions_for_textures() {
