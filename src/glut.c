@@ -230,6 +230,13 @@ SCM_DEFINE(s_swap_buffers, "glut:swap-buffers", 0, 0, 0, (), "") {
 	return SCM_BOOL_T;
 }
 
+SCM_DEFINE(s_check_for_gl_errors, "check-for-gl-errors", 1, 0, 0, (SCM msg), "") {
+    char *m = scm_to_locale_string(msg);
+    check_for_gl_errors(m);
+    free(m);
+    return SCM_BOOL_T;
+}
+
 void register_scheme_functions_for_glut() {
 #ifndef SCM_MAGIC_SNARFER
 #include "glut.x"

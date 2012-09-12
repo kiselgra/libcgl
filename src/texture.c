@@ -203,12 +203,14 @@ void bind_texture_as_image(texture_ref ref, int unit, int level, GLenum access, 
 	struct texture *texture = textures + ref.id;
     texture->bound = true;
     glBindImageTexture(unit, texture->texid, 0, GL_FALSE, 0, access, format);
+    check_for_gl_errors(__FUNCTION__);
 }
 
 void unbind_texture_as_image(texture_ref ref, int unit) {
 	struct texture *texture = textures + ref.id;
     texture->bound = false;
-    glBindImageTexture(unit, 0, 0, GL_FALSE, 0, 0, 0);
+    glBindImageTexture(unit, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+    check_for_gl_errors(__FUNCTION__);
 }
 
 void save_texture_as_png(texture_ref ref, const char *filename) {
