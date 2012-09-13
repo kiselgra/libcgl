@@ -241,6 +241,11 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 		glGetTexImage(texture->target, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
 		save_png1f(data, texture->width, texture->height, filename);
 	}
+	else if (texture->internal_format == GL_R32F) {
+		float *data = malloc(sizeof(float)*texture->width*texture->height);
+		glGetTexImage(texture->target, 0, GL_RED, GL_FLOAT, data);
+		save_png1f(data, texture->width, texture->height, filename);
+	}
 	else fprintf(stderr, "Don't know how to save texture of format %ud.\n", texture->format);
 
 	if (!was_bound)
