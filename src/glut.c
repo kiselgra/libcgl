@@ -237,6 +237,10 @@ SCM_DEFINE(s_check_for_gl_errors, "check-for-gl-errors", 1, 0, 0, (SCM msg), "")
     return SCM_BOOL_T;
 }
 
+SCM_DEFINE(s_time_stamp, "glut:time-stamp", 0, 0, 0, (), "Wall time since glut started.") {
+	return scm_from_int(glutGet(GLUT_ELAPSED_TIME));
+}
+
 void register_scheme_functions_for_glut() {
 #ifndef SCM_MAGIC_SNARFER
 #include "glut.x"
