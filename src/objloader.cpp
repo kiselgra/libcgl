@@ -59,9 +59,9 @@ extern "C" {
 			std::string global_name = std::string(name) + "/" + mit->first;
 			output->materials[i].name = (char*)malloc(global_name.length() + 1);
 			strcpy(output->materials[i].name, global_name.c_str());
-			make_vec3f(&output->materials[i].col_amb, mit->second->amb_r, mit->second->amb_g, mit->second->amb_b);
-			make_vec3f(&output->materials[i].col_diff, mit->second->dif_r, mit->second->dif_g, mit->second->dif_b);
-			make_vec3f(&output->materials[i].col_spec, mit->second->spe_r, mit->second->spe_g, mit->second->spe_b);
+			make_vec4f(&output->materials[i].col_amb, mit->second->amb_r, mit->second->amb_g, mit->second->amb_b, mit->second->alpha);
+			make_vec4f(&output->materials[i].col_diff, mit->second->dif_r, mit->second->dif_g, mit->second->dif_b, mit->second->alpha);
+			make_vec4f(&output->materials[i].col_spec, mit->second->spe_r, mit->second->spe_g, mit->second->spe_b, mit->second->alpha);
 			if (mit->second->tex_a != "") {
 				output->materials[i].tex_a = (char*)malloc(mit->second->tex_a.length()+1);
 				strcpy(output->materials[i].tex_a, mit->second->tex_a.c_str());

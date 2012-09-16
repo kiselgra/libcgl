@@ -18,7 +18,7 @@ typedef struct {
 
 typedef struct {
 	char *name;
-	vec3f col_amb, col_diff, col_spec;
+	vec4f col_amb, col_diff, col_spec;
 	char *tex_a, *tex_d, *tex_s, *tex_bump;
 } obj_mtl;
 
