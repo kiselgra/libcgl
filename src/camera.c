@@ -1,4 +1,5 @@
 #include "camera.h"
+#include "gl-version.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -135,6 +136,7 @@ bool is_perspective_camera(camera_ref ref) {
 #ifdef WITH_GUILE
 #include <libguile.h>
 #include <stdio.h>
+#include "scheme.h"
 
 SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name, SCM pos, SCM dir, SCM up, SCM fovy, SCM aspect, SCM near, SCM far), "") {
 	char *n = scm_to_locale_string(name);
@@ -170,6 +172,65 @@ SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name
 SCM_DEFINE(s_use_cam, "use-camera", 1, 0, 0, (SCM id), "") {
 	camera_ref ref = { scm_to_int(id) };
 	use_camera(ref);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_pos_of_cam, "cam-pos", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	matrix4x4f *lookat = lookat_matrix_of_cam(ref);
+	vec3f v;
+	extract_pos_vec3f_of_matrix(&v, lookat);
+	return vec3f_to_list(&v);
+}
+
+SCM_DEFINE(s_dir_of_cam, "cam-dir", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	matrix4x4f *lookat = lookat_matrix_of_cam(ref);
+	vec3f v;
+	extract_dir_vec3f_of_matrix(&v, lookat);
+	return vec3f_to_list(&v);
+}
+
+SCM_DEFINE(s_up_of_cam, "cam-up", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	matrix4x4f *lookat = lookat_matrix_of_cam(ref);
+	vec3f v;
+	extract_up_vec3f_of_matrix(&v, lookat);
+	return vec3f_to_list(&v);
+}
+
+SCM_DEFINE(s_curr_cam, "current-camera", 0, 0, 0, (), "") {
+	camera_ref ref = current_camera();
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_find_cam, "find-camera", 1, 0, 0, (SCM name), "") {
+	char *n = scm_to_locale_string(name);
+	camera_ref ref = find_camera(n);
+	free(n);
+	if (valid_camera_ref(ref))
+		return scm_from_int(ref.id);
+	return SCM_BOOL_F;
+}
+
+void s_uniform_cam_any_matrix(SCM loc, matrix4x4f *m) {
+	int location = scm_to_int(loc);
+	glUniformMatrix4fv(location, 1, GL_FALSE, m->col_major);
+}
+
+SCM_DEFINE(s_uniform_cam_matrix_p, "uniform-camera-proj-matrix", 2, 0, 0, (SCM loc, SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	s_uniform_cam_any_matrix(loc, projection_matrix_of_cam(ref));
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_uniform_cam_matrix_v, "uniform-camera-view-matrix", 2, 0, 0, (SCM loc, SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	s_uniform_cam_any_matrix(loc, gl_view_matrix_of_cam(ref));
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_uniform_cam_matrix_n, "uniform-camera-normal-matrix", 2, 0, 0, (SCM loc, SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	s_uniform_cam_any_matrix(loc, gl_normal_matrix_for_view_of(ref));
 	return SCM_BOOL_T;
 }
 
