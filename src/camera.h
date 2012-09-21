@@ -31,6 +31,7 @@ float camera_aspect(camera_ref ref);
 
 void use_camera(camera_ref ref);
 camera_ref current_camera(void);
+const char* camera_name(camera_ref ref);
 camera_ref find_camera(const char *name);
 bool valid_camera_ref(camera_ref ref);
 bool is_perspective_camera(camera_ref ref);

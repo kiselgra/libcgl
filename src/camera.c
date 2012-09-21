@@ -103,6 +103,10 @@ void change_lookat_of_cam(camera_ref ref, vec3f *pos, vec3f *dir, vec3f *up) {
 	make_lookat_matrixf(&cameras->lookat_matrix, pos, dir, up);
 }
 
+const char* camera_name(camera_ref ref) {
+	struct camera *camera = cameras + ref.id;
+    return camera->name;
+}
 
 
 static camera_ref current_cam_ref = { -1 };
