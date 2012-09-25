@@ -1,8 +1,11 @@
 lib_LTLIBRARIES = libcgl.la
 #noinst_PROGRAMS = bezier blub bspline
 
+
+BUILT_SOURCES = atomic_buffer.xx
+
 if CAN_USE_GUILE
-BUILT_SOURCES=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x
+BUILT_SOURCES+=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x
 endif
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
@@ -30,14 +33,18 @@ blub_SOURCES = $(libcgl_la_SOURCES) blub.c
 bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
 bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
+SUFFIXES: .x .xx
+
 if CAN_USE_GUILE
 snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
-SUFFIXES: .x
 .c.x:
 	guile-snarf -o $@ $< $(snarf_opts)
 .cpp.x:
 	guile-snarf -o $@ $< $(snarf_opts)
 endif
+
+.c.xx:
+	m4 mm.m4 $< > $@
 
 # for bison/flex
 # AM_CPPFLAGS = -Isrc/

@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-
 typedef struct {
 	int x, y, z;
 } vec3i;

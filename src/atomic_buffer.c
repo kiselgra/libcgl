@@ -17,14 +17,14 @@ struct atomic_buffer {
 	bool mapped;
 };
 
-#define TYPE atomic_buffer
-#define ARRAY atomic_buffers
-#define REF atomic_buffer_ref
+// #include "mm.h"
 
-#include "mm.h"
+#define define_mm(X,Y,Z)
+define_mm(atomic_buffer, atomic_buffers, atomic_buffer_ref)
+#include "atomic_buffer.xx"
 
 atomic_buffer_ref make_atomic_buffer(const char *name, unsigned int w, unsigned int h) {
-	atomic_buffer_ref ref = allocate_ref();
+	atomic_buffer_ref ref = allocate_atomic_buffer_ref();
 	struct atomic_buffer *buf = atomic_buffers + ref.id;
 
 	glGenBuffers(1, &buf->gl_buffer);
@@ -86,7 +86,7 @@ void reset_atomic_bufferu(atomic_buffer_ref ref, unsigned int value) {
 atomic_buffer_ref find_atomic_buffer(const char *name) {
 	atomic_buffer_ref ref = { -1 };
 	if (strlen(name) == 0) return ref;
-	for (int i = 0; i < next_index; ++i)
+	for (int i = 0; i < next_atomic_buffer_index; ++i)
 		if (strcmp(atomic_buffers[i].name, name) == 0) {
 			ref.id = i;
 			return ref;
