@@ -130,7 +130,7 @@ void check_framebuffer_setup(framebuffer_ref ref) {
 	}
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
-		fprintf(stderr, "Frammebuffer %s is not complete. Errorcode %d: %s\n", framebuffer->name, status, gl_enum_string(status));
+		fprintf(stderr, "Framebuffer %s is not complete. Errorcode %d: %s\n", framebuffer->name, status, gl_enum_string(status));
 		exit(-1);
 	}
 	check_for_gl_errors(__FUNCTION__);
