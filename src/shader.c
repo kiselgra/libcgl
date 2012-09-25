@@ -40,13 +40,12 @@ struct shader {
 	char *vert_info_log, *frag_info_log, *geom_info_log, *program_info_log;
 };
 
-#define TYPE shader
-#define ARRAY shaders
-#define REF shader_ref
 #include "mm.h"
+define_mm(shader, shaders, shader_ref);
+#include "shader.xx"
 
 shader_ref make_shader(const char *name, int input_vars, int uniforms) {
-	shader_ref ref = allocate_ref();
+	shader_ref ref = allocate_shader_ref();
 	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
 	strcpy(shader->name, name);
@@ -90,7 +89,7 @@ void destroy_shader(shader_ref ref) {
 	glDeleteShader(shader->vertex_program);      shader->vertex_program = 0;
 	glDeleteShader(shader->fragment_program);    shader->fragment_program = 0;
 	glDeleteShader(shader->geometry_program);    shader->geometry_program = 0;
-	free_ref(ref);
+	free_shader_ref(ref);
 }
 
 void add_shader_source(char **destination, const char *add) {
@@ -298,17 +297,13 @@ int gl_shader_object(shader_ref ref) {
 shader_ref find_shader(const char *name) {
 	shader_ref ref = { -1 };
 	if (strlen(name) == 0) return ref;
-	for (int i = 0; i < next_index; ++i) {
+	for (int i = 0; i < next_shader_index; ++i) {
 		if (strcmp(shaders[i].name, name) == 0) {
 			ref.id = i;
 			return ref;
 		}
 	}
 	return ref;
-}
-
-bool valid_shader_ref(shader_ref ref) {
-	return ref.id >= 0;
 }
 
 shader_ref make_invalid_shader(void) {

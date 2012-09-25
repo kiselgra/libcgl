@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libcgl.la
 #noinst_PROGRAMS = bezier blub bspline
 
 
-BUILT_SOURCES = atomic_buffer.xx
+BUILT_SOURCES = atomic_buffer.xx shader.xx
 
 if CAN_USE_GUILE
 BUILT_SOURCES+=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x
@@ -43,7 +43,7 @@ snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL
 	guile-snarf -o $@ $< $(snarf_opts)
 endif
 
-.c.xx:
+.c.xx: $< mm.m4
 	m4 mm.m4 $< > $@
 
 # for bison/flex
@@ -81,3 +81,5 @@ install-data-hook:
 	@test -L $(library_nonversioned_includedir) && echo "   !!!   The nonversioned library include dir <$(library_nonversioned_includedir)> is already covered by a link. You'll have to update yourself". || true
 	test -L $(library_nonversioned_includedir) || ln -s $(library_includedir) $(library_nonversioned_includedir)
 
+libcgldir = $(pkgdatadir)
+libcgl_DATA = mm.m4

@@ -17,10 +17,8 @@ struct atomic_buffer {
 	bool mapped;
 };
 
-// #include "mm.h"
-
-#define define_mm(X,Y,Z)
-define_mm(atomic_buffer, atomic_buffers, atomic_buffer_ref)
+#include "mm.h"
+define_mm(atomic_buffer, atomic_buffers, atomic_buffer_ref);
 #include "atomic_buffer.xx"
 
 atomic_buffer_ref make_atomic_buffer(const char *name, unsigned int w, unsigned int h) {

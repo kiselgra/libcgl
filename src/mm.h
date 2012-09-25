@@ -1,5 +1,6 @@
 // memory allocation for ref-based objects.
 
+/*
 static struct TYPE *ARRAY = 0;
 static unsigned int allocated = 0,
                     next_index = 0;
@@ -57,3 +58,6 @@ static void free_ref(REF ref) {
 }
 
 
+*/
+
+#define define_mm(X,Y,Z)

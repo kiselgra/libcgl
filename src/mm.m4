@@ -1,5 +1,5 @@
 divert(-1)
-define(`define_mm', `
+define(`define_mm',` dnl)
 	divert(2)
 	static struct $1 *$2 = 0;
 	static unsigned int $1s_allocated = 0,
@@ -48,7 +48,7 @@ define(`define_mm', `
 		return ref;
 	}
 	
-	static bool valid_$1_ref($3 ref) {
+	bool valid_$1_ref($3 ref) {
 		return ref.id >= 0;
 	}
 	
@@ -60,3 +60,5 @@ define(`define_mm', `
 	')
 
 undivert(2)
+dnl
+dnl vim: syntax=c
