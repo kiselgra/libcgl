@@ -265,6 +265,14 @@ SCM_DEFINE(s_find_framebuffer, "find-framebuffer", 1, 0, 0, (SCM name), "") {
 	return SCM_BOOL_F;
 }
 
+SCM_DEFINE(s_viewport, "get-viewport", 0, 0, 0, (), "") {
+	int vp[4];
+	glGetIntegerv(GL_VIEWPORT, vp);
+	return scm_values(scm_list_4(scm_from_int(vp[0]),
+	                             scm_from_int(vp[1]),
+	                             scm_from_int(vp[2]),
+	                             scm_from_int(vp[3])));
+}
 
 void register_scheme_functions_for_framebuffers() {
 #ifndef SCM_MAGIC_SNARFER

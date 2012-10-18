@@ -208,21 +208,54 @@ SCM_DEFINE(s_move_factor, "move-factor", 0, 0, 0, (), "") {
 	return scm_from_double(cgl_cam_move_factor);
 }
 
-SCM_DEFINE(s_viewport, "viewport", 0, 0, 0, (), "") {
-	GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT, viewport);
-	return scm_values(scm_list_4(scm_from_int(viewport[0]), scm_from_int(viewport[1]), scm_from_int(viewport[2]), scm_from_int(viewport[3])));
-}
-
 static SCM guile_display_handler_ref = SCM_BOOL_T;
 static void guile_display_handler() {
 	scm_call_0(guile_display_handler_ref);
+}
+static SCM guile_key_handler_ref = SCM_BOOL_T;
+static void guile_key_handler(unsigned char c, int x, int y) {
+	SCM ch = scm_integer_to_char(scm_from_int((int)c));
+	SCM xx = scm_from_int(x);
+	SCM yy = scm_from_int(y);
+	scm_call_3(guile_key_handler_ref, ch, xx, yy);
+}
+static SCM guile_mouse_motion_handler_ref = SCM_BOOL_T;
+static void guile_mouse_motion_handler(int x, int y) {
+	SCM xx = scm_from_int(x);
+	SCM yy = scm_from_int(y);
+// 	printf("calling ugile motion handler %d %d\n", x, y);
+	scm_call_2(guile_mouse_motion_handler_ref, xx, yy);
 }
 SCM_DEFINE(s_register_display_function, "register-display-function", 1, 0, 0, (SCM handler), "") {
 	SCM old = guile_display_handler_ref;
 	guile_display_handler_ref = handler;
 	register_display_function(guile_display_handler);
 	return old;
+}
+SCM_DEFINE(s_register_key_function, "register-key-function", 1, 0, 0, (SCM handler), "") {
+	SCM old = guile_key_handler_ref;
+	guile_key_handler_ref = handler;
+	register_keyboard_function(guile_key_handler);
+	return old;
+}
+SCM_DEFINE(s_std_key_handler, "standard-key-function", 3, 0, 0, (SCM key, SCM x, SCM y), "") {
+	char c = scm_to_int(scm_char_to_integer(key));
+	int xx = scm_to_int(x);
+	int yy = scm_to_int(y);
+	standard_keyboard(c, xx, yy);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_std_mouse_motion_function, "register-mouse-motion-function", 1, 0, 0, (SCM handler), "") {
+	SCM old = guile_mouse_motion_handler_ref;
+	guile_mouse_motion_handler_ref = handler;
+	register_mouse_motion_function(guile_mouse_motion_handler);
+	return old;
+}
+SCM_DEFINE(s_std_mouse_motion_handler, "standard-mouse-motion-function", 2, 0, 0, (SCM x, SCM y), "") {
+	int xx = scm_to_int(x);
+	int yy = scm_to_int(y);
+	standard_mouse_motion(xx, yy);
+	return SCM_BOOL_T;
 }
 
 SCM_DEFINE(s_swap_buffers, "glut:swap-buffers", 0, 0, 0, (), "") {
