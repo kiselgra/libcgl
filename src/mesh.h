@@ -30,7 +30,10 @@ unsigned int index_buffer_length_of_mesh(mesh_ref mr);
 unsigned int vertex_buffer_length_of_mesh(mesh_ref mr);
 char* mesh_name(mesh_ref mr);
 mesh_ref find_mesh(const char *name);
-void draw_mesh(mesh_ref mr, GLenum primitive_type);//!< attention: very general, you own draw call might be faster.
+void draw_mesh(mesh_ref ref);//!< attention: very general, your own draw call might be faster.
+void draw_mesh_as(mesh_ref mr, GLenum primitive_type);//!< ditto.
+GLenum mesh_primitive_type(mesh_ref mr);
+void set_mesh_primitive_type(mesh_ref mr, GLenum type);
 
 
 #ifdef __cplusplus

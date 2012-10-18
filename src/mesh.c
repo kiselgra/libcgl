@@ -20,6 +20,7 @@ struct mesh {
 	unsigned int *element_dim;
 	GLenum *content_type;
 #endif
+	GLenum primitive_type;
 };
 
 static struct mesh *meshes = 0;
@@ -64,6 +65,7 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	mesh->element_dim = malloc(sizeof(unsigned int) * vertex_buffers);
 	mesh->content_type = malloc(sizeof(GLenum) * vertex_buffers);
 #endif
+	mesh->primitive_type = GL_TRIANGLES;
 	return ref;
 }
 
@@ -114,6 +116,16 @@ int size_of_gl_type(GLenum content_type) {
 		fprintf(stderr, "unsupported enum for vertex buffer allocation/modification. suported are: GL_FLOAT, GL_INT, GL_UNSIGNED_INT.\n");
 		exit(-1);
 	}
+}
+
+void set_mesh_primitive_type(mesh_ref mr, GLenum type) {
+	struct mesh *mesh = meshes+mr.id;
+	mesh->primitive_type = type;
+}
+
+GLenum mesh_primitive_type(mesh_ref mr) {
+	struct mesh *mesh = meshes+mr.id;
+	return mesh->primitive_type;
 }
 
 bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, const void *data, GLenum usage_hint) {
@@ -223,7 +235,15 @@ mesh_ref find_mesh(const char *name) {
 	return ref;
 }
 
-void draw_mesh(mesh_ref ref, GLenum primitive_type) {
+void draw_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	if (mesh->index_buffer_id)
+		glDrawElements(mesh->primitive_type, mesh->indices, GL_UNSIGNED_INT, 0);
+	else
+		glDrawArrays(mesh->primitive_type, 0, mesh->vertices);
+}
+
+void draw_mesh_as(mesh_ref ref, GLenum primitive_type) {
 	struct mesh *mesh = meshes+ref.id;
 	if (mesh->index_buffer_id)
 		glDrawElements(primitive_type, mesh->indices, GL_UNSIGNED_INT, 0);
@@ -297,10 +317,16 @@ SCM_DEFINE(s_add_vb_to_mesh, "add-vertex-buffer-to-mesh", 7, 0, 0,
 	return meshid;
 }
 
-SCM_DEFINE(s_draw_mesh, "draw-mesh", 2, 0, 0, (SCM id, SCM prim_t), "") {
+SCM_DEFINE(s_draw_mesh, "draw-mesh", 1, 0, 0, (SCM id), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	draw_mesh(ref);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_draw_mesh_as, "draw-mesh-as", 2, 0, 0, (SCM id, SCM prim_t), "") {
 	mesh_ref ref = { scm_to_int(id) };
 	GLenum prim = scheme_symbol_to_gl_enum(&prim_t);
-	draw_mesh(ref, prim);
+	draw_mesh_as(ref, prim);
 	return SCM_BOOL_T;
 }
 	
