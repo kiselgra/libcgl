@@ -1,8 +1,8 @@
 (display "oh yeah!")(newline)
 
-(define make-shader-ll make-shader)
-(define (make-shader name vsrc fsrc inputs)
-  (let ((shader (make-shader-ll name (length inputs))))
+;(define make-shader-ll2 make-shader-ll)
+(define (make-shader-x name vsrc fsrc inputs)
+  (let ((shader (make-shader-ll name (length inputs) 0)))
     (add-vertex-source shader vsrc)
     (add-fragment-source shader fsrc)
 	(let rec ((rest inputs) (i 0))
@@ -12,7 +12,7 @@
     (compile-and-link-shader shader)
     shader))
 
-(make-shader "line-shader"
+(make-shader-x "line-shader"
              "
              #version 150 core
 		     in vec3 in_pos;

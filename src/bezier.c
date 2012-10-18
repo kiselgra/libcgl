@@ -75,7 +75,7 @@ void make_shaders() // {{{
 		"}\n";
 	
 
-	my_shader = make_shader("my shader", 2);
+	my_shader = make_shader("my shader", 2, 0);
 	add_vertex_source(my_shader, vertex);
 	add_fragment_source(my_shader, frag);
 	add_shader_input(my_shader, "in_Position", 0);
@@ -106,7 +106,7 @@ void make_shaders() // {{{
 		"void main() {\n"
 		"	out_col = vec4(line_col,1);\n"
 		"}\n";
-	line_shader = make_shader("line shader", 1);
+	line_shader = make_shader("line shader", 1, 0);
 	add_vertex_source(line_shader, line_vert);
 	add_fragment_source(line_shader, line_frag);
 	add_shader_input(line_shader, "in_pos", 0);
@@ -271,7 +271,7 @@ struct bezier_node* make_bezier_segment(vec3f *cp, int d) {
 
 void regen_bezier() {
 	static bool first_time = true;
-	float z = 10;
+	float z = -10;
 
 	for (int i = 0; i < number_of_control_points; ++i) cp_ids[i] = i;
 
@@ -306,7 +306,7 @@ void spline_keyhandler(unsigned char key, int x, int y) {
 	if (key == '+' && level < 3) ++level;
 	else if (key == '-' && level > 0) --level;
 	else if (key == 'x') {
-		make_vec3f(control_points+2, 0.5, vec3f_component_val(control_points+2, 1)-0.2, 10);
+		make_vec3f(control_points+2, 0.5, vec3f_component_val(control_points+2, 1)-0.2, -10);
 		regen_bezier();
 	}
 	else if (key == 'v') {
@@ -331,7 +331,7 @@ vec4f map_glut_coordinates_to_ortho(int x, int y) {
 	matrix4x4f rev;
 	invert_matrix4x4f(&rev, proj);
 
-	vec4f v; make_vec4f(&v, xx, yy, 10, 1);
+	vec4f v; make_vec4f(&v, xx, yy, -10, 1);
 	vec4f mapped;
 	multiply_matrix4x4f_vec4f(&mapped, &rev, &v);
 
@@ -404,7 +404,7 @@ void actual_main()
 	vec3f *ortho_verts = malloc(sizeof(vec3f)*3*4);
 	unsigned int *ortho_ids = malloc(sizeof(unsigned int) * 12);
 	
-	float z = 10;
+	float z = -10;
 	float x_fraction = (ortho_r - ortho_l) / 10.0f;
 	float y_fraction = (ortho_t - ortho_b) / 10.0f;
 	make_vec3f(ortho_verts+0, ortho_r, ortho_t, z);

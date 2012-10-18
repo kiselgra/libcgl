@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libcgl.la
-#noinst_PROGRAMS = bezier blub bspline
+noinst_PROGRAMS = bezier #blub bspline
 
 
 BUILT_SOURCES = atomic_buffer.xx shader.xx
@@ -68,7 +68,7 @@ bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bspline_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 
 blub_LDADD = $(GUILE_LDFLAGS)
-bezier_LDADD = $(GUILE_LDFLAGS)
+bezier_LDADD = $(GUILE_LDFLAGS) $(GLEW_LIBS)
 bspline_LDADD = $(GUILE_LDFLAGS)
 
 if CAN_USE_GUILE
