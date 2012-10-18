@@ -1,5 +1,7 @@
 #include "prepared.h"
 
+#include <libmcm/camera-matrices.h>
+
 #include <list>
 #include <stdarg.h>
 #include <stdio.h>
@@ -176,7 +178,84 @@ mesh_ref make_cube(const char *name, matrix4x4f *trafo) {
 
 }
 
+mesh_ref make_general_wire_furstum(const char *name, vec3f *near_ll, vec3f *near_lr, vec3f *near_ur, vec3f *near_ul, 
+                                   vec3f *far_ll, vec3f *far_lr, vec3f *far_ur, vec3f *far_ul) {
+	vec3f v[8] = { *near_ll, *near_lr, *near_ur, *near_ul, *far_ll, *far_lr, *far_ur, *far_ul };
+	unsigned int indices[24] = { 0, 1,   1, 2,   2, 3,   3, 0,
+	                             0, 4,   1, 5,   2, 6,   3, 7,
+	                             4, 5,   5, 6,   6, 7,   7, 4 };
+	mesh_ref mesh = make_mesh(name, 1);
+	bind_mesh_to_gl(mesh);
+	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, 8, 3, v, GL_STATIC_DRAW);
+	add_index_buffer_to_mesh(mesh, 24, indices, GL_STATIC_DRAW);
+	unbind_mesh_from_gl(mesh);
+	return mesh;
+}
 
+void compute_furstum_base(const vec3f *dir, const vec3f *up, vec3f *W, vec3f *U, vec3f *V) {
+	vec3f TxW;
+	div_vec3f_by_scalar(W, dir, length_of_vec3f(dir));
+	cross_vec3f(&TxW, up, W);
+	div_vec3f_by_scalar(U, &TxW, length_of_vec3f(&TxW));
+	cross_vec3f(V, W, U);
+}
+
+void print_matrix(const matrix4x4f *m) {
+	printf("    %3.6f\t%3.6f\t%3.6f\t%3.6f\n", m->col_major[0*4+0], m->col_major[1*4+0], m->col_major[2*4+0], m->col_major[3*4+0]);
+	printf("    %3.6f\t%3.6f\t%3.6f\t%3.6f\n", m->col_major[0*4+1], m->col_major[1*4+1], m->col_major[2*4+1], m->col_major[3*4+1]);
+	printf("    %3.6f\t%3.6f\t%3.6f\t%3.6f\n", m->col_major[0*4+2], m->col_major[1*4+2], m->col_major[2*4+2], m->col_major[3*4+2]);
+	printf("    %3.6f\t%3.6f\t%3.6f\t%3.6f\n", m->col_major[0*4+3], m->col_major[1*4+3], m->col_major[2*4+3], m->col_major[3*4+3]);
+}
+
+void have_fun() {
+	matrix4x4f proj, la, view, pv, inv;
+	vec3f pos = {0,0,0}, dir = {0,0,-1}, up = {0,1,0};
+	make_projection_matrixf(&proj, 35, 1, 1, 20);
+	make_lookat_matrixf(&la, &pos, &dir, &up);
+	make_gl_viewing_matrixf(&view, &la);
+	printf("proj: \n");
+	print_matrix(&proj);
+	printf("la: \n");
+	print_matrix(&la);
+	printf("view: \n");
+	print_matrix(&view);
+	multiply_matrices4x4f(&pv, &proj, &view);
+	printf("pv: \n");
+	print_matrix(&pv);
+	invert_matrix4x4f(&inv, &pv);
+	printf("inv: \n");
+	print_matrix(&inv);
+	matrix4x4f tmp;
+	multiply_matrices4x4f(&tmp, &pv, &inv);
+	printf("id: \n");
+	print_matrix(&tmp);
+	vec4f n = { 0,0,-1,1 };
+	vec4f f = { 0,0,1,1 };
+	vec4f res;
+	multiply_matrix4x4f_vec4f(&res, &inv, &n);
+	div_vec4f_by_scalar(&res, &res, res.w);
+	printf("n = %3.6f\t%3.6f\t%3.6f\t%3.6f\n", res.x, res.y, res.z, res.w);
+	multiply_matrix4x4f_vec4f(&res, &inv, &f);
+	div_vec4f_by_scalar(&res, &res, res.w);
+	printf("f = %3.6f\t%3.6f\t%3.6f\t%3.6f\n", res.x, res.y, res.z, res.w);
+}
+
+mesh_ref make_simple_frustum(const char *name, const vec3f *pos, const vec3f *dir, const vec3f *up, float angle, float aspect, float near, float far) {
+	/*
+	vec3f W, U, V;
+	compute_furstum_base(dir, up, &W, &U, &V);
+
+	vec3f ll, lr, ur, ul;
+
+	mul_vec3f_by_scalar(ll, &U, -1);
+	vec3f tmp;
+	mul_vec3f_by_scalar(&tmp, &V, -1);
+	add_components_vec3f(&ll, &ll, &tmp);
+	add_components_vec3f(&ll, &ll, &W);
+	normalize_vec3f(dir);
+	*/
+
+}
 
 
 /*

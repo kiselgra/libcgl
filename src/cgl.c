@@ -34,6 +34,8 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
 #endif
 	
+	extern void have_fun();
+	have_fun();
 #if CGL_GL_VERSION == GL3
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
