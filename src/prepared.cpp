@@ -195,6 +195,7 @@ mesh_ref make_general_wire_furstum(const char *name, vec3f *near_ll, vec3f *near
 	return mesh;
 }
 
+/*
 void compute_furstum_base(const vec3f *dir, const vec3f *up, vec3f *W, vec3f *U, vec3f *V) {
 	vec3f TxW;
 	div_vec3f_by_scalar(W, dir, length_of_vec3f(dir));
@@ -209,39 +210,7 @@ void print_matrix(const matrix4x4f *m) {
 	printf("    %3.6f\t%3.6f\t%3.6f\t%3.6f\n", m->col_major[0*4+2], m->col_major[1*4+2], m->col_major[2*4+2], m->col_major[3*4+2]);
 	printf("    %3.6f\t%3.6f\t%3.6f\t%3.6f\n", m->col_major[0*4+3], m->col_major[1*4+3], m->col_major[2*4+3], m->col_major[3*4+3]);
 }
-
-void have_fun() {
-	matrix4x4f proj, la, view, pv, inv;
-	vec3f pos = {0,0,0}, dir = {0,0,-1}, up = {0,1,0};
-	make_projection_matrixf(&proj, 35, 1, 1, 20);
-	make_lookat_matrixf(&la, &pos, &dir, &up);
-	make_gl_viewing_matrixf(&view, &la);
-	printf("proj: \n");
-	print_matrix(&proj);
-	printf("la: \n");
-	print_matrix(&la);
-	printf("view: \n");
-	print_matrix(&view);
-	multiply_matrices4x4f(&pv, &proj, &view);
-	printf("pv: \n");
-	print_matrix(&pv);
-	invert_matrix4x4f(&inv, &pv);
-	printf("inv: \n");
-	print_matrix(&inv);
-	matrix4x4f tmp;
-	multiply_matrices4x4f(&tmp, &pv, &inv);
-	printf("id: \n");
-	print_matrix(&tmp);
-	vec4f n = { 0,0,-1,1 };
-	vec4f f = { 0,0,1,1 };
-	vec4f res;
-	multiply_matrix4x4f_vec4f(&res, &inv, &n);
-	div_vec4f_by_scalar(&res, &res, res.w);
-	printf("n = %3.6f\t%3.6f\t%3.6f\t%3.6f\n", res.x, res.y, res.z, res.w);
-	multiply_matrix4x4f_vec4f(&res, &inv, &f);
-	div_vec4f_by_scalar(&res, &res, res.w);
-	printf("f = %3.6f\t%3.6f\t%3.6f\t%3.6f\n", res.x, res.y, res.z, res.w);
-}
+*/
 
 vec3f v3(vec4f v) {
 	div_vec4f_by_scalar(&v, &v, v.w);
