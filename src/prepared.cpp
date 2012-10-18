@@ -1,5 +1,7 @@
 #include "prepared.h"
 
+#include "scheme.h"
+
 #include <libmcm/camera-matrices.h>
 
 #include <list>
@@ -185,6 +187,7 @@ mesh_ref make_general_wire_furstum(const char *name, vec3f *near_ll, vec3f *near
 	                             0, 4,   1, 5,   2, 6,   3, 7,
 	                             4, 5,   5, 6,   6, 7,   7, 4 };
 	mesh_ref mesh = make_mesh(name, 1);
+	set_mesh_primitive_type(mesh, GL_LINES);
 	bind_mesh_to_gl(mesh);
 	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, 8, 3, v, GL_STATIC_DRAW);
 	add_index_buffer_to_mesh(mesh, 24, indices, GL_STATIC_DRAW);
@@ -240,21 +243,37 @@ void have_fun() {
 	printf("f = %3.6f\t%3.6f\t%3.6f\t%3.6f\n", res.x, res.y, res.z, res.w);
 }
 
-mesh_ref make_simple_frustum(const char *name, const vec3f *pos, const vec3f *dir, const vec3f *up, float angle, float aspect, float near, float far) {
-	/*
-	vec3f W, U, V;
-	compute_furstum_base(dir, up, &W, &U, &V);
+vec3f v3(vec4f v) {
+	div_vec4f_by_scalar(&v, &v, v.w);
+	vec3f r = { v.x, v.y, v.z };
+	return r;
+}
 
-	vec3f ll, lr, ur, ul;
+mesh_ref make_simple_wire_frustum(const char *name, const vec3f *pos, const vec3f *dir, const vec3f *up, float angle, float aspect, float near, float far) {
+	matrix4x4f proj, la, view, pv, inv;
+	make_projection_matrixf(&proj, angle, aspect, near, far);
+	make_lookat_matrixf(&la, pos, dir, up);
+	make_gl_viewing_matrixf(&view, &la);
+	multiply_matrices4x4f(&pv, &proj, &view);
+	invert_matrix4x4f(&inv, &pv);
+	matrix4x4f tmp;
+	multiply_matrices4x4f(&tmp, &pv, &inv);
+	vec4f cs_n_ll = {-1,-1,-1, 1}, cs_n_lr = { 1,-1,-1, 1}, cs_n_ur = { 1, 1,-1, 1}, cs_n_ul = {-1, 1,-1, 1},
+	      cs_f_ll = {-1,-1, 1, 1}, cs_f_lr = { 1,-1, 1, 1}, cs_f_ur = { 1, 1, 1, 1}, cs_f_ul = {-1, 1, 1, 1},
+		  res;
+	vec3f nll, nlr, nur, nul, fll, flr, fur, ful;
 
-	mul_vec3f_by_scalar(ll, &U, -1);
-	vec3f tmp;
-	mul_vec3f_by_scalar(&tmp, &V, -1);
-	add_components_vec3f(&ll, &ll, &tmp);
-	add_components_vec3f(&ll, &ll, &W);
-	normalize_vec3f(dir);
-	*/
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_n_ll); 	nll = v3(res);
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_n_lr); 	nlr = v3(res);
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_n_ur); 	nur = v3(res);
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_n_ul); 	nul = v3(res);
 
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_f_ll); 	fll = v3(res);
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_f_lr); 	flr = v3(res);
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_f_ur); 	fur = v3(res);
+	multiply_matrix4x4f_vec4f(&res, &inv, &cs_f_ul); 	ful = v3(res);
+
+	return make_general_wire_furstum(name, &nll, &nlr, &nur, &nul, &fll, &flr, &fur, &ful);
 }
 
 
@@ -410,6 +429,21 @@ extern "C" {
         free(n);
         return scm_from_int(ref.id);
     }
+
+	SCM_DEFINE(s_make_simple_wire_frustum, "make-simple-wire-frustum", 8, 0, 0, 
+	           (SCM name, SCM pos, SCM dir, SCM up, SCM angle, SCM aspect, SCM near, SCM far), "") {
+		char *m = scm_to_locale_string(name);
+		vec3f p = scm_vec_to_vec3f(pos),
+			  d = scm_vec_to_vec3f(dir),
+			  u = scm_vec_to_vec3f(up);
+		float a = scm_to_double(angle),
+			  b = scm_to_double(aspect),
+			  n = scm_to_double(near),
+			  f = scm_to_double(far);
+		mesh_ref ref = make_simple_wire_frustum(m, &p, &d, &u, a, b, n, f);
+		free(m);
+		return scm_from_int(ref.id);
+	}
 
 
 
