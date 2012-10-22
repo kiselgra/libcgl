@@ -15,6 +15,7 @@ typedef struct {
 camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, float fovy, float aspect, float near, float far);
 camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, 
                                  float right, float left, float top, float bottom, float near, float far);
+void delete_camera(camera_ref ref);
 
 void change_projection_of_cam(camera_ref ref, float fovy, float aspect, float near, float far);
 void change_lookat_of_cam(camera_ref ref, vec3f *pos, vec3f *dir, vec3f *up);

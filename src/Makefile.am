@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libcgl.la
 noinst_PROGRAMS = bezier #blub bspline
 
 
-BUILT_SOURCES = atomic_buffer.xx shader.xx
+BUILT_SOURCES = atomic_buffer.xx shader.xx camera.xx
 
 if CAN_USE_GUILE
 BUILT_SOURCES+=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x
@@ -44,7 +44,7 @@ snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL
 endif
 
 .c.xx: $< mm.m4
-	m4 mm.m4 $< > $@
+	m4 mm.m4 $*.c > $@
 
 # for bison/flex
 # AM_CPPFLAGS = -Isrc/
@@ -74,6 +74,7 @@ bspline_LDADD = $(GUILE_LDFLAGS)
 if CAN_USE_GUILE
 scheme.c camera.c shader.c texture.c glut.c mesh.c impex.cpp: shader.x camera.x texture.x glut.x mesh.x impex.x
 endif
+camera.c: camera.xx
 
 # install link
 library_nonversioned_includedir = $(includedir)/$(PACKAGE)
