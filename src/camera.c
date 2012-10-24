@@ -198,6 +198,16 @@ SCM_DEFINE(s_curr_cam, "current-camera", 0, 0, 0, (), "") {
 	return scm_from_int(ref.id);
 }
 
+SCM_DEFINE(s_cam_near, "cam-near", 1, 0, 0, (), "") {
+	camera_ref ref = current_camera();
+	return scm_from_double(cameras[ref.id].near);
+}
+
+SCM_DEFINE(s_cam_far, "cam-far", 1, 0, 0, (), "") {
+	camera_ref ref = current_camera();
+	return scm_from_double(cameras[ref.id].far);
+}
+
 SCM_DEFINE(s_find_cam, "find-camera", 1, 0, 0, (SCM name), "") {
 	char *n = scm_to_locale_string(name);
 	camera_ref ref = find_camera(n);
