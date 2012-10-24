@@ -2,8 +2,10 @@
 #define __TEXTURE_H__ 
 
 #include <stdbool.h>
+#include <libmcm/vectors.h>
 
 #include "cgl-config.h"
+#include "gl-version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +47,10 @@ bool valid_texture_ref(texture_ref ref);
 texture_ref find_texture(const char *name);
 const char* texture_name(texture_ref ref);
 
+void* download_texture(texture_ref ref, GLenum format, size_t bytes, GLenum type);
+float* download_texture1f(texture_ref ref);
+vec3f* download_texture3f(texture_ref ref);
+vec4f* download_texture4f(texture_ref ref);
 
 #ifdef __cplusplus
 }

@@ -236,6 +236,11 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 		glGetTexImage(texture->target, 0, GL_RGBA, GL_FLOAT, data);
 		save_png4f(data, texture->width, texture->height, filename);
 	}
+	else if (texture->format == GL_RED) {
+		float *data = malloc(sizeof(float)*texture->width*texture->height);
+		glGetTexImage(texture->target, 0, GL_RED, GL_FLOAT, data);
+		save_png1f(data, texture->width, texture->height, filename);
+	}
 	else if (texture->format == GL_DEPTH_COMPONENT) {
 		float *data = malloc(sizeof(float)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
@@ -255,6 +260,38 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 	fprintf(stderr, "Cannot download textures on gles, yet.\n");
 #endif
 }
+
+void* download_texture_to(texture_ref ref, GLenum format, size_t bytes, GLenum type, void *data) {
+	struct texture *texture = textures + ref.id;
+	bool was_bound = false;
+	if (!texture->bound)
+		bind_texture(ref, 0);
+	else
+		was_bound = true;
+
+	glGetTexImage(texture->target, 0, format, type, data);
+
+	if (!was_bound)
+		unbind_texture(ref);
+	check_for_gl_errors(__FUNCTION__);
+	
+	return data;
+}
+
+void* download_texture(texture_ref ref, GLenum format, size_t bytes, GLenum type) {
+	struct texture *texture = textures + ref.id;
+	void *data = malloc(bytes*texture->width*texture->height);
+	return download_texture_to(ref, format, bytes, type, data);
+}
+
+
+float* download_texture1f(texture_ref ref) { return download_texture(ref, GL_RED,  sizeof(float), GL_FLOAT); }
+vec3f* download_texture3f(texture_ref ref) { return download_texture(ref, GL_RGB,  sizeof(vec3f), GL_FLOAT); }
+vec4f* download_texture4f(texture_ref ref) { return download_texture(ref, GL_RGBA, sizeof(vec4f), GL_FLOAT); }
+
+float* download_texture1f_to(texture_ref ref, float *data) { return download_texture_to(ref, GL_RED,  sizeof(float), GL_FLOAT, data); }
+vec3f* download_texture3f_to(texture_ref ref, vec3f *data) { return download_texture_to(ref, GL_RGB,  sizeof(vec3f), GL_FLOAT, data); }
+vec4f* download_texture4f_to(texture_ref ref, vec4f *data) { return download_texture_to(ref, GL_RGBA, sizeof(vec4f), GL_FLOAT, data); }
 
 int texture_id(texture_ref ref) {
 	return textures[ref.id].texid;
@@ -415,6 +452,30 @@ SCM_DEFINE(s_find_texture, "find-texture", 1, 0, 0, (SCM name), "") {
 	if (valid_texture_ref(ref))
 		return scm_from_int(ref.id);
 	return SCM_BOOL_F;
+}
+
+SCM_DEFINE(s_download_tex1f, "download-texture1f", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	int bytes = texture_width(ref) * texture_height(ref) * sizeof(float);
+	SCM bv = scm_c_make_bytevector(bytes);
+	download_texture1f_to(ref, (float*)SCM_BYTEVECTOR_CONTENTS(bv));
+	return bv;
+}
+
+SCM_DEFINE(s_download_tex3f, "download-texture3f", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	int bytes = texture_width(ref) * texture_height(ref) * sizeof(vec3f);
+	SCM bv = scm_c_make_bytevector(bytes);
+	download_texture3f_to(ref, (vec3f*)SCM_BYTEVECTOR_CONTENTS(bv));
+	return bv;
+}
+
+SCM_DEFINE(s_download_tex4f, "download-texture4f", 1, 0, 0, (SCM id), "") {
+	texture_ref ref = { scm_to_int(id) };
+	int bytes = texture_width(ref) * texture_height(ref) * sizeof(vec4f);
+	SCM bv = scm_c_make_bytevector(bytes);
+	download_texture4f_to(ref, (vec4f*)SCM_BYTEVECTOR_CONTENTS(bv));
+	return bv;
 }
 
 void register_scheme_functions_for_textures() {
