@@ -234,6 +234,10 @@ static void guile_mouse_handler(int button, int state, int x, int y) {
 	SCM yy = scm_from_int(y);
 	scm_call_4(guile_mouse_handler_ref, b, s, xx, yy);
 }
+static SCM guile_idle_handler_ref = SCM_BOOL_T;
+static void guile_idle_handler() {
+    scm_call_0(guile_idle_handler_ref);
+}
 SCM_DEFINE(s_register_display_function, "register-display-function", 1, 0, 0, (SCM handler), "") {
 	SCM old = guile_display_handler_ref;
 	guile_display_handler_ref = handler;
@@ -279,9 +283,25 @@ SCM_DEFINE(s_std_mouse_motion_handler, "standard-mouse-motion-function", 2, 0, 0
 	standard_mouse_motion(xx, yy);
 	return SCM_BOOL_T;
 }
+SCM_DEFINE(s_register_idle_function, "register-idle-function", 1, 0, 0, (SCM handler), "") {
+    SCM old = guile_idle_handler_ref;
+    if (scm_is_false(handler)) {
+        register_idle_function(0);
+    }
+    else {
+        guile_idle_handler_ref = handler;
+        register_idle_function(guile_idle_handler);
+    }
+    return old;
+}
 
 SCM_DEFINE(s_swap_buffers, "glut:swap-buffers", 0, 0, 0, (), "") {
 	swap_buffers();
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_post_redisplay, "glut:post-redisplay", 0, 0, 0, (), "") {
+	glutPostRedisplay();
 	return SCM_BOOL_T;
 }
 
