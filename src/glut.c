@@ -226,6 +226,14 @@ static void guile_mouse_motion_handler(int x, int y) {
 // 	printf("calling ugile motion handler %d %d\n", x, y);
 	scm_call_2(guile_mouse_motion_handler_ref, xx, yy);
 }
+static SCM guile_mouse_handler_ref = SCM_BOOL_T;
+static void guile_mouse_handler(int button, int state, int x, int y) {
+        SCM b = scm_from_int(button);
+        SCM s = scm_from_int(state);
+	SCM xx = scm_from_int(x);
+	SCM yy = scm_from_int(y);
+	scm_call_4(guile_mouse_handler_ref, b, s, xx, yy);
+}
 SCM_DEFINE(s_register_display_function, "register-display-function", 1, 0, 0, (SCM handler), "") {
 	SCM old = guile_display_handler_ref;
 	guile_display_handler_ref = handler;
@@ -243,6 +251,20 @@ SCM_DEFINE(s_std_key_handler, "standard-key-function", 3, 0, 0, (SCM key, SCM x,
 	int xx = scm_to_int(x);
 	int yy = scm_to_int(y);
 	standard_keyboard(c, xx, yy);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_reg_mouse_function, "register-mouse-function", 1, 0, 0, (SCM handler), "") {
+	SCM old = guile_mouse_handler_ref;
+	guile_mouse_handler_ref = handler;
+	register_mouse_function(guile_mouse_handler);
+	return old;
+}
+SCM_DEFINE(s_std_mouse_handler, "standard-mouse-function", 4, 0, 0, (SCM button, SCM state, SCM x, SCM y), "") {
+	int b = scm_to_int(button);
+	int s = scm_to_int(state);
+	int xx = scm_to_int(x);
+	int yy = scm_to_int(y);
+	standard_mouse_func(b, s, xx, yy);
 	return SCM_BOOL_T;
 }
 SCM_DEFINE(s_std_mouse_motion_function, "register-mouse-motion-function", 1, 0, 0, (SCM handler), "") {

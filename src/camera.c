@@ -125,6 +125,40 @@ bool is_perspective_camera(camera_ref ref) {
 #include <libguile.h>
 #include <stdio.h>
 #include "scheme.h"
+	
+static void load_vec3f(SCM list, vec3f *v, const char *info) {
+	if (!scm_list_p(list)) {
+		fprintf(stderr, "%s is not a list.\n", info);
+		return;
+	}
+	if (scm_to_int(scm_length(list)) != 3) {
+		fprintf(stderr, "%s must be a list of length 3 (a vec3).\n", info);
+		return;
+	}
+	v->x = (float)scm_to_double(scm_list_ref(list, scm_from_int(0)));
+	v->y = (float)scm_to_double(scm_list_ref(list, scm_from_int(1)));
+	v->z = (float)scm_to_double(scm_list_ref(list, scm_from_int(2)));
+}
+
+SCM_DEFINE(s_make_ortho_cam, "make-orthographic-camera", 10, 0, 0, (SCM name, SCM pos, SCM dir, SCM up, SCM right, SCM left, SCM top, SCM bottom,  SCM near, SCM far), "") {
+	char *n = scm_to_locale_string(name);
+	vec3f p, d, u;
+	make_vec3f(&p, 0, 0, 0);
+	make_vec3f(&d, 0, 0, 0);
+	make_vec3f(&u, 0, 0, 0);
+	load_vec3f(pos, &p, "pos");
+	load_vec3f(dir, &d, "dir");
+	load_vec3f(up, &u, "up");
+	float r = (float)scm_to_double(right);
+	float l = (float)scm_to_double(left);
+	float t = (float)scm_to_double(top);
+	float b = (float)scm_to_double(bottom);
+	float ne = (float)scm_to_double(near);
+	float fa = (float)scm_to_double(far);
+	camera_ref ref = make_orthographic_cam(n, &p, &d, &u, r, l, t, b, ne, fa);
+	free(n);
+	return scm_from_int(ref.id);
+}
 
 SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name, SCM pos, SCM dir, SCM up, SCM fovy, SCM aspect, SCM near, SCM far), "") {
 	char *n = scm_to_locale_string(name);
@@ -132,19 +166,6 @@ SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name
 	make_vec3f(&p, 0, 0, 0);
 	make_vec3f(&d, 0, 0, 0);
 	make_vec3f(&u, 0, 0, 0);
-	void load_vec3f(SCM list, vec3f *v, const char *info) {
-		if (!scm_list_p(list)) {
-			fprintf(stderr, "%s is not a list.\n", info);
-			return;
-		}
-		if (scm_to_int(scm_length(list)) != 3) {
-			fprintf(stderr, "%s must be a list of length 3 (a vec3).\n", info);
-			return;
-		}
-		v->x = (float)scm_to_double(scm_list_ref(list, scm_from_int(0)));
-		v->y = (float)scm_to_double(scm_list_ref(list, scm_from_int(1)));
-		v->z = (float)scm_to_double(scm_list_ref(list, scm_from_int(2)));
-	}
 	load_vec3f(pos, &p, "pos");
 	load_vec3f(dir, &d, "dir");
 	load_vec3f(up, &u, "up");
@@ -216,6 +237,33 @@ SCM_DEFINE(s_find_cam, "find-camera", 1, 0, 0, (SCM name), "") {
 		return scm_from_int(ref.id);
 	return SCM_BOOL_F;
 }
+
+static SCM get_cam_matrix(SCM id, matrix4x4f*(*func)(camera_ref ref)) {
+	camera_ref ref = { scm_to_int(id) };
+	return matrix4x4f_to_scm(func(ref));
+}
+
+SCM_DEFINE(s_proj_matrix_of_cam, "projection-matrix-of-cam", 1, 0, 0, (SCM id), "") { return get_cam_matrix(id, projection_matrix_of_cam); }
+SCM_DEFINE(s_lookat_matrix_of_cam, "lookat-matrix-of-cam", 1, 0, 0, (SCM id), "") { return get_cam_matrix(id, lookat_matrix_of_cam); }
+SCM_DEFINE(s_gl_view_matrix_of_cam, "gl-view-matrix-of-cam", 1, 0, 0, (SCM id), "") { return get_cam_matrix(id, gl_view_matrix_of_cam); }
+SCM_DEFINE(s_gl_normal_matrix_of_cam, "gl-normal-matrix-of-cam", 1, 0, 0, (SCM id), "") { return get_cam_matrix(id, gl_normal_matrix_for_view_of); }
+
+static void set_cam_matrix(SCM id, matrix4x4f*(*func)(camera_ref ref), SCM mat) {
+	camera_ref ref = { scm_to_int(id) };
+	scm_to_matrix4x4f(func(ref), mat);
+}
+
+SCM_DEFINE(s_proj_matrix_of_cam_x, "set-projection-matrix-of-cam!", 2, 0, 0, (SCM id, SCM bv), "") { set_cam_matrix(id, projection_matrix_of_cam, bv); return SCM_BOOL_T; }
+SCM_DEFINE(s_lookat_matrix_of_cam_x, "set-lookat-matrix-of-cam!", 2, 0, 0, (SCM id, SCM bv), "") { set_cam_matrix(id, lookat_matrix_of_cam, bv); return SCM_BOOL_T; }
+SCM_DEFINE(s_gl_view_matrix_of_cam_x, "set-gl-view-matrix-of-cam!", 2, 0, 0, (SCM id, SCM bv), "") { set_cam_matrix(id, gl_view_matrix_of_cam, bv); return SCM_BOOL_T; }
+SCM_DEFINE(s_gl_normal_matrix_of_cam_x, "set-gl-normal-matrix-of-cam!", 2, 0, 0, (SCM id, SCM bv), "") { set_cam_matrix(id, gl_normal_matrix_for_view_of, bv); return SCM_BOOL_T; }
+
+SCM_DEFINE(s_recompute_gl_matrices_of_cam, "recompute-gl-matrices-of-cam", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	recompute_gl_matrices_of_cam(ref);
+	return SCM_BOOL_T;
+}
+
 
 void s_uniform_cam_any_matrix(SCM loc, matrix4x4f *m) {
 	int location = scm_to_int(loc);
