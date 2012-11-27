@@ -24,6 +24,8 @@ define_mm(atomic_buffer, atomic_buffers, atomic_buffer_ref);
 atomic_buffer_ref make_atomic_buffer(const char *name, unsigned int w, unsigned int h) {
 	atomic_buffer_ref ref = allocate_atomic_buffer_ref();
 	struct atomic_buffer *buf = atomic_buffers + ref.id;
+	buf->name = malloc(strlen(name)+1);
+	strcpy(buf->name, name);
 
 	glGenBuffers(1, &buf->gl_buffer);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, buf->gl_buffer);
