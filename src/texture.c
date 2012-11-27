@@ -22,6 +22,7 @@ struct texture {
 	GLenum internal_format,  // GL_RGBA32F ...
 		   format,           // GL_RGB ...
 		   type;             // GL_FLOAT ...
+	GLuint buffer;
 };
 
 static struct texture *textures = 0;
@@ -84,6 +85,7 @@ static texture_ref internal_make_tex(const char *name, GLenum target, tex_params
 	texture->bound = true;           // ---v
 	set_texture_params(ref, params); // does bind and unbind.
 	texture->bound = false;
+	texture->buffer = 0;
 
 	texture->width = w;
 	texture->height = h;
@@ -158,6 +160,7 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	texture->format = format;
 	texture->internal_format = internal_format;
 	texture->type = type;
+	texture->buffer = 0;
 	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
 
 	glBindTexture(target, 0);
@@ -186,10 +189,40 @@ texture_ref make_empty_texture1d(const char *name, unsigned int elems, unsigned 
 	texture->format = format;
 	texture->internal_format = internal_format;
 	texture->type = type;
+	texture->buffer = 0;
 	glTexImage1D(GL_TEXTURE_1D, 0, internal_format, texture->width, 0, format, type, 0);
+	check_for_gl_errors("ti");
 
 	glBindTexture(GL_TEXTURE_1D, 0);
 	check_for_gl_errors(__FUNCTION__);
+	return ref;
+}
+
+texture_ref make_buffer_texture(const char *name, unsigned int elements, unsigned int element_size, unsigned int internal_format) {
+	allocate_texture();
+	texture_ref ref;
+	ref.id = next_texture_index++;
+	struct texture *texture = textures+ref.id;
+	texture->name = malloc(strlen(name)+1);
+	strcpy(texture->name, name);
+
+	glGenBuffers(1, &texture->buffer);
+	glBindBuffer(GL_TEXTURE_BUFFER, texture->buffer);
+
+	unsigned int size = elements * element_size;
+	glBufferData(GL_TEXTURE_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+
+	texture->width = elements;
+	texture->height = 1;
+	texture->target = GL_TEXTURE_BUFFER;
+
+	glGenTextures(1, &texture->texid);
+	glBindTexture(GL_TEXTURE_BUFFER, texture->texid);
+	glTexBuffer(GL_TEXTURE_BUFFER, internal_format, texture->buffer);
+	glBindBuffer(GL_TEXTURE_BUFFER, 0);
+	glBindTexture(GL_TEXTURE_BUFFER, 0);
+
+	printf("generated buffer (%s): bid %d   tid %d   ref %d\n", texture->name, texture->buffer, texture->texid, ref.id);
 	return ref;
 }
 
@@ -354,6 +387,12 @@ const char* texture_name(texture_ref ref) {
 
 bool valid_texture_ref(texture_ref ref) {
 	return ref.id >= 0;
+}
+
+GLuint texture_buffer(texture_ref ref) {
+	struct texture *texture = textures + ref.id;
+	printf("buffer of (%s): %d\n", texture->name, texture->buffer);
+	return textures[ref.id].buffer;
 }
 
 #ifdef WITH_GUILE
