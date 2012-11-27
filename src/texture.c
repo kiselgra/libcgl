@@ -165,6 +165,34 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	return ref;
 }
 
+texture_ref make_empty_texture1d(const char *name, unsigned int elems, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
+	allocate_texture();
+	texture_ref ref;
+	ref.id = next_texture_index++;
+	struct texture *texture = textures+ref.id;
+	texture->name = malloc(strlen(name)+1);
+	strcpy(texture->name, name);
+
+	glGenTextures(1, &texture->texid);
+	texture->target = GL_TEXTURE_1D;
+	glBindTexture(GL_TEXTURE_1D, texture->texid);
+	
+	texture->bound = true;
+	set_texture_params(ref, params);
+	texture->bound = false;
+
+	texture->width = elems;
+	texture->height = 1;
+	texture->format = format;
+	texture->internal_format = internal_format;
+	texture->type = type;
+	glTexImage1D(GL_TEXTURE_1D, 0, internal_format, texture->width, 0, format, type, 0);
+
+	glBindTexture(GL_TEXTURE_1D, 0);
+	check_for_gl_errors(__FUNCTION__);
+	return ref;
+}
+
 void set_texture_params(texture_ref ref, tex_params_t *params) {
 	struct texture *texture = textures+ref.id;
 	bool was_bound = false;
@@ -385,6 +413,18 @@ SCM_DEFINE(s_make_empty_texture, "make-texture-without-file", 7, 0, 0, (SCM name
 	tex_params_t p = default_fbo_tex_params();
 // 	printf("make texture %s with t=%s   f=%s   if=%s   ty=%s   w=%d   h=%d\n", n, gl_enum_string(target), gl_enum_string(format), gl_enum_string(int_format), gl_enum_string(type), width, height);
 	texture_ref ref = make_empty_texture(n, width, height, target, int_format, type, format, &p);
+	free(n);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_make_empty_texture1d, "make-texture-1d-without-file", 5, 0, 0, (SCM name, SCM w, SCM f, SCM inf, SCM ty), "") {
+	char *n = scm_to_locale_string(name);
+	GLenum format = scheme_symbol_to_gl_enum(&f);
+	GLenum int_format = scheme_symbol_to_gl_enum(&inf);
+	GLenum type = scheme_symbol_to_gl_enum(&ty);
+	unsigned int width = scm_to_uint(w);
+	tex_params_t p = default_fbo_tex_params();
+	texture_ref ref = make_empty_texture1d(n, width, int_format, type, format, &p);
 	free(n);
 	return scm_from_int(ref.id);
 }
