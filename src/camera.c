@@ -219,14 +219,14 @@ SCM_DEFINE(s_curr_cam, "current-camera", 0, 0, 0, (), "") {
 	return scm_from_int(ref.id);
 }
 
-SCM_DEFINE(s_cam_near, "cam-near", 1, 0, 0, (), "") {
-	camera_ref ref = current_camera();
-	return scm_from_double(cameras[ref.id].near);
+SCM_DEFINE(s_cam_near, "cam-near", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	return scm_from_double(camera_near(ref));
 }
 
-SCM_DEFINE(s_cam_far, "cam-far", 1, 0, 0, (), "") {
-	camera_ref ref = current_camera();
-	return scm_from_double(cameras[ref.id].far);
+SCM_DEFINE(s_cam_far, "cam-far", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	return scm_from_double(camera_far(ref));
 }
 
 SCM_DEFINE(s_find_cam, "find-camera", 1, 0, 0, (SCM name), "") {
@@ -285,6 +285,11 @@ SCM_DEFINE(s_uniform_cam_matrix_n, "uniform-camera-normal-matrix", 2, 0, 0, (SCM
 	s_uniform_cam_any_matrix(loc, gl_normal_matrix_for_view_of(ref));
 	return SCM_BOOL_T;
 }
+SCM_DEFINE(s_cam_name, "camera-name", 1, 0, 0, (SCM id), "") {
+	camera_ref ref = { scm_to_int(id) };
+	return scm_from_locale_string(camera_name(ref));
+}
+
 
 void register_scheme_functions_for_cameras() {
 #ifndef SCM_MAGIC_SNARFER
