@@ -222,7 +222,6 @@ texture_ref make_buffer_texture(const char *name, unsigned int elements, unsigne
 	glBindBuffer(GL_TEXTURE_BUFFER, 0);
 	glBindTexture(GL_TEXTURE_BUFFER, 0);
 
-	printf("generated buffer (%s): bid %d   tid %d   ref %d\n", texture->name, texture->buffer, texture->texid, ref.id);
 	return ref;
 }
 
@@ -390,8 +389,6 @@ bool valid_texture_ref(texture_ref ref) {
 }
 
 GLuint texture_buffer(texture_ref ref) {
-	struct texture *texture = textures + ref.id;
-	printf("buffer of (%s): %d\n", texture->name, texture->buffer);
 	return textures[ref.id].buffer;
 }
 
