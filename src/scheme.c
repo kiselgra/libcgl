@@ -123,7 +123,7 @@ vec3f list_to_vec3f(SCM v) {
 vec4f list_to_vec4f(SCM v) {
 	if (scm_is_false(scm_list_p(v)))     scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(v, scm_from_locale_string("is not a list")));
 	if (scm_is_null(v))                  scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_1(scm_from_locale_string("the empty list is no valid vec4f")));
-	if (scm_to_int(scm_length(v)) != 4)  scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(v, scm_from_locale_string("is not a three component list")));
+	if (scm_to_int(scm_length(v)) != 4)  scm_throw(scm_from_locale_symbol("vec4f-conversion"), scm_list_2(v, scm_from_locale_string("is not a four component list")));
 	vec4f ret;
 	SCM el;
 	el = scm_list_ref(v, scm_from_int(0));
