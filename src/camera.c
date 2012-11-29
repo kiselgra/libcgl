@@ -120,6 +120,12 @@ bool is_perspective_camera(camera_ref ref) {
 	return camera_fovy(ref) != 0;
 }
 
+void camera_near_plane_size(camera_ref ref, vec2f *out) {
+	float fovy_rad = camera_fovy(ref) * M_PI / 180.0f;
+	float near_dist = camera_near(ref);
+	out->y = 2*tanf(fovy_rad/2.0)*near_dist;	 // a=x/y
+	out->x = out->y * camera_aspect(ref);
+}
 
 #ifdef WITH_GUILE
 #include <libguile.h>
