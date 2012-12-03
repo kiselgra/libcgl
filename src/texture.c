@@ -274,7 +274,7 @@ void unbind_texture_as_image(texture_ref ref, int unit) {
 }
 
 void save_texture_as_png(texture_ref ref, const char *filename) {
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	if (!valid_texture_ref(ref)) {
 		fprintf(stderr, "cannot save. invalid texref (destination was %s)\n", filename);
 		return;

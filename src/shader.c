@@ -25,8 +25,10 @@ struct shader {
 	char *name;
 	char *vertex_source,
 	     *fragment_source,
-		 *geometry_source;
-	GLuint vertex_program, fragment_program, geometry_program;
+		 *geometry_source,
+	     *tesselation_control_source,
+		 *tesselation_evaluation_source;
+	GLuint vertex_program, fragment_program, geometry_program, tess_control_program, tess_eval_program;
 	GLuint shader_program;
 	char **input_var_names;
 	unsigned int *input_var_ids;
@@ -37,12 +39,14 @@ struct shader {
 	int uniforms;
 	int next_uniform_id;
 	bool bound, built_ok;
-	char *vert_info_log, *frag_info_log, *geom_info_log, *program_info_log;
+	char *vert_info_log, *frag_info_log, *geom_info_log, *tess_control_info_log, *tess_eval_info_log, *program_info_log;
 };
 
+#ifndef SCM_MAGIC_SNARFER
 #include "mm.h"
 define_mm(shader, shaders, shader_ref);
 #include "shader.xx"
+#endif
 
 shader_ref make_shader(const char *name, int input_vars, int uniforms) {
 	shader_ref ref = allocate_shader_ref();
@@ -68,8 +72,8 @@ shader_ref make_shader(const char *name, int input_vars, int uniforms) {
 		shader->uniform_names[i] = 0;
 		shader->uniform_locations[i] = -1; // invalid uniform (glGetUniformLocation)
 	}
-	shader->vertex_source = shader->fragment_source = shader->geometry_source = 0;
-	shader->vertex_program = shader->fragment_program = shader->geometry_program = shader->shader_program = 0;
+	shader->vertex_source = shader->fragment_source = shader->geometry_source = shader->tesselation_control_source = shader->tesselation_evaluation_source = 0;
+	shader->vertex_program = shader->fragment_program = shader->geometry_program = shader->tess_control_program = shader->tess_eval_program = shader->shader_program = 0;
 	return ref;
 }
 
@@ -119,6 +123,16 @@ void add_fragment_source(shader_ref ref, const char *src) {
 void add_geometry_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
 	add_shader_source(&shader->geometry_source, src);
+}
+
+void add_tesselation_control_source(shader_ref ref, const char *src) {
+	struct shader *shader = shaders+ref.id;
+	add_shader_source(&shader->tesselation_control_source, src);
+}
+
+void add_tesselation_evaluation_source(shader_ref ref, const char *src) {
+	struct shader *shader = shaders+ref.id;
+	add_shader_source(&shader->tesselation_evaluation_source, src);
 }
 
 bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
@@ -171,7 +185,7 @@ void store_info_log(char **target, GLuint object) {
 
 bool compile_and_link_shader(shader_ref ref) {
 	struct shader *shader = shaders+ref.id;
-	const GLchar *src[3];
+	const GLchar *src[5];
 	GLint compile_res;
 
 	// compile shader source
@@ -184,13 +198,29 @@ bool compile_and_link_shader(shader_ref ref) {
 	glCompileShader(shader->vertex_program);
 	glCompileShader(shader->fragment_program);
 	
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
+#if CGL_GL_VERSION >= GL3
 	if (shader->geometry_source) {
 		shader->geometry_program = glCreateShader(GL_GEOMETRY_SHADER);
 		src[2] = shader->geometry_source;
 		glShaderSource(shader->geometry_program, 1, src+2, 0);
 		glCompileShader(shader->geometry_program);
 	}
+#endif
+#if CGL_GL_VERSION >= GL4
+	if (shader->tesselation_control_source) {
+		shader->tess_control_program = glCreateShader(GL_TESS_CONTROL_SHADER);
+		src[3] = shader->tesselation_control_source;
+		glShaderSource(shader->tess_control_program, 1, src+3, 0);
+		glCompileShader(shader->tess_control_program);
+	}
+	if (shader->tesselation_evaluation_source) {
+		shader->tess_eval_program = glCreateShader(GL_TESS_EVALUATION_SHADER);
+		src[4] = shader->tesselation_evaluation_source;
+		glShaderSource(shader->tess_eval_program, 1, src+4, 0);
+		glCompileShader(shader->tess_eval_program);
+	}
+#endif
 #endif
 
 	glGetShaderiv(shader->vertex_program, GL_COMPILE_STATUS, &compile_res);
@@ -209,11 +239,14 @@ bool compile_and_link_shader(shader_ref ref) {
 		glDeleteShader(shader->vertex_program);
 		glDeleteShader(shader->fragment_program);
 		if (shader->geometry_source) glDeleteShader(shader->geometry_program);
+		if (shader->tess_control_program) glDeleteShader(shader->tess_control_program);
+		if (shader->tess_eval_program) glDeleteShader(shader->tess_eval_program);
 		fprintf(stderr, "failed to compile fragment shader of %s\n", shader->name);
 		return false;
 	}
 
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
+#if CGL_GL_VERSION >= GL3
 	if (shader->geometry_source) {
 		glGetShaderiv(shader->geometry_program, GL_COMPILE_STATUS, &compile_res);
 		if (compile_res == GL_FALSE) {
@@ -221,17 +254,54 @@ bool compile_and_link_shader(shader_ref ref) {
 			glDeleteShader(shader->vertex_program);
 			glDeleteShader(shader->fragment_program);
 			glDeleteShader(shader->geometry_program);
+			if (shader->tess_control_program) glDeleteShader(shader->tess_control_program);
+			if (shader->tess_eval_program) glDeleteShader(shader->tess_eval_program);
 			fprintf(stderr, "failed to compile geometry shader of %s\n", shader->name);
 			return false;
 		}
 	}
 #endif
+#if CGL_GL_VERSION >= GL4
+	if (shader->tesselation_control_source) {
+		glGetShaderiv(shader->tess_control_program, GL_COMPILE_STATUS, &compile_res);
+		if (compile_res == GL_FALSE) {
+			store_info_log(&shader->tess_control_info_log, shader->tess_control_program);
+			glDeleteShader(shader->vertex_program);
+			glDeleteShader(shader->fragment_program);
+			glDeleteShader(shader->geometry_program);
+			glDeleteShader(shader->tess_control_program);
+			if (shader->tess_eval_program) glDeleteShader(shader->tess_eval_program);
+			fprintf(stderr, "failed to compile tesselation control shader of %s\n", shader->name);
+			return false;
+		}
+	}
+	if (shader->tesselation_evaluation_source) {
+		glGetShaderiv(shader->tess_eval_program, GL_COMPILE_STATUS, &compile_res);
+		if (compile_res == GL_FALSE) {
+			store_info_log(&shader->tess_eval_info_log, shader->tess_eval_program);
+			glDeleteShader(shader->vertex_program);
+			glDeleteShader(shader->fragment_program);
+			glDeleteShader(shader->geometry_program);
+			glDeleteShader(shader->tess_control_program);
+			glDeleteShader(shader->tess_eval_program);
+			fprintf(stderr, "failed to compile tesselation evaluation shader of %s\n", shader->name);
+			return false;
+		}
+	}
+#endif
+#endif
 
 	shader->shader_program = glCreateProgram();
 	glAttachShader(shader->shader_program, shader->vertex_program);
 	glAttachShader(shader->shader_program, shader->fragment_program);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
+#if CGL_GL_VERSION >= GL3
 	if (shader->geometry_program) glAttachShader(shader->shader_program, shader->geometry_program);
+#endif
+#if CGL_GL_VERSION >= GL4
+	if (shader->tess_control_program) glAttachShader(shader->shader_program, shader->tess_control_program);
+	if (shader->tess_eval_program) glAttachShader(shader->shader_program, shader->tess_eval_program);
+#endif
 #endif
 
 	// bind locations
@@ -284,6 +354,14 @@ const char *fragment_shader_info_log(shader_ref ref) {
 
 const char *geometry_shader_info_log(shader_ref ref) {
 	return shaders[ref.id].geom_info_log;
+}
+
+const char *tess_control_shader_info_log(shader_ref ref) {
+	return shaders[ref.id].tess_control_info_log;
+}
+
+const char *tess_eval_shader_info_log(shader_ref ref) {
+	return shaders[ref.id].tess_eval_info_log;
 }
 
 const char *shader_info_log(shader_ref ref) {
@@ -397,6 +475,20 @@ SCM_DEFINE(s_add_geometry_source, "add-geometry-source", 2, 0, 0, (SCM shader, S
 	free(source);
 	return SCM_BOOL_T;
 }
+SCM_DEFINE(s_add_tc_source, "add-tesselation-control-source", 2, 0, 0, (SCM shader, SCM src), "add tesselation control shader source to the shader object.") {
+	shader_ref ref = { scm_to_int(shader) };
+	char *source = scm_to_locale_string(src);
+	add_tesselation_control_source(ref, source);
+	free(source);
+	return SCM_BOOL_T;
+}
+SCM_DEFINE(s_add_te_source, "add-tesselation-evaluation-source", 2, 0, 0, (SCM shader, SCM src), "add tesselation evaluation shader source to the shader object.") {
+	shader_ref ref = { scm_to_int(shader) };
+	char *source = scm_to_locale_string(src);
+	add_tesselation_evaluation_source(ref, source);
+	free(source);
+	return SCM_BOOL_T;
+}
 SCM_DEFINE(s_add_shader_input, "add-shader-input", 3, 0, 0, (SCM shader, SCM varname, SCM index), "") {
 	shader_ref ref = { scm_to_int(shader) };
 	char *vn = scm_to_locale_string(varname);
@@ -444,6 +536,16 @@ SCM_DEFINE(s_fragment_shader_info_log, "fragment-shader-info-log", 1, 0, 0, (SCM
 SCM_DEFINE(s_geometry_shader_info_log, "geometry-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = geometry_shader_info_log(ref);
+	return scm_from_locale_string(log ? log : (const char*)"nil");
+}
+SCM_DEFINE(s_tc_shader_info_log, "tesselation-control-shader-info-log", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	const char *log = tess_control_shader_info_log(ref);
+	return scm_from_locale_string(log ? log : (const char*)"nil");
+}
+SCM_DEFINE(s_te_shader_info_log, "tesselation-evaluation-shader-info-log", 1, 0, 0, (SCM id), "") {
+	shader_ref ref = { scm_to_int(id) };
+	const char *log = tess_eval_shader_info_log(ref);
 	return scm_from_locale_string(log ? log : (const char*)"nil");
 }
 SCM_DEFINE(s_shader_link_info_log, "shader-link-info-log", 1, 0, 0, (SCM id), "") {

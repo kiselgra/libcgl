@@ -7,9 +7,9 @@
 #include <libmcm-0.0.1/camera-matrices.h>
 
 
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	#include <GL/freeglut.h>
-#elif CGL_GL_VERSION == GLES2
+#elif CGL_GL == GLES
 	#if LIBCGL_HAVE_EGLUT_X11 == 1
 		#ifdef __cplusplus
 		extern "C" {
@@ -29,11 +29,11 @@ void please_use_a_backward_gl_context() {
 	forward = false;
 }
 
-#if CGL_GL_VERSION == GL3 || LIBCGL_HAVE_EGLUT_X11 == 1
+#if CGL_GL == GL || LIBCGL_HAVE_EGLUT_X11 == 1
 
 void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
 {
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glutInit(&argc, argv);
 	glutInitContextVersion (gl_maj, gl_min);
 	unsigned int flags = GLUT_DEBUG;
@@ -84,7 +84,7 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 void register_display_function(     void (*fn)())                        { glutDisplayFunc(fn); }
 void register_idle_function(        void (*fn)())                        { glutIdleFunc(fn); }
 void register_keyboard_function(    void (*fn)(unsigned char, int, int)) { glutKeyboardFunc(fn); }
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 void register_keyboard_up_function( void (*fn)(unsigned char, int, int)) { glutKeyboardUpFunc(fn); }
 void register_mouse_function(       void (*fn)(int, int, int, int))      { glutMouseFunc(fn); }
 #endif
@@ -183,7 +183,7 @@ void standard_resize_func(int w, int h) {
 
 void swap_buffers() {
 // eglut does so after drawing
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glutSwapBuffers();
 #endif
 }

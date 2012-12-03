@@ -19,6 +19,8 @@ shader_ref make_shader(const char *name, int input_vars, int uniforms);
 void add_vertex_source(shader_ref ref, const char *src);
 void add_fragment_source(shader_ref ref, const char *src);
 void add_geometry_source(shader_ref ref, const char *src);
+void add_tesselation_control_source(shader_ref ref, const char *src);
+void add_tesselation_evaluation_source(shader_ref ref, const char *src);
 bool add_shader_input(shader_ref ref, const char *varname, unsigned int index);
 bool add_shader_uniform(shader_ref ref, const char *name);
 bool modify_shader_input_index(shader_ref ref, const char *varname, unsigned int new_index);

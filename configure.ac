@@ -43,19 +43,31 @@ fi
 AC_SUBST([GUILE_DEF])
 AM_CONDITIONAL([CAN_USE_GUILE], [test "x$can_use_guile" = "xyes"])
 
-AC_ARG_WITH([gl], [AS_HELP_STRING([--with-gl=X], [Choose which gl version you want. Options: gl, gles (meaning gles2), use lowercase.])], glver=$withval, glver="gl")
-AS_IF([test "x$glver" == "xgl"],
+AC_ARG_WITH([gl], [AS_HELP_STRING([--with-gl=X], [Choose which gl version you want. Options: gl3, gl4, gl (meaning gl4), gles (meaning gles2), use lowercase.])], glver=$withval, glver="gl")
+AS_IF(
+	[test "x$glver" == "xgl3"],
 	[
 		AC_CHECK_LIB([GL], [main])
 		AC_CHECK_LIB([GLU], [main])
 		AC_CHECK_LIB([glut], [main])
 
-#		AC_CHECK_LIB([GLEW], [main])
 		PKG_CHECK_MODULES(GLEW, glew)
 		AC_SUBST(GLEW_CFLAGS)
 		AC_SUBST(GLEW_LIBS)
 
 		AC_SUBST([GL_VERSION], [GL3])
+	],
+	[test "x$glver" == "xgl4" || test "x$glver" == "xgl" ],
+	[
+		AC_CHECK_LIB([GL], [main])
+		AC_CHECK_LIB([GLU], [main])
+		AC_CHECK_LIB([glut], [main])
+
+		PKG_CHECK_MODULES(GLEW, glew)
+		AC_SUBST(GLEW_CFLAGS)
+		AC_SUBST(GLEW_LIBS)
+
+		AC_SUBST([GL_VERSION], [GL4])
 	],
 	[test "x$glver" == "xgles"],
 	[
@@ -66,7 +78,7 @@ AS_IF([test "x$glver" == "xgl"],
 		AC_SUBST([GL_VERSION], [GLES2])
 	],
 	[
-		AC_MSG_ERROR([Invalid gl version. Use (literally) gl or gles.])
+		AC_MSG_ERROR([Invalid gl version. Use (literally) gl, gl3, gl4 or gles.])
 	])
 
 AC_ARG_WITH([objloader],

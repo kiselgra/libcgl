@@ -81,7 +81,7 @@ unsigned int scheme_symbol_to_gl_enum(void *s) {
 	case ("rgb", GL_RGB);
 	case ("rgba", GL_RGBA);
 	case ("depth-component", GL_DEPTH_COMPONENT);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	case ("rgb-8", GL_RGB8);
 	case ("rgba-8", GL_RGBA8);
 	case ("rgba-32f", GL_RGBA32F);
@@ -208,6 +208,19 @@ SCM_DEFINE(s_mat_mult, "multiply-matrices", 2, 0, 0, (SCM lhs, SCM rhs), "") {
     scm_to_matrix4x4f(&r, rhs);
     multiply_matrices4x4f(&res, &l, &r);
     return matrix4x4f_to_scm(&res);
+}
+
+// why is this not found by the wrapper generator script?
+SCM_DEFINE(gl_Polygon_Mode, "gl:polygon-mode", 2, 0, 0, (SCM face, SCM mode), "") {
+	glPolygonMode(scm_to_int(face), scm_to_int(mode));
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(gl_PatchParameteri, "gl:patch-parameteri", 2, 0, 0, (SCM key, SCM val), "") {
+	GLenum k = scm_to_int(key);
+	int v = scm_to_int(val);
+	glPatchParameteri(k, v);
+	return SCM_BOOL_T;
 }
 
 void register_math_functions() {

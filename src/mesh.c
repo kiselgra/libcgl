@@ -54,11 +54,11 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 		mesh->vertex_buffer_names = malloc(sizeof(char*) * vertex_buffers);
 		glGenBuffers(vertex_buffers, mesh->vertex_buffer_ids);
 	}
-#if CGL_GL_VERSION == GLES
+#if CGL_GL == GLES
 	else fprintf(stderr, "Warning: Meshes with external vertex buffers are not supported on gles, yet.\n");
 #endif
 
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glGenVertexArrays(1, &mesh->vao_id);
 #else
 	mesh->done = false;
@@ -70,7 +70,7 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 }
 
 void bind_mesh_to_gl(mesh_ref mr) {
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glBindVertexArray(meshes[mr.id].vao_id);
 #else
 	struct mesh *mesh = meshes+mr.id;
@@ -89,7 +89,7 @@ void bind_mesh_to_gl(mesh_ref mr) {
 }
 
 void unbind_mesh_from_gl(mesh_ref mr) {
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glBindVertexArray(0);
 #else
 	struct mesh *mesh = meshes+mr.id;
@@ -149,7 +149,7 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	strcpy(mesh->vertex_buffer_names[vbo_id], name);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
 	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 #else
@@ -171,7 +171,7 @@ bool add_existing_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum co
 		mesh->vertices = vertices;
 	int vbo_id = mesh->next_vbo++;
 	glBindBuffer(GL_ARRAY_BUFFER, vboid);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 #else
@@ -199,7 +199,7 @@ bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_typ
 	unsigned int size_in_bytes = unit_size * mesh->vertices * element_dim;
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
 	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 #endif
@@ -328,6 +328,14 @@ SCM_DEFINE(s_draw_mesh_as, "draw-mesh-as", 2, 0, 0, (SCM id, SCM prim_t), "") {
 	GLenum prim = scheme_symbol_to_gl_enum(&prim_t);
 	draw_mesh_as(ref, prim);
 	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_set_mesh_prim_type, "set-mesh-primitive-type!", 2, 0, 0, (SCM id, SCM prim_t), "") {
+	mesh_ref ref = { scm_to_int(id) };
+	GLenum t = scm_to_int(prim_t);
+	GLenum old = mesh_primitive_type(ref);
+	set_mesh_primitive_type(ref, t);
+	return scm_from_int(old);
 }
 	
 void register_scheme_functions_for_meshes() {
