@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libcgl.la
-noinst_PROGRAMS = bezier #blub bspline
+noinst_PROGRAMS = #bezier #blub bspline
 
 
 BUILT_SOURCES = atomic_buffer.xx shader.xx camera.xx

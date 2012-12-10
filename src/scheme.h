@@ -1,6 +1,8 @@
 #ifndef __SCHEME_H__ 
 #define __SCHEME_H__ 
 
+#ifdef WITH_GUILE
+
 #include <libmcm/matrix.h>
 #include <libmcm/vectors.h>
 #include <libguile.h>
@@ -30,6 +32,8 @@ SCM scm_to_matrix4x4f(matrix4x4f *m, SCM bv);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif
