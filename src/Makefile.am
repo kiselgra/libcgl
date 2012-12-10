@@ -84,3 +84,4 @@ install-data-hook:
 
 libcgldir = $(pkgdatadir)
 libcgl_DATA = mm.m4
+EXTRA_DIST = mm.m4
