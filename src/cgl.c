@@ -70,7 +70,7 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 
 static gl_error_handler_t error_handler = standard_gl_error_handler;
 
-void register_error_handler(gl_error_handler_t h) {
+void register_gl_error_handler(gl_error_handler_t h) {
 	error_handler = h;
 }
 
