@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libcgl.la
-noinst_PROGRAMS = bezier #blub bspline
+noinst_PROGRAMS = #bezier #blub bspline
 
 
 BUILT_SOURCES = atomic_buffer.xx shader.xx camera.xx
@@ -84,3 +84,4 @@ install-data-hook:
 
 libcgldir = $(pkgdatadir)
 libcgl_DATA = mm.m4
+EXTRA_DIST = mm.m4

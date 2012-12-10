@@ -17,6 +17,7 @@ AX_PREFIX_CONFIG_H(src/cgl-config.h)
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_C99
+AM_PROG_CC_C_O
 
 # PKG_CHECK_MODULES([GUILE], [guile-2.0])
 # AC_SUBST([GUILE_CFLAGS])
@@ -33,13 +34,21 @@ AC_PROG_LIBTOOL
 AC_CHECK_LIB([mcm], [make_vec3f])
 #AC_CHECK_LIB([png], [main])
 
-ifdef([GUILE_FLAGS], [can_use_guile="yes"], [can_use_guile="no"])
-if test "x$can_use_guile" = "xyes" ; then
-	GUILE_FLAGS
-	GUILE_DEF="-DWITH_GUILE"
-else
-	GUILE_DEF=""
-fi
+AC_ARG_WITH([guile], [AS_HELP_STRING([--with-guile], [Wether to use guile. Default: yes.])], choose_guile=$withval, choose_guile="yes")
+AS_IF(
+	[test "x$choose_guile" == "yes"],
+	[
+		ifdef([GUILE_FLAGS], [can_use_guile="yes"], [can_use_guile="no"])
+		if test "x$can_use_guile" = "xyes" ; then
+			GUILE_FLAGS
+			GUILE_DEF="-DWITH_GUILE"
+		else
+			GUILE_DEF=""
+		fi
+	],
+	[
+		GUILE_DEF=""
+	])
 AC_SUBST([GUILE_DEF])
 AM_CONDITIONAL([CAN_USE_GUILE], [test "x$can_use_guile" = "xyes"])
 

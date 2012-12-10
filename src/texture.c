@@ -168,6 +168,7 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	return ref;
 }
 
+#if CGL_GL == GL
 texture_ref make_empty_texture1d(const char *name, unsigned int elems, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
 	allocate_texture();
 	texture_ref ref;
@@ -224,6 +225,7 @@ texture_ref make_buffer_texture(const char *name, unsigned int elements, unsigne
 
 	return ref;
 }
+#endif
 
 void set_texture_params(texture_ref ref, tex_params_t *params) {
 	struct texture *texture = textures+ref.id;
@@ -259,6 +261,7 @@ void unbind_texture(texture_ref ref) {
 	glBindTexture(textures[ref.id].target, 0); 
 }
 
+#if CGL_GL == GL
 void bind_texture_as_image(texture_ref ref, int unit, int level, GLenum access, GLenum format) {
 	struct texture *texture = textures + ref.id;
     texture->bound = true;
@@ -272,6 +275,7 @@ void unbind_texture_as_image(texture_ref ref, int unit) {
     glBindImageTexture(unit, 0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
     check_for_gl_errors(__FUNCTION__);
 }
+#endif
 
 void save_texture_as_png(texture_ref ref, const char *filename) {
 #if CGL_GL == GL
@@ -322,6 +326,7 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 }
 
 void* download_texture_to(texture_ref ref, GLenum format, size_t bytes, GLenum type, void *data) {
+#if CGL_GL == GL
 	struct texture *texture = textures + ref.id;
 	bool was_bound = false;
 	if (!texture->bound)
@@ -336,6 +341,9 @@ void* download_texture_to(texture_ref ref, GLenum format, size_t bytes, GLenum t
 	check_for_gl_errors(__FUNCTION__);
 	
 	return data;
+#else
+	fprintf(stderr, "Cannot download textures on gles, yet.\n");
+#endif
 }
 
 void* download_texture(texture_ref ref, GLenum format, size_t bytes, GLenum type) {
@@ -344,7 +352,7 @@ void* download_texture(texture_ref ref, GLenum format, size_t bytes, GLenum type
 	return download_texture_to(ref, format, bytes, type, data);
 }
 
-
+#if CGL_GL == GL
 float* download_texture1f(texture_ref ref) { return download_texture(ref, GL_RED,  sizeof(float), GL_FLOAT); }
 vec3f* download_texture3f(texture_ref ref) { return download_texture(ref, GL_RGB,  sizeof(vec3f), GL_FLOAT); }
 vec4f* download_texture4f(texture_ref ref) { return download_texture(ref, GL_RGBA, sizeof(vec4f), GL_FLOAT); }
@@ -352,6 +360,7 @@ vec4f* download_texture4f(texture_ref ref) { return download_texture(ref, GL_RGB
 float* download_texture1f_to(texture_ref ref, float *data) { return download_texture_to(ref, GL_RED,  sizeof(float), GL_FLOAT, data); }
 vec3f* download_texture3f_to(texture_ref ref, vec3f *data) { return download_texture_to(ref, GL_RGB,  sizeof(vec3f), GL_FLOAT, data); }
 vec4f* download_texture4f_to(texture_ref ref, vec4f *data) { return download_texture_to(ref, GL_RGBA, sizeof(vec4f), GL_FLOAT, data); }
+#endif
 
 int texture_id(texture_ref ref) {
 	return textures[ref.id].texid;
