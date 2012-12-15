@@ -90,6 +90,16 @@ AS_CASE(["$with_png"],
 		[no], [],
 		[AC_DEFINE([HAVE_LIBPNG], [1], [Via --with-png=PATH])])
 
+AC_ARG_WITH([jpeg],
+            [AS_HELP_STRING([--with-jpeg],
+                            [Support loading of jpeg files through libjpeg. Does not set any paths. @<:@default=check@:>@])],
+		    [with_jpeg=$withval],
+			[with_jpeg=check])
+AS_CASE(["$with_jpeg"],
+		[check], [AC_CHECK_LIB([jpeg], [main])],
+		[no], [],
+		[AC_DEFINE([HAVE_LIBPNG], [1], [Via --with-jpeg=PATH])])
+
 
 
 AC_CHECK_LIB([3dmath], [main])

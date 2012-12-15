@@ -128,7 +128,8 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 		ref.id = -1;
 		return ref;
 	}
-	vec3f *data = load_png3f(actual_name, &w, &h);
+// 	vec3f *data = load_png3f(actual_name, &w, &h);
+	vec3f *data = load_image3f(actual_name, &w, &h);
 	free(actual_name);
 	
 	ref = internal_make_tex(name, target, params, GL_RGBA, GL_RGB, GL_FLOAT, w, h, data);
