@@ -34,7 +34,7 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
 #endif
 	
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
 	ignore_gl_error("glew-init");
@@ -70,7 +70,7 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 
 static gl_error_handler_t error_handler = standard_gl_error_handler;
 
-void register_error_handler(gl_error_handler_t h) {
+void register_gl_error_handler(gl_error_handler_t h) {
 	error_handler = h;
 }
 
@@ -96,7 +96,7 @@ void standard_gl_error_handler(GLenum error, const char *where) {
 void ignore_gl_error(const char *function)
 {
 	GLenum error = glGetError();
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	fprintf(stderr, "Ignoring GL error %s (for %s).\n", gluErrorString(error), function);
 #else
 	fprintf(stderr, "Ignoring GL error %d (for %s) (is glu supported here?).\n", error, function);
@@ -144,7 +144,7 @@ char* gl_enum_string(GLenum e) {
 	c(GL_RGB)
 	c(GL_RGBA)
 	c(GL_DEPTH_COMPONENT)
-#if CGL_GL_VERSION == GL3
+#if CGL == GL
 	c(GL_RGB8)
 	c(GL_RGBA8)
 	c(GL_DEPTH_COMPONENT24)
@@ -155,7 +155,7 @@ char* gl_enum_string(GLenum e) {
 	c(GL_FRAMEBUFFER_COMPLETE)
 	c(GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
 	c(GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	c(GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER)
 	c(GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER)
 #endif

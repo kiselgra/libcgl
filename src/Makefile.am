@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libcgl.la
-noinst_PROGRAMS = bezier #blub bspline
+noinst_PROGRAMS = #bezier #blub bspline
 
 
 BUILT_SOURCES = atomic_buffer.xx shader.xx camera.xx
@@ -29,18 +29,18 @@ libcgl_la_SOURCES = 	atomic_buffer.c atomic_buffer.h \
 						cgl-config.h
 
 
-blub_SOURCES = $(libcgl_la_SOURCES) blub.c
+#blub_SOURCES = $(libcgl_la_SOURCES) blub.c
 bezier_SOURCES = $(libcgl_la_SOURCES) bezier.c
-bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
+#bspline_SOURCES = $(libcgl_la_SOURCES) bspline.c
 
 SUFFIXES: .x .xx
 
 if CAN_USE_GUILE
 snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 .c.x:
-	guile-snarf -o $@ $< $(snarf_opts)
+	guile-snarf -o $@ $*.c $(snarf_opts)
 .cpp.x:
-	guile-snarf -o $@ $< $(snarf_opts)
+	guile-snarf -o $@ $*.cpp $(snarf_opts)
 endif
 
 .c.xx: $< mm.m4
@@ -63,13 +63,13 @@ libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE
 
 libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS) $(GLEW_LIBS)
 
-blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
+#blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
-bspline_CPPFLAGS = $(libcgl_la_CPPFLAGS)
+#bspline_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 
-blub_LDADD = $(GUILE_LDFLAGS)
+#blub_LDADD = $(GUILE_LDFLAGS)
 bezier_LDADD = $(GUILE_LDFLAGS) $(GLEW_LIBS)
-bspline_LDADD = $(GUILE_LDFLAGS)
+#bspline_LDADD = $(GUILE_LDFLAGS)
 
 if CAN_USE_GUILE
 scheme.c camera.c shader.c texture.c glut.c mesh.c impex.cpp: shader.x camera.x texture.x glut.x mesh.x impex.x
@@ -84,3 +84,4 @@ install-data-hook:
 
 libcgldir = $(pkgdatadir)
 libcgl_DATA = mm.m4
+EXTRA_DIST = mm.m4

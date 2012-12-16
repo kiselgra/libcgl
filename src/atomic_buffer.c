@@ -1,7 +1,12 @@
+
 #include "atomic_buffer.h"
 
 #include "cgl.h"
 #include "gl-version.h"
+
+#if CGL_GL == GL
+#if CGL_GL_VERSION >= GL4
+
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -188,3 +193,10 @@ glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0); 
 */
 
+#else
+#warning atomic buffer not supported
+#endif
+
+#else
+#warning atomic buffer not supported
+#endif

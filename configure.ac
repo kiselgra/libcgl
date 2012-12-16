@@ -17,6 +17,7 @@ AX_PREFIX_CONFIG_H(src/cgl-config.h)
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_C99
+AM_PROG_CC_C_O
 
 # PKG_CHECK_MODULES([GUILE], [guile-2.0])
 # AC_SUBST([GUILE_CFLAGS])
@@ -33,29 +34,49 @@ AC_PROG_LIBTOOL
 AC_CHECK_LIB([mcm], [make_vec3f])
 #AC_CHECK_LIB([png], [main])
 
-ifdef([GUILE_FLAGS], [can_use_guile="yes"], [can_use_guile="no"])
-if test "x$can_use_guile" = "xyes" ; then
-	GUILE_FLAGS
-	GUILE_DEF="-DWITH_GUILE"
-else
-	GUILE_DEF=""
-fi
+AC_ARG_WITH([guile], [AS_HELP_STRING([--with-guile], [Wether to use guile. Default: yes.])], choose_guile=$withval, choose_guile="yes")
+AS_IF(
+	[test "x$choose_guile" == "yes"],
+	[
+		ifdef([GUILE_FLAGS], [can_use_guile="yes"], [can_use_guile="no"])
+		if test "x$can_use_guile" = "xyes" ; then
+			GUILE_FLAGS
+			GUILE_DEF="-DWITH_GUILE"
+		else
+			GUILE_DEF=""
+		fi
+	],
+	[
+		GUILE_DEF=""
+	])
 AC_SUBST([GUILE_DEF])
 AM_CONDITIONAL([CAN_USE_GUILE], [test "x$can_use_guile" = "xyes"])
 
-AC_ARG_WITH([gl], [AS_HELP_STRING([--with-gl=X], [Choose which gl version you want. Options: gl, gles (meaning gles2), use lowercase.])], glver=$withval, glver="gl")
-AS_IF([test "x$glver" == "xgl"],
+AC_ARG_WITH([gl], [AS_HELP_STRING([--with-gl=X], [Choose which gl version you want. Options: gl3, gl4, gl (meaning gl4), gles (meaning gles2), use lowercase.])], glver=$withval, glver="gl")
+AS_IF(
+	[test "x$glver" == "xgl3"],
 	[
 		AC_CHECK_LIB([GL], [main])
 		AC_CHECK_LIB([GLU], [main])
 		AC_CHECK_LIB([glut], [main])
 
-#		AC_CHECK_LIB([GLEW], [main])
 		PKG_CHECK_MODULES(GLEW, glew)
 		AC_SUBST(GLEW_CFLAGS)
 		AC_SUBST(GLEW_LIBS)
 
 		AC_SUBST([GL_VERSION], [GL3])
+	],
+	[test "x$glver" == "xgl4" || test "x$glver" == "xgl" ],
+	[
+		AC_CHECK_LIB([GL], [main])
+		AC_CHECK_LIB([GLU], [main])
+		AC_CHECK_LIB([glut], [main])
+
+		PKG_CHECK_MODULES(GLEW, glew)
+		AC_SUBST(GLEW_CFLAGS)
+		AC_SUBST(GLEW_LIBS)
+
+		AC_SUBST([GL_VERSION], [GL4])
 	],
 	[test "x$glver" == "xgles"],
 	[
@@ -66,7 +87,7 @@ AS_IF([test "x$glver" == "xgl"],
 		AC_SUBST([GL_VERSION], [GLES2])
 	],
 	[
-		AC_MSG_ERROR([Invalid gl version. Use (literally) gl or gles.])
+		AC_MSG_ERROR([Invalid gl version. Use (literally) gl, gl3, gl4 or gles.])
 	])
 
 AC_ARG_WITH([objloader],

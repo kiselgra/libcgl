@@ -47,7 +47,7 @@ framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned 
 	framebuffer->name = malloc(strlen(name)+1);
 	strcpy(framebuffer->name, name);
 
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &framebuffer->max_number_of_color_attachments);
 #else
 	framebuffer->max_number_of_color_attachments = 1;
@@ -100,7 +100,7 @@ void attach_depth_buffer(framebuffer_ref ref) {
 
 	glGenRenderbuffers(1, &framebuffer->depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->depthbuffer);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
 #else
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, framebuffer->width, framebuffer->height);
@@ -112,7 +112,7 @@ void attach_depth_buffer(framebuffer_ref ref) {
 
 void draw_buffers_done(framebuffer_ref ref) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	if (framebuffers->attachments_in_use == 0) {
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
@@ -146,7 +146,7 @@ void bind_framebuffer(framebuffer_ref ref) {
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->fbo_id);
 	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->depthbuffer);
-#if CGL_GL_VERSION == GL3
+#if CGL_GL == GL
 	if (framebuffer->attachments_in_use)
 		glDrawBuffers(framebuffer->attachments_in_use, framebuffer->color_attachments);
 	else
