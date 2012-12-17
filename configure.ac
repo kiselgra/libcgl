@@ -36,7 +36,7 @@ AC_CHECK_LIB([mcm], [make_vec3f])
 
 AC_ARG_WITH([guile], [AS_HELP_STRING([--with-guile], [Wether to use guile. Default: yes.])], choose_guile=$withval, choose_guile="yes")
 AS_IF(
-	[test "x$choose_guile" == "yes"],
+	[test "x$choose_guile" == "xyes"],
 	[
 		ifdef([GUILE_FLAGS], [can_use_guile="yes"], [can_use_guile="no"])
 		if test "x$can_use_guile" = "xyes" ; then
