@@ -252,7 +252,7 @@
       (line)
       (line "void register_gl_functions() {")
       (line "	#ifndef GUILE_MAGIC_SNARFER")
-      (line (format nil "	#include \"~a.x\"" to))
+      (line (format nil "	#include \"~a.x\"" (subseq to 0 (- (length to) 2))))
       (line "	#endif")
       (line "}")
       (line)

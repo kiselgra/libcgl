@@ -5,7 +5,7 @@ noinst_PROGRAMS = #bezier #blub bspline
 BUILT_SOURCES = atomic_buffer.xx shader.xx camera.xx
 
 if CAN_USE_GUILE
-BUILT_SOURCES+=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x
+BUILT_SOURCES+=camera.x glut.x shader.x texture.x framebuffer.x mesh.x impex.x prepared.x scheme.x atomic_buffer.x gl.wrappers.x
 endif
 
 # libconfigfiles_la_SOURCES = grammar.yy  lexer.ll  parser.h  token.h lexer.h config_creator.h configfile.h configfile.cpp
@@ -38,8 +38,10 @@ SUFFIXES: .x .xx
 if CAN_USE_GUILE
 snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 .c.x:
+	echo "--------------- S N A R F"
 	guile-snarf -o $@ $*.c $(snarf_opts)
 .cpp.x:
+	echo "--------------- S N A R F"
 	guile-snarf -o $@ $*.cpp $(snarf_opts)
 endif
 
@@ -73,6 +75,7 @@ bezier_LDADD = $(GUILE_LDFLAGS) $(GLEW_LIBS)
 
 if CAN_USE_GUILE
 scheme.c camera.c shader.c texture.c glut.c mesh.c impex.cpp: shader.x camera.x texture.x glut.x mesh.x impex.x
+gl.wrappers.c: gl.wrappers.x
 endif
 camera.c: camera.xx
 
