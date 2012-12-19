@@ -38,10 +38,8 @@ SUFFIXES: .x .xx
 if CAN_USE_GUILE
 snarf_opts = @GUILE_DEF@ $(AM_CPPFLAGS) $(libcgl_la_CPPFLAGS) $(CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 .c.x:
-	echo "--------------- S N A R F"
 	guile-snarf -o $@ $*.c $(snarf_opts)
 .cpp.x:
-	echo "--------------- S N A R F"
 	guile-snarf -o $@ $*.cpp $(snarf_opts)
 endif
 
