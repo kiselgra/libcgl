@@ -13,6 +13,10 @@ typedef struct {
 	int id;
 } mesh_ref;
 
+inline bool equal_mesh_refs(mesh_ref a, mesh_ref b) {
+	return a.id == b.id;
+}
+
 /*! you can add a vertex buffer to a mesh in two different ways.
  *  first: add it by passing cpu data -> a vbo will be created.
  *  second: add an existing vbo -> it will be used. (create the mesh with make_mesh("", 0).

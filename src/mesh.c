@@ -23,6 +23,9 @@ struct mesh {
 	GLenum primitive_type;
 };
 
+// see http://gustedt.wordpress.com/2010/11/29/myth-and-reality-about-inline-in-c99/
+extern inline bool equal_mesh_refs(mesh_ref a, mesh_ref b);
+
 static struct mesh *meshes = 0;
 static unsigned int meshes_allocated = 0, 
                     next_mesh_index = 0;

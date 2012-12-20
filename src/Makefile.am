@@ -25,6 +25,7 @@ libcgl_la_SOURCES = 	atomic_buffer.c atomic_buffer.h \
                         texture.c      texture.h \
 						mm.h \
 						prepared.cpp   prepared.h \
+						wall-time.c    wall-time.h \
 						gl.wrappers.c \
 						cgl-config.h
 
@@ -53,7 +54,7 @@ endif
 CGL_AM_CPPFLAGS = $(GUILE_CFLAGS) @GUILE_DEF@ -D CGL_GL_VERSION=$(GL_VERSION) $(GLEW_CFLAGS)
 
 library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
-library_include_HEADERS = atomic_buffer.h cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h libcgl.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h
+library_include_HEADERS = atomic_buffer.h cgl.h camera.h drawelement.h framebuffer.h glut.h gl-version.h impex.h libcgl.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h wall-time.h
 
 # setting c++ flags:
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
