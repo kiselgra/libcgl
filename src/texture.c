@@ -119,6 +119,7 @@ texture_ref make_texture_ub(const char *name, const char *filename, int target, 
 	return ref;
 }
 
+//! does not work on GLES.
 texture_ref make_texture(const char *name, const char *filename, int target, tex_params_t *params) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
