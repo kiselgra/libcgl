@@ -41,7 +41,7 @@ typedef struct {
 } obj_data;
 
 
-void load_objfile(const char *name, const char *filename, obj_data *output, bool inflate);
+void load_objfile(const char *name, const char *filename, obj_data *output, bool inflate, bool collapse);
 
 
 #ifdef __cplusplus
