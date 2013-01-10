@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <termios.h>	// tc[sg]etattr
+#include <unistd.h>		// tc[sg]etattr
+
 #ifdef WITH_GUILE
 #include <libguile.h>
 #include "scheme.h"
@@ -29,7 +32,12 @@ static void* cfg_only(void *data) {
 	return 0;
 }
 
+static struct termios termios;
+
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile) {
+	
+	if (isatty(STDOUT_FILENO))
+		tcgetattr(STDOUT_FILENO, &termios);
 #if LIBCGL_HAVE_LIBGLUT == 1
 	startup_glut(window_title, argc, argv, gl_major, gl_minor, res_x, res_y);
 #endif
@@ -128,9 +136,12 @@ void dump_gl_info(void)
 }
 
 void quit(int status) {
+	if (isatty(STDOUT_FILENO))
+		tcsetattr(STDOUT_FILENO, TCSANOW, &termios);
 #ifdef WITH_GUILE
 	scm_c_eval_string("(cancel-thread repl-thread)");
 	scm_c_eval_string("(join-thread repl-thread)");
+	scm_primitive_exit(scm_from_int(status));
 #endif
 	exit(status);
 }
