@@ -87,6 +87,12 @@ extern "C" {
 				strcpy(output->materials[i].tex_bump, mit->second->tex_bump.c_str());
 			}
 			else output->materials[i].tex_bump = 0;
+			if (mit->second->tex_alpha != "") {
+				cout << "-------- " << mit->second->tex_alpha << endl;
+				output->materials[i].tex_alpha = (char*)malloc(mit->second->tex_alpha.length()+1);
+				strcpy(output->materials[i].tex_alpha, mit->second->tex_alpha.c_str());
+			}
+			else output->materials[i].tex_alpha = 0;
 			++i;
 		}
 		
