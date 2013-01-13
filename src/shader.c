@@ -23,11 +23,12 @@
 
 struct shader {
 	char *name;
-	char *vertex_source,
-	     *fragment_source,
-		 *geometry_source,
-	     *tesselation_control_source,
-		 *tesselation_evaluation_source;
+	char **vertex_source,
+	     **fragment_source,
+		 **geometry_source,
+	     **tesselation_control_source,
+		 **tesselation_evaluation_source;
+	int vertex_sources, fragment_sources, geometry_sources, tesselation_control_sources, tesselation_evaluation_sources;
 	GLuint vertex_program, fragment_program, geometry_program, tess_control_program, tess_eval_program;
 	GLuint shader_program;
 	char **input_var_names;
@@ -73,6 +74,7 @@ shader_ref make_shader(const char *name, int input_vars, int uniforms) {
 		shader->uniform_locations[i] = -1; // invalid uniform (glGetUniformLocation)
 	}
 	shader->vertex_source = shader->fragment_source = shader->geometry_source = shader->tesselation_control_source = shader->tesselation_evaluation_source = 0;
+	shader->vertex_sources = shader->fragment_sources = shader->geometry_sources = shader->tesselation_control_sources = shader->tesselation_evaluation_sources = 0;
 	shader->vertex_program = shader->fragment_program = shader->geometry_program = shader->tess_control_program = shader->tess_eval_program = shader->shader_program = 0;
 	return ref;
 }
@@ -83,12 +85,19 @@ void destroy_shader(shader_ref ref) {
 	for (int i = 0; i < shader->next_input_var; ++i) {
 		free(shader->input_var_names[i]);
 	}
+	for (int i = 0; i < shader->vertex_sources; ++i)                 free(shader->vertex_source[i]);
+	for (int i = 0; i < shader->fragment_sources; ++i)               free(shader->fragment_source[i]);
+	for (int i = 0; i < shader->geometry_sources; ++i)               free(shader->geometry_source[i]);
+	for (int i = 0; i < shader->tesselation_control_sources; ++i)    free(shader->tesselation_control_source[i]);
+	for (int i = 0; i < shader->tesselation_evaluation_sources; ++i) free(shader->tesselation_evaluation_source[i]);
 	free(shader->input_var_names);               shader->input_var_names = 0;
 	free(shader->input_var_ids);                 shader->input_var_ids = 0;
 	free(shader->name);                          shader->name = 0;
 	free(shader->vertex_source);                 shader->vertex_source = 0;
 	free(shader->fragment_source);               shader->fragment_source = 0;
 	free(shader->geometry_source);               shader->geometry_source = 0;
+	free(shader->tesselation_control_source);    shader->tesselation_control_source = 0;
+	free(shader->tesselation_evaluation_source); shader->tesselation_evaluation_source = 0;
 	glDeleteProgram(shader->shader_program);     shader->shader_program = 0;
 	glDeleteShader(shader->vertex_program);      shader->vertex_program = 0;
 	glDeleteShader(shader->fragment_program);    shader->fragment_program = 0;
@@ -96,43 +105,41 @@ void destroy_shader(shader_ref ref) {
 	free_shader_ref(ref);
 }
 
-void add_shader_source(char **destination, const char *add) {
-	unsigned int old_size = 0;
-	if (*destination) old_size = strlen(*destination) + 1; // we insert an additional \n
-	unsigned int new_size = strlen(add);
-	char *new_src = malloc(old_size + new_size+1);
-	if (old_size) {
-		strcpy(new_src, *destination);
-		new_src[old_size] = '\n';
-	}
-	strcpy(new_src + old_size, add);
+void add_shader_source(char ***destination, const char *add, int *size) {
+	// each shader source type holds an array of strings.
+	unsigned int old_size = *size;
+	char **new_array = malloc((old_size+1)*sizeof(char**));
+	for (int i = 0; i < old_size; ++i)
+		new_array[i] = (*destination)[i];
 	free(*destination);
-	*destination = new_src;
+	new_array[old_size] = strdup(add);
+	(*size)++;
+	*destination = new_array;
 }
 
 void add_vertex_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
-	add_shader_source(&shader->vertex_source, src);
+	add_shader_source(&shader->vertex_source, src, &shader->vertex_sources);
 }
 
 void add_fragment_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
-	add_shader_source(&shader->fragment_source, src);
+	add_shader_source(&shader->fragment_source, src, &shader->fragment_sources);
 }
 
 void add_geometry_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
-	add_shader_source(&shader->geometry_source, src);
+	add_shader_source(&shader->geometry_source, src, &shader->geometry_sources);
 }
 
 void add_tesselation_control_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
-	add_shader_source(&shader->tesselation_control_source, src);
+	add_shader_source(&shader->tesselation_control_source, src, &shader->tesselation_control_sources);
 }
 
 void add_tesselation_evaluation_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
-	add_shader_source(&shader->tesselation_evaluation_source, src);
+	add_shader_source(&shader->tesselation_evaluation_source, src, &shader->tesselation_evaluation_sources);
 }
 
 bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
@@ -185,16 +192,13 @@ void store_info_log(char **target, GLuint object) {
 
 bool compile_and_link_shader(shader_ref ref) {
 	struct shader *shader = shaders+ref.id;
-	const GLchar *src[5];
 	GLint compile_res;
 
 	// compile shader source
 	shader->vertex_program = glCreateShader(GL_VERTEX_SHADER);
 	shader->fragment_program = glCreateShader(GL_FRAGMENT_SHADER);
-	src[0] = shader->vertex_source;
-	src[1] = shader->fragment_source;
-	glShaderSource(shader->vertex_program, 1, src, 0);
-	glShaderSource(shader->fragment_program, 1, src+1, 0);
+	glShaderSource(shader->vertex_program, shader->vertex_sources, (const char**)shader->vertex_source, 0);
+	glShaderSource(shader->fragment_program, shader->fragment_sources, (const char**)shader->fragment_source, 0);
 	glCompileShader(shader->vertex_program);
 	glCompileShader(shader->fragment_program);
 	
@@ -202,22 +206,19 @@ bool compile_and_link_shader(shader_ref ref) {
 #if CGL_GL_VERSION >= GL3
 	if (shader->geometry_source) {
 		shader->geometry_program = glCreateShader(GL_GEOMETRY_SHADER);
-		src[2] = shader->geometry_source;
-		glShaderSource(shader->geometry_program, 1, src+2, 0);
+		glShaderSource(shader->geometry_program, shader->geometry_sources, (const char**)shader->geometry_source, 0);
 		glCompileShader(shader->geometry_program);
 	}
 #endif
 #if CGL_GL_VERSION >= GL4
 	if (shader->tesselation_control_source) {
 		shader->tess_control_program = glCreateShader(GL_TESS_CONTROL_SHADER);
-		src[3] = shader->tesselation_control_source;
-		glShaderSource(shader->tess_control_program, 1, src+3, 0);
+		glShaderSource(shader->tess_control_program, shader->tesselation_control_sources, (const char**)shader->tesselation_control_source, 0);
 		glCompileShader(shader->tess_control_program);
 	}
 	if (shader->tesselation_evaluation_source) {
 		shader->tess_eval_program = glCreateShader(GL_TESS_EVALUATION_SHADER);
-		src[4] = shader->tesselation_evaluation_source;
-		glShaderSource(shader->tess_eval_program, 1, src+4, 0);
+		glShaderSource(shader->tess_eval_program, shader->tesselation_evaluation_sources, (const char**)shader->tesselation_evaluation_source, 0);
 		glCompileShader(shader->tess_eval_program);
 	}
 #endif
