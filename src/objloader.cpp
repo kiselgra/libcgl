@@ -67,28 +67,32 @@ extern "C" {
 			make_vec4f(&output->materials[i].col_amb, mit->second->amb_r, mit->second->amb_g, mit->second->amb_b, mit->second->alpha);
 			make_vec4f(&output->materials[i].col_diff, mit->second->dif_r, mit->second->dif_g, mit->second->dif_b, mit->second->alpha);
 			make_vec4f(&output->materials[i].col_spec, mit->second->spe_r, mit->second->spe_g, mit->second->spe_b, mit->second->alpha);
+			output->materials[i].spec_exp = mit->second->shininess;
 			if (mit->second->tex_a != "") {
 				output->materials[i].tex_a = (char*)malloc(mit->second->tex_a.length()+1);
 				strcpy(output->materials[i].tex_a, mit->second->tex_a.c_str());
 			}
 			else output->materials[i].tex_a = 0;
+
 			if (mit->second->tex_d != "") {
 				output->materials[i].tex_d = (char*)malloc(mit->second->tex_d.length()+1);
 				strcpy(output->materials[i].tex_d, mit->second->tex_d.c_str());
 			}
 			else output->materials[i].tex_d = 0;
+
 			if (mit->second->tex_s != "") {
 				output->materials[i].tex_s = (char*)malloc(mit->second->tex_s.length()+1);
 				strcpy(output->materials[i].tex_s, mit->second->tex_s.c_str());
 			}
 			else output->materials[i].tex_s = 0;
+
 			if (mit->second->tex_bump != "") {
 				output->materials[i].tex_bump = (char*)malloc(mit->second->tex_bump.length()+1);
 				strcpy(output->materials[i].tex_bump, mit->second->tex_bump.c_str());
 			}
 			else output->materials[i].tex_bump = 0;
+
 			if (mit->second->tex_alpha != "") {
-				cout << "-------- " << mit->second->tex_alpha << endl;
 				output->materials[i].tex_alpha = (char*)malloc(mit->second->tex_alpha.length()+1);
 				strcpy(output->materials[i].tex_alpha, mit->second->tex_alpha.c_str());
 			}
