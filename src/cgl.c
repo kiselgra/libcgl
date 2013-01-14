@@ -58,6 +58,8 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 	}
 #endif
 
+	start_debugging();
+
 #ifdef WITH_GUILE
 	if (use_guile == with_guile) {
 		char *p[2] = { (char*)initfile, 0 };

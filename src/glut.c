@@ -66,7 +66,6 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 	eglutKeyboardFunc (standard_keyboard);
 #endif
 	glViewport(0,0,res_x,res_y);
-
 }
 
 #if CGL_GL_VERSION == GLES2
