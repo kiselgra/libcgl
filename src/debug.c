@@ -14,7 +14,7 @@ void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severi
 	printf("Message: %s\n ", message);
 }
 
-void start_debugging() {
+void start_debug_output() {
 	glDebugMessageCallback(default_debug_function, 0);
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -29,6 +29,10 @@ void start_debugging() {
 
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
 	glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 1, GL_DEBUG_SEVERITY_HIGH, 4, "test");
+}
+
+void stop_debug_output() {
+	glDisable(GL_DEBUG_OUTPUT);
 }
 
 //! directly taken (and transformed) from KHR_debug extension text.
