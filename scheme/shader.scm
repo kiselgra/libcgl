@@ -51,7 +51,6 @@
 
 (define make-shader-ll make-shader)
 (define* (make-shader name #:key vertex-shader fragment-shader geometry-shader tess-control-shader tess-eval-shader inputs uniforms)
-  (format #t "make shader ~a ~a ~a~%" name inputs uniforms)
   (let ((old-shader (find-shader name)))
     (if old-shader
 	    (destroy-shader old-shader)))
@@ -85,6 +84,5 @@
               	  (if tess-control-shader (show-errors name tcs-source (tesselation-control-shader-info-log shader) "tesselation control info log"))
               	  (if tess-eval-shader (show-errors name tes-source (tesselation-evaluation-shader-info-log shader) "tesselation evaluation info log"))
               	  (format #t "linker info log:~%~a~%---------~%" (shader-link-info-log shader))))
-              (format #t "done with shader ~a ~a~%" name shader)
               shader)))))))
 
