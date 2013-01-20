@@ -155,15 +155,28 @@ bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
 	return true;
 }
 
+static void establish_uniform_location(struct shader *shader, int i) {
+	int loc = glGetUniformLocation(shader->shader_program, shader->uniform_names[i]);
+	if (loc < 0)
+		fprintf(stderr, "WARNING: Location of uniform %s in shader %s is < 0.\n", shader->uniform_names[i], shader->name);
+	shader->uniform_locations[i] = loc;
+}
+
 bool add_shader_uniform(shader_ref ref, const char *name) {
 	struct shader *shader = shaders+ref.id;
 	if (shader->next_uniform_id >= shader->uniforms) {
-		fprintf(stderr, "tried to assign shader uniform (%s, %d) to shader %s when all bindings are set.\n", name, shader->next_uniform_id, shader->name);
-		return false;
+// 		fprintf(stderr, "tried to assign shader uniform (%s, %d) to shader %s when all bindings are set.\n", name, shader->next_uniform_id, shader->name);
+// 		return false;
+		shader->uniform_names = realloc(shader->uniform_names, sizeof(char*) * shader->uniforms+1);
+		shader->uniform_locations = realloc(shader->uniform_locations, sizeof(int) * shader->uniforms+1);
+		shader->uniforms++;
+
 	}
 	int i = shader->next_uniform_id++;
 	shader->uniform_names[i] = malloc(strlen(name)+1);
 	strcpy(shader->uniform_names[i], name);
+	if (shader->built_ok)
+		establish_uniform_location(shader, i);
 	return true;
 }
 
@@ -325,12 +338,8 @@ bool compile_and_link_shader(shader_ref ref) {
 	
 	shader->built_ok = true;
 
-	for (int i = 0; i < shader->uniforms; ++i) {
-		int loc = glGetUniformLocation(shader->shader_program, shader->uniform_names[i]);
-		if (loc < 0)
-			fprintf(stderr, "WARNING: Location of uniform %s in shader %s is < 0.\n", shader->uniform_names[i], shader->name);
-		shader->uniform_locations[i] = loc;
-	}
+	for (int i = 0; i < shader->uniforms; ++i)
+		establish_uniform_location(shader, i);
 
 	return true;
 }
