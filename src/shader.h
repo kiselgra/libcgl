@@ -15,7 +15,7 @@ typedef struct {
 } shader_ref;
 
 
-shader_ref make_shader(const char *name, int input_vars, int uniforms);
+shader_ref make_shader(const char *name, int input_vars);
 void add_vertex_source(shader_ref ref, const char *src);
 void add_fragment_source(shader_ref ref, const char *src);
 void add_geometry_source(shader_ref ref, const char *src);

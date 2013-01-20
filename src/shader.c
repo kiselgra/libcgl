@@ -49,7 +49,7 @@ define_mm(shader, shaders, shader_ref);
 #include "shader.xx"
 #endif
 
-shader_ref make_shader(const char *name, int input_vars, int uniforms) {
+shader_ref make_shader(const char *name, int input_vars) {
 	shader_ref ref = allocate_shader_ref();
 	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
@@ -65,14 +65,10 @@ shader_ref make_shader(const char *name, int input_vars, int uniforms) {
 		shader->input_var_names[i] = 0;
 		shader->input_var_ids[i] = 0;
 	}
-	shader->uniforms = uniforms;
+	shader->uniforms = 0;
 	shader->next_uniform_id = 0;
-	shader->uniform_names = malloc(sizeof(char*) * uniforms);
-	shader->uniform_locations = malloc(sizeof(int) * uniforms);
-	for (int i = 0; i < uniforms; ++i) {
-		shader->uniform_names[i] = 0;
-		shader->uniform_locations[i] = -1; // invalid uniform (glGetUniformLocation)
-	}
+	shader->uniform_names = 0;
+	shader->uniform_locations = 0;
 	shader->vertex_source = shader->fragment_source = shader->geometry_source = shader->tesselation_control_source = shader->tesselation_evaluation_source = 0;
 	shader->vertex_sources = shader->fragment_sources = shader->geometry_sources = shader->tesselation_control_sources = shader->tesselation_evaluation_sources = 0;
 	shader->vertex_program = shader->fragment_program = shader->geometry_program = shader->tess_control_program = shader->tess_eval_program = shader->shader_program = 0;
@@ -450,11 +446,10 @@ void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m) {
 #ifdef WITH_GUILE
 #include <libguile.h>
 
-SCM_DEFINE(s_make_shader, "make-shader", 3, 0, 0, (SCM name, SCM input_n, SCM uniform_n), "create shader with name and number of input vars and uniforms.") {
+SCM_DEFINE(s_make_shader, "make-shader", 2, 0, 0, (SCM name, SCM input_n), "create shader with name and number of input vars and uniforms.") {
 	char *na = scm_to_locale_string(name);
 	int ni = scm_to_int(input_n);
-	int nu = scm_to_int(uniform_n);
-	shader_ref ref = make_shader(na, ni, nu);
+	shader_ref ref = make_shader(na, ni);
 	free(na);
 	return scm_from_int(ref.id);
 }

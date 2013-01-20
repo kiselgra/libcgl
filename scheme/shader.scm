@@ -51,7 +51,7 @@
 
 (define make-shader-ll make-shader)
 (define* (make-shader name #:key vertex-shader fragment-shader geometry-shader tess-control-shader tess-eval-shader inputs uniforms)
-  ;(format #t "make shader ~a ~a ~a~%" name inputs uniforms)
+  (format #t "make shader ~a ~a ~a~%" name inputs uniforms)
   (let ((old-shader (find-shader name)))
     (if old-shader
 	    (destroy-shader old-shader)))
@@ -62,7 +62,7 @@
           (receive (tes-source tes-uniforms) (handle-fragments tess-eval-shader)
             (let* ((addiditonal-uniforms (append vert-uniforms frag-uniforms geom-uniforms tcs-uniforms tes-uniforms))
                    (uniforms (append (if uniforms uniforms '()) addiditonal-uniforms))
-              	   (shader (make-shader-ll name (length inputs) (length uniforms))))
+              	   (shader (make-shader-ll name (length inputs))))
               (add-vertex-source shader vert-source)
               (add-fragment-source shader frag-source)
               (if geom-source (add-geometry-source shader geom-source))
@@ -85,5 +85,6 @@
               	  (if tess-control-shader (show-errors name tcs-source (tesselation-control-shader-info-log shader) "tesselation control info log"))
               	  (if tess-eval-shader (show-errors name tes-source (tesselation-evaluation-shader-info-log shader) "tesselation evaluation info log"))
               	  (format #t "linker info log:~%~a~%---------~%" (shader-link-info-log shader))))
+              (format #t "done with shader ~a ~a~%" name shader)
               shader)))))))
 
