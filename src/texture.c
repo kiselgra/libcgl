@@ -359,6 +359,8 @@ float* download_texture1f(texture_ref ref) { return download_texture(ref, GL_RED
 vec3f* download_texture3f(texture_ref ref) { return download_texture(ref, GL_RGB,  sizeof(vec3f), GL_FLOAT); }
 vec4f* download_texture4f(texture_ref ref) { return download_texture(ref, GL_RGBA, sizeof(vec4f), GL_FLOAT); }
 
+int* download_texture1i(texture_ref ref) { return download_texture(ref, GL_RED_INTEGER,  sizeof(int), GL_INT); }
+
 float* download_texture1f_to(texture_ref ref, float *data) { return download_texture_to(ref, GL_RED,  sizeof(float), GL_FLOAT, data); }
 vec3f* download_texture3f_to(texture_ref ref, vec3f *data) { return download_texture_to(ref, GL_RGB,  sizeof(vec3f), GL_FLOAT, data); }
 vec4f* download_texture4f_to(texture_ref ref, vec4f *data) { return download_texture_to(ref, GL_RGBA, sizeof(vec4f), GL_FLOAT, data); }

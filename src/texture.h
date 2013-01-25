@@ -57,6 +57,8 @@ float* download_texture1f(texture_ref ref);
 vec3f* download_texture3f(texture_ref ref);
 vec4f* download_texture4f(texture_ref ref);
 
+int* download_texture1i(texture_ref ref);
+
 #ifdef __cplusplus
 }
 #endif
