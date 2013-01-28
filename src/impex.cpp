@@ -114,6 +114,10 @@ extern "C" {
 		*w = cinfo.output_width;
 		*h = cinfo.output_height;
 
+// 		unsigned char *data = (unsigned char*)malloc(*bytes_per_pixel * cinfo.image_width * cinfo.image_height);
+// 		*w = cinfo.image_width;
+// 		*h = cinfo.image_height;
+
 		jpeg_start_decompress(&cinfo);
 
 		while (cinfo.output_scanline < cinfo.output_height)
@@ -145,7 +149,7 @@ extern "C" {
 			fprintf(stderr, "Could not read '%s': aborting.\n", filename);
 			exit(1);
 		}
-
+		return pixels;
 	}
 #endif
 
