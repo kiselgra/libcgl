@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef GL_KHR_DEBUG
+#define HAVE_GL_DEBUGGING 1
+#else
+#define HAVE_GL_DEBUGGING 0
+#endif
+
 const char* debug_code_to_short_string(GLenum code);
 
 void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* userParam) {
@@ -15,6 +21,7 @@ void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severi
 }
 
 void start_debug_output() {
+#if HAVE_GL_DEBUGGING == 1
 	glDebugMessageCallback(default_debug_function, 0);
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -29,15 +36,23 @@ void start_debug_output() {
 
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
 	glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 1, GL_DEBUG_SEVERITY_HIGH, 4, "test");
+#else
+	fprintf(stderr, "GL debugging is not supported (or I don't know about).\n");
+#endif
 }
 
 void stop_debug_output() {
+#if HAVE_GL_DEBUGGING == 1
 	glDisable(GL_DEBUG_OUTPUT);
+#else
+	fprintf(stderr, "GL debugging is not supported (or I don't know about).\n");
+#endif
 }
 
 //! directly taken (and transformed) from KHR_debug extension text.
 const char* debug_code_to_string(GLenum code) {
 	switch (code) {
+#if HAVE_GL_DEBUGGING == 1
 	// Tokens accepted or provided by the <source> parameters of
 	// DebugMessageControl, DebugMessageInsert and DEBUGPROC, and the <sources> 
 	// parameter of GetDebugMessageLog:
@@ -69,7 +84,7 @@ const char* debug_code_to_string(GLenum code) {
 	case GL_DEBUG_SEVERITY_MEDIUM:       return "GL_DEBUG_SEVERITY_MEDIUM"; break;
 	case GL_DEBUG_SEVERITY_LOW:          return "GL_DEBUG_SEVERITY_LOW"; break;
 	case GL_DEBUG_SEVERITY_NOTIFICATION: return "GL_DEBUG_SEVERITY_NOTIFICATION"; break;
-
+#endif
 	default:
 		return "**** <<<< unknown code >>>> ****";
 	}
@@ -78,6 +93,7 @@ const char* debug_code_to_string(GLenum code) {
 const char* debug_code_to_short_string(GLenum code) {
 	switch (code) {
 	// Tokens accepted or provided by the <source> parameters of
+#if HAVE_GL_DEBUGGING == 1
 	// DebugMessageControl, DebugMessageInsert and DEBUGPROC, and the <sources> 
 	// parameter of GetDebugMessageLog:
 	
@@ -108,7 +124,7 @@ const char* debug_code_to_short_string(GLenum code) {
 	case GL_DEBUG_SEVERITY_MEDIUM:       return "medium"; break;
 	case GL_DEBUG_SEVERITY_LOW:          return "low"; break;
 	case GL_DEBUG_SEVERITY_NOTIFICATION: return "notification"; break;
-
+#endif
 	default:
 		return "**** <<<< unknown code >>>> ****";
 	}

@@ -60,7 +60,7 @@ AS_IF(
 		AC_CHECK_LIB([GLU], [main])
 		AC_CHECK_LIB([glut], [main])
 
-		PKG_CHECK_MODULES(GLEW, glew)
+		PKG_CHECK_MODULES(GLEW, glew>=1.8)
 		AC_SUBST(GLEW_CFLAGS)
 		AC_SUBST(GLEW_LIBS)
 
@@ -143,6 +143,27 @@ else
 fi
 CFLAGS="$CFLAGS $DEBUG_FLAGS"
 CXXFLAGS="$CXXFLAGS $DEBUG_FLAGS"
+
+
+AC_LINK_IFELSE(
+	[AC_LANG_CALL([],[glProgramParameteri])],
+	[],
+	[AC_DEFINE(
+		[SKIP_SCM_glProgramParameteri],,
+		[Dont export this function to scheme as it will generate linker errors in Ubuntu 12.04´s Nvidia driver])],
+	)
+
+AC_LINK_IFELSE(
+	[AC_LANG_CALL([],[glUniformBlockBinding])],
+	[],
+	[AC_DEFINE(
+		[SKIP_SCM_glUniformBlockBinding],,
+		[Dont export this function to scheme as it will generate linker errors in Ubuntu 12.04´s Nvidia driver])],
+	)
+
+#AC_LANG_CONFTEST(
+#	[AC_LANG_PROGRAM([glUniform3f();],[glUniform3f();])])
+#AC_LANG_PROGRAM([],[glProgramParameteri])
 
 
 # Checks for header files.

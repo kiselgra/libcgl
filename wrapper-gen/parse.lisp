@@ -206,6 +206,7 @@
 		(format stream "/* skipping wrapper for ~a because ~a is a pointer type */~%~%" name type)
 		(return-from print-wrapper nil))))
       ;; first the header line
+      (format stream "#ifndef LIBCGL_SKIP_SCM_~a~%" name)
       (format stream "SCM_DEFINE(s_~a, \"~a\", ~a, 0, 0, " name (gl-name-to-lisp name) (length args))
       (format stream "(~{SCM ~a~^, ~})" flat-arglist)
       (format stream ", \"\") {~%")
@@ -228,7 +229,8 @@
 						  (format nil "~a(c_result)" (c-to-scm-function ret-basetype))))
 	(format stream "	return s_result;~%"))
       ;; closing
-      (format stream "}~%~%"))))
+      (format stream "}~%")
+      (format stream "#endif~%~%"))))
     
 
 (defun print-wrappers (list &optional (stream *standard-output*))
@@ -246,6 +248,8 @@
       (line "#define GL_GLEXT_PROTOTYPES")
       (line "#include <GL/gl.h>")
       (line "#include <GL/glext.h>")
+      (line)
+      (line "#include \"cgl-config.h\"")
       (line)
       (print-wrappers *functions* stream)
       (line "/* we the actual setup code */")
