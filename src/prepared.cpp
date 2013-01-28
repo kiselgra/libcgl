@@ -399,6 +399,13 @@ extern "C" {
         return scm_from_int(ref.id);
     }
 
+    SCM_DEFINE(s_make_cube, "make-cube", 1, 0, 0, (SCM name), "") {
+        char *n = scm_to_locale_string(name);
+        mesh_ref ref = make_cube(n, 0);
+        free(n);
+        return scm_from_int(ref.id);
+    }
+
 	SCM_DEFINE(s_make_simple_wire_frustum, "make-simple-wire-frustum", 8, 0, 0, 
 	           (SCM name, SCM pos, SCM dir, SCM up, SCM angle, SCM aspect, SCM near, SCM far), "") {
 		char *m = scm_to_locale_string(name);
