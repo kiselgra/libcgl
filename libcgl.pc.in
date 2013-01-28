@@ -7,5 +7,5 @@ datadir=@datadir@/@PACKAGE@
 Name: libcgl
 Description: cgl
 Version: @VERSION@
-Libs: -L${libdir} -lcgl @GUILE_LDFLAGS@
-Cflags: -I${includedir}/libcgl-@VERSION@ -D CGL_GL_VERSION=@GL_VERSION@ @GUILE_CFLAGS@
+Libs: -L${libdir} -lcgl @GUILE_LDFLAGS@ @GLEW_LIBS@ @LIBS@
+Cflags: -I${includedir}/libcgl-@VERSION@ -D CGL_GL_VERSION=@GL_VERSION@ @GUILE_CFLAGS@ @GLEW_CFLAGS@
