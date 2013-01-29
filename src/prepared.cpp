@@ -132,6 +132,34 @@ mesh_ref make_quad_with_normal_and_tc(const char *name, matrix4x4f *trafo) {
 	return mesh;
 }
 
+mesh_ref make_circle(const char *name, int n, matrix4x4f *trafo) {
+	vec3f v[n+2];
+	v[0].x = v[0].y = v[0].z = 0;
+	for (int i = 0; i < n; ++i) {
+		v[i+1].x = cosf(i*2*M_PI/float(n));
+		v[i+1].y = sinf(i*2*M_PI/float(n));
+		v[i+1].z = 0;
+	}
+	v[n+1].x = cosf(0);
+	v[n+1].y = sinf(0);
+
+	if (trafo)
+		for (int i = 0; i < n+2; ++i) {
+			vec4f cur = { v[i].x, v[i].y, v[i].z, 1 };
+			vec4f res;
+			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
+			v[i].x = res.x; v[i].y = res.y; v[i].z = res.z;
+		}
+
+	mesh_ref mesh = make_mesh(name, 1);
+	bind_mesh_to_gl(mesh);
+	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, n+2, 3, v, GL_STATIC_DRAW);
+	set_mesh_primitive_type(mesh, GL_TRIANGLE_FAN);
+	unbind_mesh_from_gl(mesh);
+	return mesh;
+}
+
+
 mesh_ref make_cube(const char *name, matrix4x4f *trafo) {
 	vec3f v[] = { {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1}, { 1,  1,  1}, {-1,  1,  1}, {-1, -1,  1}, // FRONT
 	              {-1, -1, -1}, {-1,  1, -1}, { 1,  1, -1}, { 1,  1, -1}, { 1, -1, -1}, {-1, -1, -1}, // BACK
@@ -395,6 +423,14 @@ extern "C" {
     SCM_DEFINE(s_make_quad, "make-quad", 1, 0, 0, (SCM name), "") {
         char *n = scm_to_locale_string(name);
         mesh_ref ref = make_quad(n, 0);
+        free(n);
+        return scm_from_int(ref.id);
+    }
+
+    SCM_DEFINE(s_make_circle, "make-circle", 2, 0, 0, (SCM name, SCM segments), "") {
+        char *n = scm_to_locale_string(name);
+		int s = scm_to_int(segments);
+        mesh_ref ref = make_circle(n, s, 0);
         free(n);
         return scm_from_int(ref.id);
     }
