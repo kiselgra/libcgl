@@ -41,7 +41,10 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 	glutInitContextFlags(flags);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(res_x, res_y); 
-	glutInitWindowPosition (100, 100);
+// 	glutInitWindowPosition (100, 100);
+	int sw = glutGet(GLUT_SCREEN_WIDTH);
+	int sh = glutGet(GLUT_SCREEN_HEIGHT);
+	glutInitWindowPosition(sw/2-res_x/2, sh/2-res_y/2);
 	if (title) glutCreateWindow(title);
 	else       glutCreateWindow("a gl window");
 	
