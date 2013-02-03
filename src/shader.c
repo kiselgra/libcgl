@@ -458,6 +458,12 @@ int shader_uniform_location_by_id(shader_ref ref, unsigned int id) {
 	return shader->uniform_locations[id];
 }
 
+vec3i compute_shader_local_workgroup_size(shader_ref ref) {
+	GLuint so = gl_shader_object(ref);
+	vec3i v;
+	glGetProgramiv(so, GL_COMPUTE_WORK_GROUP_SIZE, &v);
+	return v;
+}
 
 
 int uniform_location(shader_ref ref, const char *name) {

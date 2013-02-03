@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+#include <libmcm/vectors.h>
 #include <libmcm/matrix.h>
 
 #ifdef __cplusplus
@@ -43,6 +44,9 @@ const char* shader_name(shader_ref ref);
 int shader_uniforms(shader_ref ref);
 const char* shader_uniform_name_by_id(shader_ref ref, unsigned int id);
 int shader_uniform_location_by_id(shader_ref ref, unsigned int id);
+
+// compute shader specifics.
+vec3i compute_shader_local_workgroup_size(shader_ref ref);
 
 // the following functions retrieve the uniform location for each call.
 int uniform_location(shader_ref ref, const char *name);

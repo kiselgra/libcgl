@@ -12,10 +12,6 @@ extern "C" {
 #endif
 
 typedef struct {
-	int x, y, z;
-} vec3i;
-
-typedef struct {
 	char *name;
 	vec4f col_amb, col_diff, col_spec;
 	char *tex_a, *tex_d, *tex_s, *tex_bump, *tex_alpha;
