@@ -1,16 +1,23 @@
 #include "debug.h"
 
+#include "gl-version.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "gl-version.h"
 
-#ifdef GL_KHR_DEBUG
+#ifdef GL_KHR_debug
 #define HAVE_GL_DEBUGGING 1
 #else
 #define HAVE_GL_DEBUGGING 0
 #endif
 
 const char* debug_code_to_short_string(GLenum code);
+
+void critical_debug_message(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
+	printf("critical condition, quitting.\n");
+	exit(-1);
+}
 
 void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
 	printf("callback\n");
@@ -22,11 +29,6 @@ void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severi
 	if (type == GL_DEBUG_TYPE_ERROR && source == GL_DEBUG_SOURCE_API && severity == GL_DEBUG_SEVERITY_HIGH) {
 		critical_debug_message(source, type, id, severity, length, message, user_param);
 	}
-}
-
-void critical_debug_message(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
-	printf("critical condition, quitting.\n");
-	exit(-1);
 }
 
 
