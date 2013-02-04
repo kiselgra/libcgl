@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "gl-version.h"
 
 #ifdef GL_KHR_DEBUG
 #define HAVE_GL_DEBUGGING 1

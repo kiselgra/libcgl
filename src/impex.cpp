@@ -106,8 +106,8 @@ extern "C" {
 			*bytes_per_pixel = 1;
 		else if (cinfo.out_color_space == JCS_RGB)
 			*bytes_per_pixel = 3;
-		else if (cinfo.out_color_space == JCS_EXT_RGBA)
-			*bytes_per_pixel = 4;
+// 		else if (cinfo.out_color_space == JCS_EXT_RGBA)
+// 			*bytes_per_pixel = 4;
 		else return 0;
 
 		unsigned char *data = (unsigned char*)malloc(*bytes_per_pixel * cinfo.output_width * cinfo.output_height);
