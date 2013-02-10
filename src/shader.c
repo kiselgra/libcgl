@@ -59,7 +59,7 @@ shader_ref make_shader(const char *name, int input_vars) {
 	shader->built_ok = false;
 	shader->input_vars = input_vars;
 	shader->next_input_var = 0;
-	shader->vert_info_log = shader->frag_info_log = shader->geom_info_log = shader->program_info_log = 0;
+	shader->vert_info_log = shader->frag_info_log = shader->geom_info_log = shader->tess_control_info_log = shader->tess_eval_info_log = shader->compute_info_log = shader->program_info_log = 0;
 	shader->input_var_names = malloc(sizeof(char*) * input_vars);
 	shader->input_var_ids = malloc(sizeof(unsigned int*) * input_vars);
 	for (int i = 0; i < input_vars; ++i) {
