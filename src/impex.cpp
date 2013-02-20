@@ -10,6 +10,10 @@
 #include <jerror.h>
 #endif
 
+#if LIBCGL_HAVE_MAGICKWAND == 1
+#include <wand/MagickWand.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <list>
@@ -86,7 +90,7 @@ extern "C" {
 	}
 #endif
 
-#if LIBCGL_HAVE_LIBJPEG == 1
+#if LIBCGL_HAVE_LIBJPEG == 1	// {{{
 	unsigned char *load_jpeg_data(const char *filename, int *bytes_per_pixel, unsigned int *w, unsigned int *h) {
 		FILE *fd;
 		struct jpeg_decompress_struct cinfo;
@@ -151,7 +155,7 @@ extern "C" {
 		}
 		return pixels;
 	}
-#endif
+#endif	// }}} 
 
 	// rather stupid check on file "extensions"
 	enum format { f_png, f_jpeg, f_unknown };
@@ -168,7 +172,37 @@ extern "C" {
 		free(str);
 		return f;
 	}
+
+#if LIBCGL_HAVE_MAGICKWAND == 1
+	void magickwand_error(MagickWand *wand) {
+		char *description;
+		ExceptionType severity;
+
+		description=MagickGetException(wand,&severity);
+		fprintf(stderr, "%s %s %lu\n", GetMagickModule(), description, severity);
+		MagickRelinquishMemory(description);
+		exit(1);
+	}
+#endif
+
 	vec3f *load_image3f(const char *filename, unsigned int *w, unsigned int *h) {
+#if LIBCGL_HAVE_MAGICKWAND == 1
+		cout << "loading " << filename << " via imagemagick" << endl;
+		MagickWandGenesis();
+		MagickWand *img = NewMagickWand();
+		int status = MagickReadImage(img, filename);
+		if (status == MagickFalse) {
+			magickwand_error(img);
+		}
+		MagickFlipImage(img);
+		*w = MagickGetImageWidth(img);
+		*h = MagickGetImageHeight(img);
+		vec3f *pixels = (vec3f*)malloc(sizeof(vec3f)**w**h);
+		MagickExportImagePixels(img, 0, 0, *w, *h, "RGB", FloatPixel, (void*)pixels);
+		DestroyMagickWand(img);
+		MagickWandTerminus();
+		return pixels;
+#else
 		format f = guess_image_format(filename);
 #if LIBCGL_HAVE_LIBPNG == 1
 		if (f == f_png)
@@ -177,6 +211,7 @@ extern "C" {
 #if LIBCGL_HAVE_LIBJPEG == 1
 		if (f == f_jpeg) 
 			return load_jpeg3f(filename, w, h);
+#endif
 #endif
 		fprintf(stderr, "Cannot guess image format of '%s', or format unsupported (maybe not compiled in?).\n", filename);
 		exit(1);
@@ -277,3 +312,4 @@ extern "C" {
 
 #endif
 
+// vim: foldmethod=marker: 
