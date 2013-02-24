@@ -115,7 +115,6 @@ extern "C" {
 
 	vec3f *load_image3f(const char *filename, unsigned int *w, unsigned int *h) {
 #if LIBCGL_HAVE_MAGICKWAND == 1
-		cout << "loading " << filename << " via imagemagick" << endl;
 		MagickWandGenesis();
 		MagickWand *img = NewMagickWand();
 		int status = MagickReadImage(img, filename);
