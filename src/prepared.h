@@ -19,28 +19,33 @@ extern "C" {
 #endif
 
 
-/* for all generated meshes, the order the vertex data is added to the vbo is
+/*! \addtogroup meshgen Built-in Meshes
+ *
+ * For all generated meshes, the order the vertex data is added to the vbo is
  * position, normal, texture coordinate
  * (as appropriate)
+ *
+ * @{
  */
 
-// returns a quad mesh (two triangles), originally spanning [(-1,-1,0) , (1,1,0)], transformed by trafo (which may be 0).
+//! Returns a quad mesh (two triangles), originally spanning [(-1,-1,0) , (1,1,0)], transformed by trafo (which may be 0).
 mesh_ref make_quad(const char *name, matrix4x4f *trafo);
 
-// same as make_quad; the normal is computed
-mesh_ref make_quad_with_normal(const char *name, matrix4x4f *trafo); //UNTESTED!
+//! Same as \ref make_quad; the normal is computed
+mesh_ref make_quad_with_normal(const char *name, matrix4x4f *trafo); //! \attention UNTESTED!
 
-// same as make quad but with tex coords [(0,0),(1,1)] (where the tcs are not transformed)
+//! Same as \ref make_quad but with tex coords [(0,0),(1,1)] (where the tcs are not transformed)
 mesh_ref make_quad_with_tc(const char *name, matrix4x4f *trafo);
 
-// make_quad_with_normal + make_quad_with_tc
-mesh_ref make_quad_with_normal_and_tc(const char *name, matrix4x4f *trafo); //UNTESTED!
+//! \ref make_quad_with_normal + \ref make_quad_with_tc
+mesh_ref make_quad_with_normal_and_tc(const char *name, matrix4x4f *trafo); //! \attention UNTESTED!
 
 mesh_ref make_circle(const char *name, int n, matrix4x4f *trafo);
 
-// returns a cube mesh [-1,-1,-1]x[1,1,1]
+//! Returns a cube mesh [-1,-1,-1]x[1,1,1]
 mesh_ref make_cube(const char *name, matrix4x4f *trafo);
 
+//! @}
 
 /* 
  * tangent space
@@ -52,8 +57,8 @@ vec4f* generate_tangent_space_from_tri_mesh(const vec3f *vertex, const vec3f *no
 
 
 
-/*
- * shader convenience if you have no scheme at hand
+/*! \brief shader convenience if you have no scheme at hand
+ *  \ingroup shaders
  */
 shader_ref make_shader_from_strings(const char *name, const char *vert, const char *frag, int number_of_inputs, ...);
 

@@ -2,11 +2,11 @@ SUBDIRS =
 if CAN_USE_GUILE
 SUBDIRS += wrapper-gen
 endif
-SUBDIRS += src scheme #doc lib-config-src # man
+SUBDIRS += src scheme doc #lib-config-src # man
 
-#.PHONY: doc
-#doc:
-#	cd doc; make doc
+.PHONY: doc
+doc:
+	cd doc; make doc
 
 BUILT_SOURCES = revision
 

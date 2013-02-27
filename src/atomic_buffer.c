@@ -72,6 +72,9 @@ void unmap_atomic_buffer(atomic_buffer_ref ref) {
 	buf->mapped = false;
 }
 
+/*! \brief Reset the atomic buffer.
+ *  \attention This causes the buffer to be taken out of video memory on 2012/2013 nvidia drivers. Really bad.
+ */
 void reset_atomic_buffer(atomic_buffer_ref ref, int value) {
 	struct atomic_buffer *buf = atomic_buffers + ref.id;
 	int *b = map_atomic_int_buffer(ref, GL_WRITE_ONLY);
@@ -80,6 +83,9 @@ void reset_atomic_buffer(atomic_buffer_ref ref, int value) {
 	unmap_atomic_buffer(ref);
 }
 
+/*! \brief Reset the atomic buffer.
+ *  \attention This causes the buffer to be taken out of video memory on 2012/2013 nvidia drivers. Really bad.
+ */
 void reset_atomic_bufferu(atomic_buffer_ref ref, unsigned int value) {
 	struct atomic_buffer *buf = atomic_buffers + ref.id;
 	unsigned int *b = map_atomic_int_buffer(ref, GL_WRITE_ONLY);

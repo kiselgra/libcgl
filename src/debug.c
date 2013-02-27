@@ -13,13 +13,16 @@
 
 const char* debug_code_to_short_string(GLenum code);
 
+/*! \brief This is called when the debug callback detects a critical state, i.e. the GL reports a severe error in the `api domain'.
+ *  \ingroup administrative
+ *  \note When running gdb use <tt>break critical_debug_message</tt> to stop at the point with all the information available.
+ */
 void critical_debug_message(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
 	printf("critical condition, quitting.\n");
 	exit(-1);
 }
 
 void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
-	printf("callback\n");
 	printf("Type: %s, Source: %s, ID: %d, Severity: %s\n",
 	       debug_code_to_short_string(type),
 	       debug_code_to_short_string(source),id,
@@ -30,7 +33,9 @@ void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severi
 	}
 }
 
-
+/*! \brief Activate the OpenGL debugging mechanism.
+ *  \ingroup administrative
+ */
 void start_debug_output() {
 #if HAVE_GL_DEBUGGING == 1
 	glDebugMessageCallback(default_debug_function, 0);
@@ -52,6 +57,9 @@ void start_debug_output() {
 #endif
 }
 
+/*! \brief Deactivate the OpenGL debugging mechanism.
+ *  \ingroup administrative
+ */
 void stop_debug_output() {
 #if HAVE_GL_DEBUGGING == 1
 	glDisable(GL_DEBUG_OUTPUT);

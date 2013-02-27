@@ -1,7 +1,9 @@
 #ifndef __GLUT_H__ 
 #define __GLUT_H__ 
 
-/* The GLUT bindings.
+/*! \file glut.h
+ *
+ * The GLUT bindings.
  *
  * You may wonder why the glut interface is wrapped away by yet another
  * layer...  And you would have a valid point.

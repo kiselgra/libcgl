@@ -4,6 +4,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*! \defgroup meshes Meshes
+ *
+ *  A mesh is a very simple thing.
+ *  It is just a collection of vertex attributes (i.e. positions, normals, texture coordinates) used to support data for a draw call.
+ *  It does not hold any references to textures, colors, materials, shaders or whatever.
+ *
+ *  You can add a vertex buffer to a mesh in two different ways.
+ *  First: add it by passing cpu data -> a vbo will be created.
+ *  Second: add an existing vbo -> it will be used. (create the mesh with make_mesh("", 0).
+ *  \attention don't mix the two methods!
+ *
+ */
+
+/*! \file mesh.h
+ * \ingroup meshes
+ */
+
+
 struct mesh {
 	char *name;
 	GLuint vao_id;
@@ -29,6 +47,10 @@ extern inline bool equal_mesh_refs(mesh_ref a, mesh_ref b);
 static struct mesh *meshes = 0;
 static unsigned int meshes_allocated = 0, 
                     next_mesh_index = 0;
+
+/*! \addtogroup meshes
+ *  @{
+ */
 
 mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	// maintain mesh table
@@ -253,6 +275,8 @@ void draw_mesh_as(mesh_ref ref, GLenum primitive_type) {
 	else
 		glDrawArrays(primitive_type, 0, mesh->vertices);
 }
+
+//! @}
 
 #ifdef WITH_GUILE
 #include <libguile.h>

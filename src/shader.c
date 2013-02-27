@@ -6,18 +6,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-/* A note on consistent shader reloading.
+/*! \defgroup shaders Shaders
+ * 	See \ref shader.h for a detailled description.
  *
- * When a shader is deleted it's index-slot is free to take by another shader.
- * As long as the list of free indices is not empty the next shader will be
- * allocated the index put last on the list.
- * This means it is safe to assume a shader keeps its id when reload is
- * implemented as follows:
- *   shader_ref old_ref = find_shader("my-shader");
- *   destroy_shader(old_ref);
- *   shader_ref new_ref = make_shader("my-shader", ...);
- *   --> old_ref.id == new_ref.id
+ *  \section shaderusage General usage.
+ *
+ *  To create a shader call \ref make_shader and give it a unique name.
+ *  The code is large, but rather simple.
+ *	
+ *  A few uniform-handling functions are defined at the end of the C part of this file.
+ *
+ *
+ *  \section shaderreload A note on consistent shader reloading.
+ *
+ *  When a shader is deleted it's index-slot is free to take by another shader.
+ *  As long as the list of free indices is not empty the next shader will be
+ *  allocated the index put last on the list.
+ *
+ *  This means it is safe to assume a shader keeps its id when reload is
+ *  implemented as follows:
+ *  \li  shader_ref old_ref = find_shader("my-shader");
+ *  \li  destroy_shader(old_ref);
+ *  \li  shader_ref new_ref = make_shader("my-shader", ...);
+ *  \li  --> old_ref.id == new_ref.id
+ */
+
+/*! \file shader.h
+ *  \ingroup shaders
+ *
+ * 	Why can't I copy the group documentation here?
  */
 
 
@@ -49,6 +66,10 @@ struct shader {
 define_mm(shader, shaders, shader_ref);
 #include "shader.xx"
 #endif
+
+/*! \addtogroup shaders
+ *  @{
+ */
 
 shader_ref make_shader(const char *name, int input_vars) {
 	shader_ref ref = allocate_shader_ref();
@@ -107,6 +128,8 @@ void destroy_shader(shader_ref ref) {
 	free_shader_ref(ref);
 }
 
+//! @}
+
 void add_shader_source(char ***destination, const char *add, int *size) {
 	// each shader source type holds an array of strings.
 	unsigned int old_size = *size;
@@ -118,6 +141,10 @@ void add_shader_source(char ***destination, const char *add, int *size) {
 	(*size)++;
 	*destination = new_array;
 }
+
+/*! \addtogroup shaders
+ *  @{
+ */
 
 void add_vertex_source(shader_ref ref, const char *src) {
 	struct shader *shader = shaders+ref.id;
@@ -162,12 +189,18 @@ bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
 	return true;
 }
 
+//! @}
+
 static void establish_uniform_location(struct shader *shader, int i) {
 	int loc = glGetUniformLocation(shader->shader_program, shader->uniform_names[i]);
 	if (loc < 0)
 		fprintf(stderr, "WARNING: Location of uniform %s in shader %s is < 0.\n", shader->uniform_names[i], shader->name);
 	shader->uniform_locations[i] = loc;
 }
+
+/*! \addtogroup shaders
+ *  @{
+ */
 
 bool add_shader_uniform(shader_ref ref, const char *name) {
 	struct shader *shader = shaders+ref.id;
@@ -186,6 +219,8 @@ bool add_shader_uniform(shader_ref ref, const char *name) {
 		establish_uniform_location(shader, i);
 	return true;
 }
+
+//! @}
 
 bool modify_shader_input_index(shader_ref ref, const char *varname, unsigned int new_index) {
 	// TO DO.
@@ -209,6 +244,10 @@ void store_info_log(char **target, GLuint object) {
 	}
 	(*target)[len] = '\0';
 }
+
+/*! \addtogroup shaders
+ *  @{
+ */
 
 bool compile_and_link_shader(shader_ref ref) {
 	struct shader *shader = shaders+ref.id;
@@ -490,7 +529,7 @@ void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m) {
 	glUniformMatrix4fv(uniform_location(ref, name), 1, GL_FALSE, m->col_major);
 }
 
-
+//! @}
 
 
 #ifdef WITH_GUILE

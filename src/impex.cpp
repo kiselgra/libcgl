@@ -19,10 +19,30 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+/*! \defgroup impex Import & Export
+ *
+ *  This file provieds a few methods to read in image data.
+ *  We recommend that you use ImageMagick, which is defaulted to if it is found at configure time.
+ *
+ *  Furthermore a list of paths is managed. These are (in order) searched for images that are being looked up.
+ */
+
+/*! \file impex.h
+ *  \ingroup impex
+ *
+ *  This file provieds a few methods to read in image data.
+ *  We recommend that you use ImageMagick, which is defaulted to if it is found at configure time.
+ *
+ *  Furthermore a list of paths is managed. These are (in order) searched for images that are being looked up.
+ */
+
 using namespace std;
 
 extern "C" {
 
+    /*! \addtogroup impex
+     *  @{
+     */
 #if LIBCGL_HAVE_LIBPNG == 1
 	vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h) {
 		png::image<png::rgb_pixel> image(filename);
@@ -84,6 +104,7 @@ extern "C" {
 		image.write(filename);
 	}
 #endif
+    //! @}
 
 	// rather stupid check on file "extensions"
 	enum format { f_png, f_jpeg, f_unknown };
@@ -112,6 +133,10 @@ extern "C" {
 		exit(1);
 	}
 #endif
+
+    /*! \addtogroup impex
+     *  @{
+     */
 
 	vec3f *load_image3f(const char *filename, unsigned int *w, unsigned int *h) {
 #if LIBCGL_HAVE_MAGICKWAND == 1
@@ -202,6 +227,8 @@ extern "C" {
 	char* find_file(const char *basename) {
 		return file_lookup_function(basename);
 	}
+
+    //! @}
 }
 
 #ifdef WITH_GUILE
