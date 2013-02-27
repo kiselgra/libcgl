@@ -7,6 +7,30 @@
 #include <string.h>
 #include <stdbool.h>
 
+/*! \defgroup framebuffers Framebuffers
+ *
+ *  \section fbouse Fbo usage
+ *  A typical use of the framebuffer can be seen in cgls's stock-shader.c.in file.
+ *  Furthermore, here is a small Scheme snipped, illustrating the required steps:
+ *  \code
+ *  (let ((color (make-texture-without-file "screenshot-render-color" 'tex2d 1024 1024 'rgba 'rgba-8 'unsigned-byte))
+ *        (fbo (make-framebuffer "screenshot" 1024 1024)))
+ *    (tex-params! color #f 'nearest 'nearest 'repeat 'repeat)
+ *    (bind-framebuffer fbo)
+ *    (bind-texture color 0)
+ *    (attach-texture-as-colorbuffer fbo "color" color)
+ *    (attach-depthbuffer fbo)
+ *    (check-framebuffer-setup fbo)
+ *    (unbind-framebuffer fbo)
+ *    (unbind-texture color))
+ *  \endcode
+ */
+
+/*! \file framebuffer.h
+ *  \ingroup framebuffers
+ */
+
+
 struct framebuffer {
 	char *name;
 	unsigned int width, height;
@@ -38,6 +62,10 @@ static void allocate_framebuffer() {
 		free(old_array);
 	}
 }
+
+/*! \addtogroup framebuffers
+ *  @{
+ */
 
 framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned int height) {
 	allocate_framebuffer();
@@ -136,7 +164,8 @@ void check_framebuffer_setup(framebuffer_ref ref) {
 	check_for_gl_errors(__FUNCTION__);
 }
 
-static int old_vp[4];
+static int old_vp[4];   //!< \attention this is bad.
+
 void bind_framebuffer(framebuffer_ref ref) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 		
@@ -191,6 +220,8 @@ char* framebuffer_name(framebuffer_ref ref) {
 bool valid_framebuffer_ref(framebuffer_ref ref) {
 	return ref.id >= 0;
 }
+
+//! @}
 
 #ifdef WITH_GUILE
 #include  <libguile.h>

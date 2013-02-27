@@ -17,12 +17,6 @@ inline bool equal_mesh_refs(mesh_ref a, mesh_ref b) {
 	return a.id == b.id;
 }
 
-/*! you can add a vertex buffer to a mesh in two different ways.
- *  first: add it by passing cpu data -> a vbo will be created.
- *  second: add an existing vbo -> it will be used. (create the mesh with make_mesh("", 0).
- *  \attention don't mix the two methods!
- */
-
 mesh_ref make_mesh(const char *name, unsigned int vertex_buffers);
 void bind_mesh_to_gl(mesh_ref mr);
 void unbind_mesh_from_gl(mesh_ref mr);

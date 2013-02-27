@@ -14,6 +14,19 @@
 using namespace std;
 using lib3dmath::mat4f;
 
+/*! \defgroup objloader Obj File Loader
+ *
+ *  This is just a converter from the representation of libobjloader to the structure \ref obj_data.
+ *  Essentially bringing it down to the C level.
+ */
+
+/*! \file objloader.h
+ *  \ingroup objloader
+ *
+ *  This is just a converter from the representation of libobjloader to the structure \ref obj_data.
+ *  Essentially bringing it down to the C level.
+ */
+
 extern "C" {
 	void load_objfile(const char *name, const char *filename, obj_data *output, bool inflate, bool collapse) {
 		obj_default::ObjFileLoader loader(filename, "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");

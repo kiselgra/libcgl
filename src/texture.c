@@ -12,6 +12,19 @@
 #include <string.h>
 #include <stdio.h>
 
+/*! \defgroup textures Textures
+ *
+ *  The most common (in our experience) texture usages are covered by this, of course this is far from all.
+ *  We support mainly 2D textures and buffer textures.
+ *  They can be bound as samplers or images.
+ *
+ *  There is limited support for 1D textures.
+ */
+
+/*! \file texture.h
+ *  \ingroup textures
+ */
+
 struct texture {
 	char *name;
 	GLuint texid;
@@ -41,6 +54,10 @@ static void allocate_texture() {
 		free(old_array);
 	}
 }
+
+/*! \addtogroup textures
+ *  @{
+ */
 
 tex_params_t default_tex_params() {
 	tex_params_t p;
@@ -99,7 +116,7 @@ static texture_ref internal_make_tex(const char *name, GLenum target, tex_params
 	return ref;
 }
 
-#if LIBCGL_HAVE_LIBPNG == 1
+#if LIBCGL_HAVE_LIBPNG == 1 || LIBCGL_HAVE_MAGICKWAND == 1
 texture_ref make_texture_ub(const char *name, const char *filename, int target, tex_params_t *params) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
@@ -119,7 +136,11 @@ texture_ref make_texture_ub(const char *name, const char *filename, int target, 
 	return ref;
 }
 
-//! does not work on GLES.
+/*! \brief Load a texture from file.
+ *  \ingroup textures
+ *  \note does not work on GLES.
+ *  \note alpha is discarded.
+ */
 texture_ref make_texture(const char *name, const char *filename, int target, tex_params_t *params) {
 	unsigned int w, h;
 	char *actual_name = find_file(filename);
@@ -141,6 +162,10 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 }
 #endif
 
+/*! \brief Creates an empty texture.
+ *  \ingroup textures
+ *  \note The parameter order of int-format, type, format is not the same as in the glTexImage2D call.
+ */
 texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
 	allocate_texture();
 	texture_ref ref;
@@ -201,6 +226,9 @@ texture_ref make_empty_texture1d(const char *name, unsigned int elems, unsigned 
 	return ref;
 }
 
+/*! \brief Creates a buffer and uses it as backing storage for the newly created texture.
+ *  \ingroup textures
+ */
 texture_ref make_buffer_texture(const char *name, unsigned int elements, unsigned int element_size, unsigned int internal_format) {
 	allocate_texture();
 	texture_ref ref;
@@ -242,6 +270,9 @@ void set_texture_params(texture_ref ref, tex_params_t *params) {
 	if (!was_bound)  glBindTexture(texture->target, 0);
 }
 
+/*! \note This does destroy the texture's content, yea?
+ *  \ingroup textures
+ */
 void resize_texture(texture_ref ref, unsigned int w, unsigned int h) {
 	struct texture *texture = textures + ref.id;
 	glBindTexture(texture->target, texture->texid);
@@ -404,6 +435,8 @@ bool valid_texture_ref(texture_ref ref) {
 GLuint texture_buffer(texture_ref ref) {
 	return textures[ref.id].buffer;
 }
+
+/*! @} */
 
 #ifdef WITH_GUILE
 #include <libguile.h>

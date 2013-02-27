@@ -9,7 +9,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # name one of your source files here
 AC_CONFIG_SRCDIR([src/mesh.c])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES(Makefile wrapper-gen/Makefile src/Makefile scheme/Makefile libcgl.pc)
+AC_CONFIG_FILES(Makefile wrapper-gen/Makefile src/Makefile scheme/Makefile libcgl.pc doc/Makefile doc/doxyfile doc/doxygen_mainpage.h)
 
 AX_PREFIX_CONFIG_H(src/cgl-config.h)
 
@@ -111,17 +111,21 @@ AS_CASE(["$with_png"],
 		[no], [],
 		[AC_DEFINE([HAVE_LIBPNG], [1], [Via --with-png=PATH])])
 
-AC_ARG_WITH([jpeg],
-            [AS_HELP_STRING([--with-jpeg],
-                            [Support loading of jpeg files through libjpeg. Does not set any paths. @<:@default=check@:>@])],
-		    [with_jpeg=$withval],
-			[with_jpeg=check])
-AS_CASE(["$with_jpeg"],
-		[check], [AC_CHECK_LIB([jpeg], [main])],
+AC_ARG_WITH([magickwand],
+			[AS_HELP_STRING([--with-magickwand],
+							[Support loading images files using the MagickWand library from imagemagick.])],
+			[with_magickwand=$withval],
+			[with_magickwand=check])
+AS_CASE(["$with_magickwand"],
+		[check], [	PKG_CHECK_MODULES(WAND, MagickWand,
+									  [HAVE_MAGICKWAND=1],
+									  [HAVE_MAGICKWAND=0])
+					AC_SUBST(WAND_CFLAGS)
+					AC_SUBST(WAND_LIBS)
+					AC_DEFINE_UNQUOTED([HAVE_MAGICKWAND], [$HAVE_MAGICKWAND], [Set to 1 if you have libMagicWand of imagemagick.])
+					],
 		[no], [],
-		[AC_DEFINE([HAVE_LIBPNG], [1], [Via --with-jpeg=PATH])])
-
-
+		[AC_MSG_ERROR([dont know how to do this])])
 
 AC_CHECK_LIB([3dmath], [main])
 #AC_PATH_PROG([OBJL_CONFIG], [libobjloader-config])

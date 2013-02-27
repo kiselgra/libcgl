@@ -14,6 +14,10 @@
 #include "scheme.h"
 #endif
 
+/*! \defgroup administrative Administrative Functions
+ *  Startup, error handling, and such.
+ */
+
 static void hop(void *data, int argc, char **argv) {
 #ifdef WITH_GUILE
 	load_snarfed_definitions();
@@ -32,8 +36,14 @@ static void* cfg_only(void *data) {
 	return 0;
 }
 
+//! This is to return to a sane terminal state after (potentially) quitting guile in some tasteles way.
 static struct termios termios;
 
+/*! \brief Startup Code. Will call \c call (we often speak of it as `actual_main').
+ *  \ingroup administrative
+ *  
+ *  Hands control to cgl, which will start up, create a window, setup gl, possibly start guile, possible read the config file (if not 0) and finally call \c call.
+ */
 void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc, char **argv, int res_x, int res_y, void (*call)(), int use_guile, bool verbose, const char *initfile) {
 	
 	if (isatty(STDOUT_FILENO))
@@ -80,10 +90,18 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 
 static gl_error_handler_t error_handler = standard_gl_error_handler;
 
+/*! \brief Use this to register an error handler called upon detection an error by means of \ref check_for_gl_errors.
+ *  \ingroup administrative
+ */
 void register_gl_error_handler(gl_error_handler_t h) {
 	error_handler = h;
 }
 
+/*! \brief Checks to see if the GL is in an error state and calls the registered error hander (see \ref register_gl_error_handler).
+ *  This might have happend anywhere between two calls to this function.
+ *  \ingroup administrative
+ *  \note This is mostly unnecessary when the debugging extension is working (which it should be).
+ */
 void check_for_gl_errors(const char *where)
 {
 	GLenum error;

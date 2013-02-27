@@ -5,9 +5,8 @@
 #include <png++/png.hpp>
 #endif
 
-#if LIBCGL_HAVE_LIBJPEG == 1
-#include <jpeglib.h>
-#include <jerror.h>
+#if LIBCGL_HAVE_MAGICKWAND == 1
+#include <wand/MagickWand.h>
 #endif
 
 #include <stdio.h>
@@ -20,10 +19,30 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+/*! \defgroup impex Import & Export
+ *
+ *  This file provieds a few methods to read in image data.
+ *  We recommend that you use ImageMagick, which is defaulted to if it is found at configure time.
+ *
+ *  Furthermore a list of paths is managed. These are (in order) searched for images that are being looked up.
+ */
+
+/*! \file impex.h
+ *  \ingroup impex
+ *
+ *  This file provieds a few methods to read in image data.
+ *  We recommend that you use ImageMagick, which is defaulted to if it is found at configure time.
+ *
+ *  Furthermore a list of paths is managed. These are (in order) searched for images that are being looked up.
+ */
+
 using namespace std;
 
 extern "C" {
 
+    /*! \addtogroup impex
+     *  @{
+     */
 #if LIBCGL_HAVE_LIBPNG == 1
 	vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h) {
 		png::image<png::rgb_pixel> image(filename);
@@ -85,73 +104,7 @@ extern "C" {
 		image.write(filename);
 	}
 #endif
-
-#if LIBCGL_HAVE_LIBJPEG == 1
-	unsigned char *load_jpeg_data(const char *filename, int *bytes_per_pixel, unsigned int *w, unsigned int *h) {
-		FILE *fd;
-		struct jpeg_decompress_struct cinfo;
-		struct jpeg_error_mgr jerr;
-		unsigned char *line;
-
-		cinfo.err = jpeg_std_error(&jerr);
-		jpeg_create_decompress(&cinfo);
-		fd = fopen(filename, "rb");
-		if (fd == 0)
-			return 0;
-
-		jpeg_stdio_src(&cinfo, fd);
-		jpeg_read_header(&cinfo, true);
-
-		if (cinfo.out_color_space == JCS_GRAYSCALE)
-			*bytes_per_pixel = 1;
-		else if (cinfo.out_color_space == JCS_RGB)
-			*bytes_per_pixel = 3;
-// 		else if (cinfo.out_color_space == JCS_EXT_RGBA)
-// 			*bytes_per_pixel = 4;
-		else return 0;
-
-		unsigned char *data = (unsigned char*)malloc(*bytes_per_pixel * cinfo.output_width * cinfo.output_height);
-		*w = cinfo.output_width;
-		*h = cinfo.output_height;
-
-// 		unsigned char *data = (unsigned char*)malloc(*bytes_per_pixel * cinfo.image_width * cinfo.image_height);
-// 		*w = cinfo.image_width;
-// 		*h = cinfo.image_height;
-
-		jpeg_start_decompress(&cinfo);
-
-		while (cinfo.output_scanline < cinfo.output_height)
-		{
-			line = data + *bytes_per_pixel * cinfo.output_scanline;
-			jpeg_read_scanlines(&cinfo, &line, 1);
-		}
-		jpeg_finish_decompress(&cinfo);
-		jpeg_destroy_decompress(&cinfo);
-		return data;
-	}
-	
-	vec3f* load_jpeg3f(const char *filename, unsigned int *w, unsigned int *h) {
-		int bpp;
-		unsigned char *data = load_jpeg_data(filename, &bpp, w, h);
-		vec3f *pixels = (vec3f*)malloc(sizeof(vec3f)**w**h);
-		if (data) {
-			for (int y = 0; y < *h; ++y)
-				for (int x = 0; x < *w; ++x)
-					if (bpp == 1)
-						pixels[y**w+x].x = pixels[y**w+x].y = pixels[y**w+x].z = data[y**w+x] / 255.0;
-					else {
-						pixels[y**w+x].x = data[3*(y**w+x)] / 255.0;
-						pixels[y**w+x].y = data[3*(y**w+x)+1] / 255.0;
-						pixels[y**w+x].z = data[3*(y**w+x)+2] / 255.0;
-					}
-		}
-		else {
-			fprintf(stderr, "Could not read '%s': aborting.\n", filename);
-			exit(1);
-		}
-		return pixels;
-	}
-#endif
+    //! @}
 
 	// rather stupid check on file "extensions"
 	enum format { f_png, f_jpeg, f_unknown };
@@ -168,15 +121,45 @@ extern "C" {
 		free(str);
 		return f;
 	}
+
+#if LIBCGL_HAVE_MAGICKWAND == 1
+	void magickwand_error(MagickWand *wand) {
+		char *description;
+		ExceptionType severity;
+
+		description=MagickGetException(wand,&severity);
+		fprintf(stderr, "%s %s %lu\n", GetMagickModule(), description, severity);
+		MagickRelinquishMemory(description);
+		exit(1);
+	}
+#endif
+
+    /*! \addtogroup impex
+     *  @{
+     */
+
 	vec3f *load_image3f(const char *filename, unsigned int *w, unsigned int *h) {
+#if LIBCGL_HAVE_MAGICKWAND == 1
+		MagickWandGenesis();
+		MagickWand *img = NewMagickWand();
+		int status = MagickReadImage(img, filename);
+		if (status == MagickFalse) {
+			magickwand_error(img);
+		}
+		MagickFlipImage(img);
+		*w = MagickGetImageWidth(img);
+		*h = MagickGetImageHeight(img);
+		vec3f *pixels = (vec3f*)malloc(sizeof(vec3f)**w**h);
+		MagickExportImagePixels(img, 0, 0, *w, *h, "RGB", FloatPixel, (void*)pixels);
+		DestroyMagickWand(img);
+		MagickWandTerminus();
+		return pixels;
+#else
 		format f = guess_image_format(filename);
 #if LIBCGL_HAVE_LIBPNG == 1
 		if (f == f_png)
 			return load_png3f(filename, w, h);
 #endif
-#if LIBCGL_HAVE_LIBJPEG == 1
-		if (f == f_jpeg) 
-			return load_jpeg3f(filename, w, h);
 #endif
 		fprintf(stderr, "Cannot guess image format of '%s', or format unsupported (maybe not compiled in?).\n", filename);
 		exit(1);
@@ -244,6 +227,8 @@ extern "C" {
 	char* find_file(const char *basename) {
 		return file_lookup_function(basename);
 	}
+
+    //! @}
 }
 
 #ifdef WITH_GUILE
@@ -277,3 +262,4 @@ extern "C" {
 
 #endif
 
+// vim: foldmethod=marker: 

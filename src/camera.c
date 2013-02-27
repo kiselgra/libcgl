@@ -4,6 +4,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*! \defgroup cameras Cameras
+ *
+ * 	Mostly straight forward use of libmcm's camera matrices.
+ *
+ * 	The matrices are all stored separately, i.e. there is no modelview matrix.
+ * 	You can, however, use one in the layer you build upon cgl -- of course ;)
+ *
+ * 	There is the concept of a `current camera' (see \ref current_camera).
+ */
+
+/*! \file camera.h
+ *  \ingroup cameras
+ */
+
 struct camera {
 	char *name;
 	float near, far, aspect, fovy;
@@ -16,6 +30,10 @@ struct camera {
 #include "mm.h"
 define_mm(camera, cameras, camera_ref);
 #include "camera.xx"
+
+/*! \addtogroup cameras
+ *  @{
+ */
 
 camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, float fovy, float aspect, float near, float far) {
 	// maintainance
@@ -53,12 +71,15 @@ void delete_camera(camera_ref ref) {
 }
 
 matrix4x4f* projection_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].projection_matrix; }
+//! This is the lookat matrix as specified by pos/dir/up, not the GL view matrix.
 matrix4x4f* lookat_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].lookat_matrix; }
-matrix4x4f* gl_view_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].gl_view_matrix; }
+//! This is the OpenGL view matrix for wc->ec.
+matrix4x4f* gl_view_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].gl_view_matrix; }	
 matrix4x4f* gl_normal_matrix_for_view_of(camera_ref ref) { return &cameras[ref.id].gl_view_normal_matrix; }
 float camera_near(camera_ref ref) { return cameras[ref.id].near; }
 float camera_far(camera_ref ref)  { return cameras[ref.id].far; }
 
+//! after changing any of the camera's parameters, you'll have to recompute the OpenGL matrices derived from them, to have effect on rendering.
 void recompute_gl_matrices_of_cam(camera_ref ref) {
 	struct camera *camera = cameras + ref.id;
 	make_gl_viewing_matrixf(&camera->gl_view_matrix, &camera->lookat_matrix);
@@ -86,6 +107,7 @@ void change_projection_of_cam(camera_ref ref, float fovy, float aspect, float ne
 	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
 }
 
+//! See \ref recompute_gl_matrices_of_cam.
 void change_lookat_of_cam(camera_ref ref, vec3f *pos, vec3f *dir, vec3f *up) {
 	struct camera *camera = cameras + ref.id;
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
@@ -97,7 +119,11 @@ const char* camera_name(camera_ref ref) {
 }
 
 
+/*! \brief When we have to refer to a camera, globally, we use the one which is considered current.
+ * 	\note I think this is some kind of policy...
+ */
 static camera_ref current_cam_ref = { -1 };
+//! Changes the `current camera'.
 void use_camera(camera_ref ref) {
 	current_cam_ref = ref;
 }
@@ -126,6 +152,8 @@ void camera_near_plane_size(camera_ref ref, vec2f *out) {
 	out->y = 2*tanf(fovy_rad/2.0)*near_dist;	 // a=x/y
 	out->x = out->y * camera_aspect(ref);
 }
+
+//! @}
 
 #ifdef WITH_GUILE
 #include <libguile.h>

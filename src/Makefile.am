@@ -60,16 +60,16 @@ library_include_HEADERS = atomic_buffer.h cgl.h camera.h debug.h framebuffer.h g
 # AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) -D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(WAND_CFLAGS)-D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
 
-libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS) $(GLEW_LIBS)
+libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS) $(GLEW_LIBS) $(WAND_LIBS)
 
 #blub_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 bezier_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 #bspline_CPPFLAGS = $(libcgl_la_CPPFLAGS)
 
 #blub_LDADD = $(GUILE_LDFLAGS)
-bezier_LDADD = $(GUILE_LDFLAGS) $(GLEW_LIBS)
+bezier_LDADD = $(GUILE_LDFLAGS) $(GLEW_LIBS) $(WAND_LIBS)
 #bspline_LDADD = $(GUILE_LDFLAGS)
 
 if CAN_USE_GUILE
