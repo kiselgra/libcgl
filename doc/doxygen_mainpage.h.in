@@ -1,0 +1,88 @@
+/*! \mainpage @PACKAGE@ Description 
+ *  \author Kai
+ * 	\version @VERSION@
+ *
+ *  \section main About
+ *
+ * 	This is a very basic OpenGL framework, written in C (cgl).
+ * 	It provides a thin layer of abstraction over plain OpenGL and FreeGlut.
+ * 	Furthermore it provides OpenGL bindings to Guile, the Scheme dialect of the GNU project, 
+ * 		as well as bindings to the framework itself.
+ * 	Therefore it is possible to write the renderer entierly in Scheme.
+ * 	It is, however, also possible to write your program all in C.
+ * 	I suggest mixing a litte, uniform handlers and texture creation are much nicer in Scheme, while crunching can still be done in C.
+ *
+ *
+ *  \note The documentation is still a work in progress.
+ *  \note Our docstrings are placed in the C files, but our public interface is repeated in the documentation of the H files.
+ *  		This is also where we put file comments.
+ *
+ *
+ *
+ * 	\subsection phil Intention
+ * 	The library is not supposed to be a fully featured 3D engine, but rather to provide a basis for such.
+ *
+ * 	<em>We try to provide means, not policy.</em>
+ *
+ * 	Though we might not always hit the line :)
+ *
+ *
+ * 	\subsection startup Starting cgl
+ *
+ * 	See \ref startup_cgl.
+ *
+ * 	\subsection refs Refs
+ * 	As the framework is written in C, it allows for very simple and strict data encapsulation.
+ * 	We use "Refs" to opaque data structures throughout the code.
+ * 	These Refs are merely indices into private arrays of private structure definitions.
+ * 	Therefore, our public interface is minimalist.
+ *
+ * 	If you are a C++ programmer, think of how member functions were transformed back in the early days :)
+ *
+ * 	\subsection shad Shaders
+ * 	The traditional way of shader loading (lots and lots of files) is still supported by the cgl, however, a more sophisticated method is provided.
+ * 	Since we (optionally) load a Scheme file upon starting cgl, this file can contain shader definitions written in Scheme.
+ * 	To this end we provide some nice reader macros to enable a straight forward notation (for C programmers, that is).
+ *
+ * 	We usually have files like this: <tt>test.shader</tt>
+ * 	\code
+ * 	#<make-shader "name"
+ * 	#:vertex-shader #{
+ * 		...
+ * 	}
+ * 	#:fragment-shader ...
+ * 	#:inputs (list "in_pos" "in_norm" ...)
+ * 	#:uniforms (list "model" "view" "proj" ...)>
+ * 	\endcode
+ *
+ * 	For another possible method see the handling of <tt>stock-shader.c.in</tt> in libcgls.
+ *
+ *  \section license License & Terms of use.
+ *
+ *  (c) Kai.
+ *
+ *  May be used under the Terms of the GNU GPL v3 or later.
+ *
+ *  It would be nice if you would stall any redistribution until this project has established a fixed website :)
+ *
+ *  \section ogl OpenGL
+ *
+ *  The most ancient GL version this library is supposed to build with is GL3 with a forward compatible context.
+ *  See
+ *  \code
+ *  ./configure --help
+ *  \endcode
+ *
+ * 	\section deps Dependencies and build instructions
+ *
+ * 	Libraries cgl depends upon
+ * 	\li an opengl or opengl/es implemenation (tested on nvidia and andoird (imgtec)).
+ * 	\li glut (not on android)
+ * 	\li glew (not for gl/es)
+ *
+ * 	Optional libraries
+ * 	\li imagemagick (tested on pc, only)
+ * 	\li libpng & libpng++ (both)
+ *
+ */
+
