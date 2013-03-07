@@ -160,6 +160,44 @@ mesh_ref make_circle(const char *name, int n, matrix4x4f *trafo) {
 }
 
 
+mesh_ref make_cylinder(const char *name, int n, matrix4x4f *trafo) {
+	vec3f v[2*n+2];
+	vec3f norm[2*n+2];
+	for (int i = 0; i < n+1; ++i) {
+		v[2*i].x = v[2*i+1].x = cosf(i*2*M_PI/float(n));
+		v[2*i].y = v[2*i+1].y = sinf(i*2*M_PI/float(n));
+		v[2*i].z = 1;
+		v[2*i+1].z = -1;
+		norm[2*i].x = norm[2*i+1].x = v[2*i].y;
+		norm[2*i].y = norm[2*i+1].y = v[2*i].x;
+		norm[2*i].z = norm[2*i+1].z = 0;
+	}
+	if (trafo) {
+		matrix4x4f tmp, nm;
+		invert_matrix4x4f(&tmp, trafo);
+		transpose_matrix4x4f(&nm, &tmp);
+		for (int i = 0; i < 2*n+2; ++i) {
+			// transform v
+			vec4f cur = { v[i].x, v[i].y, v[i].z, 1 };
+			vec4f res;
+			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
+			v[i].x = res.x; v[i].y = res.y; v[i].z = res.z;
+			// transform n
+			cur.x = norm[i].x; cur.y = norm[i].y; cur.z = norm[i].z; cur.w = 0;
+			multiply_matrix4x4f_vec4f(&res, &nm, &cur);
+			norm[i].x = res.x; norm[i].y = res.y; norm[i].z = res.z;
+		}
+	}
+
+	mesh_ref mesh = make_mesh(name, 2);
+	bind_mesh_to_gl(mesh);
+	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, 2*n+2, 3, v, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(mesh, "vn", GL_FLOAT, 2*n+2, 3, norm, GL_STATIC_DRAW);
+	set_mesh_primitive_type(mesh, GL_TRIANGLE_STRIP);
+	unbind_mesh_from_gl(mesh);
+	return mesh;
+}
+
 mesh_ref make_cube(const char *name, matrix4x4f *trafo) {
 	vec3f v[] = { {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1}, { 1,  1,  1}, {-1,  1,  1}, {-1, -1,  1}, // FRONT
 	              {-1, -1, -1}, {-1,  1, -1}, { 1,  1, -1}, { 1,  1, -1}, { 1, -1, -1}, {-1, -1, -1}, // BACK
