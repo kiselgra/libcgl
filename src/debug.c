@@ -23,6 +23,8 @@ void critical_debug_message(GLenum source, GLenum type, GLuint id, GLenum severi
 }
 
 void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
+	if (id == 131204) return;	// texture has mipmaps but non matching min-filter: ignore.
+
 	printf("Type: %s, Source: %s, ID: %d, Severity: %s\n",
 	       debug_code_to_short_string(type),
 	       debug_code_to_short_string(source),id,
