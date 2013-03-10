@@ -147,9 +147,12 @@ void standard_keyboard(unsigned char key, int x, int y)
 }
 
 static int last_mouse_x = -1, last_mouse_y = -1;
+static bool left_down = false;
 
 void standard_mouse_motion(int x, int y)
 {
+	if (!left_down)
+		return;
 	static matrix4x4f xrot, yrot, rot, tmp;
 	static vec3f x_axis, y_axis; 
 	static bool first_time = true;
@@ -172,8 +175,12 @@ void standard_mouse_motion(int x, int y)
 
 void standard_mouse_func(int button, int state, int x, int y)
 {
-	if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON)
+	if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON) {
 		last_mouse_x = x, last_mouse_y = y;
+		left_down = true;
+	}
+	else if (state == GLUT_UP && button == GLUT_LEFT_BUTTON)
+		left_down = false;
 }
 
 void standard_resize_func(int w, int h) {
