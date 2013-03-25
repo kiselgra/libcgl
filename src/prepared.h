@@ -41,6 +41,7 @@ mesh_ref make_quad_with_tc(const char *name, matrix4x4f *trafo);
 mesh_ref make_quad_with_normal_and_tc(const char *name, matrix4x4f *trafo); //! \attention UNTESTED!
 
 mesh_ref make_circle(const char *name, int n, matrix4x4f *trafo);
+mesh_ref make_cylinder(const char *name, int n, matrix4x4f *trafo);
 
 //! Returns a cube mesh [-1,-1,-1]x[1,1,1]
 mesh_ref make_cube(const char *name, matrix4x4f *trafo);

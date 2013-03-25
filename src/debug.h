@@ -13,6 +13,7 @@ typedef void (*gl_debug_function)(GLenum source, GLenum type, GLuint id, GLenum 
 
 void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param);
 void start_debug_output();
+void start_debug_with_output_on_error_only();
 void stop_debug_output();
 const char* debug_code_to_string(GLenum code);
 

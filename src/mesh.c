@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 
 /*! \defgroup meshes Meshes
  *
@@ -15,6 +16,10 @@
  *  Second: add an existing vbo -> it will be used. (create the mesh with make_mesh("", 0).
  *  \attention don't mix the two methods!
  *
+ *
+ * 	We compute a bounding box for the mesh based on the first floating point buffer passed as an attribute.
+ * 	If this is not the right thing for you just use \c compute_bounding_box_for_mesh or 
+ * 	\c force_bounding_box_for_mesh afterwards.
  */
 
 /*! \file mesh.h
@@ -39,6 +44,7 @@ struct mesh {
 	GLenum *content_type;
 #endif
 	GLenum primitive_type;
+	vec3f *bounding_box;
 };
 
 // see http://gustedt.wordpress.com/2010/11/29/myth-and-reality-about-inline-in-c99/
@@ -91,6 +97,7 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	mesh->content_type = malloc(sizeof(GLenum) * vertex_buffers);
 #endif
 	mesh->primitive_type = GL_TRIANGLES;
+	mesh->bounding_box = 0;
 	return ref;
 }
 
@@ -153,6 +160,44 @@ GLenum mesh_primitive_type(mesh_ref mr) {
 	return mesh->primitive_type;
 }
 
+void compute_bounding_box_for_mesh(mesh_ref mr, unsigned int vertices, unsigned int element_dim, const float *data) {
+	struct mesh *mesh = meshes+mr.id;
+	mesh->bounding_box = malloc(sizeof(vec3f)*2);
+	make_vec3f(mesh->bounding_box+0, FLT_MAX, FLT_MAX, FLT_MAX);
+	make_vec3f(mesh->bounding_box+1, -FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (int i = 0; i < vertices; ++i) {
+		int base = i * element_dim;
+		if (data[base+0] < mesh->bounding_box[0].x)	mesh->bounding_box[0].x = data[base+0];
+		if (data[base+0] > mesh->bounding_box[1].x)	mesh->bounding_box[1].x = data[base+0];
+		if (element_dim > 1) {
+			if (data[base+1] < mesh->bounding_box[0].y)	mesh->bounding_box[0].y = data[base+1];
+			if (data[base+1] > mesh->bounding_box[1].y)	mesh->bounding_box[1].y = data[base+1];
+			if (element_dim > 2) {
+				if (data[base+2] < mesh->bounding_box[0].z)	mesh->bounding_box[0].z = data[base+2];
+				if (data[base+2] > mesh->bounding_box[1].z)	mesh->bounding_box[1].z = data[base+2];
+			}
+		}
+	}
+}
+
+void force_bounding_box_for_mesh(mesh_ref mr, const vec3f *min, const vec3f *max) {
+	struct mesh *mesh = meshes+mr.id;
+	if (mesh->bounding_box == 0)
+		mesh->bounding_box = malloc(sizeof(vec3f)*2);
+	copy_vec3f(mesh->bounding_box+0, min);
+	copy_vec3f(mesh->bounding_box+1, max);
+}
+
+void bounding_box_of_mesh(mesh_ref mr, vec3f *min, vec3f *max) {
+	struct mesh *mesh = meshes+mr.id;
+	if (mesh->bounding_box == 0)
+		min = max = 0;
+	else {
+		copy_vec3f(min, mesh->bounding_box+0);
+		copy_vec3f(max, mesh->bounding_box+1);
+	}
+}
+
 bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, const void *data, GLenum usage_hint) {
 	int unit_size = size_of_gl_type(content_type);
 	struct mesh *mesh = meshes+mr.id;
@@ -181,6 +226,8 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	mesh->element_dim[vbo_id] = element_dim;
 	mesh->content_type[vbo_id] = content_type;
 #endif
+	if (mesh->bounding_box == 0 && content_type == GL_FLOAT)
+		compute_bounding_box_for_mesh(mr, vertices, element_dim, data);
 	return true;
 }
 

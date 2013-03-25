@@ -24,6 +24,8 @@ void critical_debug_message(GLenum source, GLenum type, GLuint id, GLenum severi
 }
 
 void default_debug_function(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, GLvoid* user_param) {
+	if (id == 131204) return;	// texture has mipmaps but non matching min-filter: ignore.
+
 	printf("Type: %s, Source: %s, ID: %d, Severity: %s\n",
 	       debug_code_to_short_string(type),
 	       debug_code_to_short_string(source),id,
@@ -52,9 +54,20 @@ void start_debug_output() {
 		fprintf(stderr, "GL context is no debugging context!\n");
 
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
-	glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 1, GL_DEBUG_SEVERITY_HIGH, 4, "test");
+// 	glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 1, GL_DEBUG_SEVERITY_HIGH, 4, "test");
 #else
 	fprintf(stderr, "GL debugging is not supported (or I don't know about).\n");
+#endif
+}
+
+/*! \brief Activate the OpenGL debugging mechanism, but report errors, only.
+ *  \ingroup administrative
+ */
+void start_debug_with_output_on_error_only() {
+	start_debug_output();
+#if HAVE_GL_DEBUGGING == 1
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_FALSE);
+	glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR, GL_DONT_CARE, 0, 0, GL_TRUE);
 #endif
 }
 
