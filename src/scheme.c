@@ -40,17 +40,26 @@ void start_console_thread(void) {
 }
 
 
+void load_internal_configfiles(void) {
+	char *buffer = 0;
+	size_t bs = 0;
+	FILE *stream = open_memstream(&buffer, &bs);
+	fprintf(stream, "(load \"" DATADIR "/scheme/reader-extensions.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/shader.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/vecnf.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/gl.h.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/cgl-init.scm\")");
+	fclose(stream);
 
+	scm_c_eval_string(buffer);
+
+	free(buffer);
+}
 
 void load_configfile(const char *filename) {
 	char *buffer = 0;
 	size_t bs = 0;
 	FILE *stream = open_memstream(&buffer, &bs);
-	fprintf(stream, "(load \"" DATADIR "/scheme/reader-extensions.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/shader.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/vecnf.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/gl.h.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/cgl-init.scm\")", filename);
 	fprintf(stream, "(load \"%s\")", filename);
 	fclose(stream);
 
