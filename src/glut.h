@@ -45,6 +45,8 @@ void swap_buffers();
 void enter_glut_main_loop();
 
 extern float cgl_cam_move_factor;	// we should prefix global variables (at least). if only C had namespaces...
+extern bool cgl_use_fix_up_vector;
+extern vec3f cgl_up_vector;
 
 #ifdef __cplusplus
 }

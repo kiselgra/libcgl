@@ -94,6 +94,9 @@ void register_mouse_motion_function(void (*fn)(int, int))                { glutM
 void register_resize_function(      void (*fn)(int, int))                { glutReshapeFunc(fn); }
 
 float cgl_cam_move_factor = 0.1;
+bool cgl_use_fix_up_vector = false;
+vec3f cgl_up_vector = { 0,1,0 };
+
 void standard_keyboard(unsigned char key, int x, int y)
 {
 	vec3f tmp;
@@ -169,7 +172,14 @@ void standard_mouse_motion(int x, int y)
 	make_rotation_matrix4x4f(&yrot, &y_axis, delta_factor * delta_x);
 	multiply_matrices4x4f(&rot, &xrot, &yrot);
 	multiply_matrices4x4f(&tmp, lookat_matrix, &rot);
-	copy_matrix4x4f(lookat_matrix, &tmp);
+	if (cgl_use_fix_up_vector) {
+		vec3f pos, dir;
+		extract_pos_vec3f_of_matrix(&pos, &tmp);
+		extract_dir_vec3f_of_matrix(&dir, &tmp);
+		make_lookat_matrixf(lookat_matrix, &pos, &dir, &cgl_up_vector);
+	}
+	else
+		copy_matrix4x4f(lookat_matrix, &tmp);
 	recompute_gl_matrices_of_cam(current_camera());
 }
 
@@ -320,6 +330,27 @@ SCM_DEFINE(s_check_for_gl_errors, "check-for-gl-errors", 1, 0, 0, (SCM msg), "")
     free(m);
     return SCM_BOOL_T;
 }
+
+SCM_DEFINE(s_use_fix_up_vector, "use-fix-up-vector", 3, 0, 0, (SCM x, SCM y, SCM z), "") {
+	cgl_use_fix_up_vector = true;
+	cgl_up_vector.x = scm_to_double(x);
+	cgl_up_vector.y = scm_to_double(y);
+	cgl_up_vector.z = scm_to_double(z);
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_use_free_up_vector, "use-free-up-vector", 0, 0, 0, (), "") {
+	cgl_use_fix_up_vector = false;
+	return SCM_BOOL_T;
+}
+
+SCM_DEFINE(s_fix_up_vector, "fix-up-vector", 0, 0, 0, (), "") {
+	if (cgl_use_fix_up_vector)
+		return vec3f_to_list(&cgl_up_vector);
+	else
+		return SCM_BOOL_F;
+}
+
 
 SCM_DEFINE(s_time_stamp, "glut:time-stamp", 0, 0, 0, (), "Wall time since glut started.") {
 	return scm_from_int(glutGet(GLUT_ELAPSED_TIME));
