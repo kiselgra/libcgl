@@ -40,16 +40,26 @@ void start_console_thread(void) {
 }
 
 
+void load_internal_configfiles(void) {
+	char *buffer = 0;
+	size_t bs = 0;
+	FILE *stream = open_memstream(&buffer, &bs);
+	fprintf(stream, "(load \"" DATADIR "/scheme/reader-extensions.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/shader.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/vecnf.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/gl.h.scm\")");
+	fprintf(stream, "(load \"" DATADIR "/scheme/cgl-init.scm\")");
+	fclose(stream);
 
+	scm_c_eval_string(buffer);
+
+	free(buffer);
+}
 
 void load_configfile(const char *filename) {
 	char *buffer = 0;
 	size_t bs = 0;
 	FILE *stream = open_memstream(&buffer, &bs);
-	fprintf(stream, "(load \"" DATADIR "/scheme/reader-extensions.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/shader.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/vecnf.scm\")", filename);
-	fprintf(stream, "(load \"" DATADIR "/scheme/gl.h.scm\")", filename);
 	fprintf(stream, "(load \"%s\")", filename);
 	fclose(stream);
 
@@ -167,6 +177,29 @@ vec4f scm_vec_to_vec4f(SCM v) {
 
 vec3f scm_vec_to_vec3f(SCM v) {
     return list_to_vec3f(v);
+}
+
+void push_cgl_feature(const char *name) {
+	static bool proc_set = false;
+	static SCM proc;
+	if (!proc_set) {
+		proc = scm_c_eval_string("cgl:push-feature");
+		proc_set = true;
+	}
+	SCM sym = scm_string_to_symbol(scm_from_locale_string(name));
+	scm_call_1(proc, sym);
+}
+
+bool has_cgl_feature(const char *name) {
+	static bool proc_set = false;
+	static SCM proc;
+	if (!proc_set) {
+		proc = scm_c_eval_string("cgl:has-feature");
+		proc_set = true;
+	}
+	SCM sym = scm_string_to_symbol(scm_from_locale_string(name));
+	SCM has = scm_call_1(proc, sym);
+	return has == SCM_BOOL_T;
 }
 
 static const int mat_size = 16*sizeof(float);

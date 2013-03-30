@@ -30,6 +30,9 @@ vec4f scm_vec_to_vec4f(SCM v);
 SCM matrix4x4f_to_scm(matrix4x4f *m);
 SCM scm_to_matrix4x4f(matrix4x4f *m, SCM bv);
 
+bool has_cgl_feature(const char *name);
+void push_cgl_feature(const char *name);
+
 #ifdef __cplusplus
 }
 #endif

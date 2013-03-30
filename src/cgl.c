@@ -18,9 +18,12 @@
  *  Startup, error handling, and such.
  */
 
+extern void load_internal_configfiles(void);
+
 static void hop(void *data, int argc, char **argv) {
 #ifdef WITH_GUILE
 	load_snarfed_definitions();
+	load_internal_configfiles();
 	if (argv[0]) load_configfile(argv[0]);
 	start_console_thread();
 #endif
@@ -31,6 +34,7 @@ static void hop(void *data, int argc, char **argv) {
 static void* cfg_only(void *data) {
 #ifdef WITH_GUILE
 	load_snarfed_definitions();
+	load_internal_configfiles();
 	if (data) load_configfile((char*)data);
 #endif
 	return 0;
