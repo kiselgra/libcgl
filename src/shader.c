@@ -207,8 +207,8 @@ bool add_shader_uniform(shader_ref ref, const char *name) {
 	if (shader->next_uniform_id >= shader->uniforms) {
 // 		fprintf(stderr, "tried to assign shader uniform (%s, %d) to shader %s when all bindings are set.\n", name, shader->next_uniform_id, shader->name);
 // 		return false;
-		shader->uniform_names = realloc(shader->uniform_names, sizeof(char*) * shader->uniforms+1);
-		shader->uniform_locations = realloc(shader->uniform_locations, sizeof(int) * shader->uniforms+1);
+		shader->uniform_names = realloc(shader->uniform_names, sizeof(char*) * (shader->uniforms+1));
+		shader->uniform_locations = realloc(shader->uniform_locations, sizeof(int) * (shader->uniforms+1));
 		shader->uniforms++;
 
 	}
