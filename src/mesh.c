@@ -46,7 +46,7 @@ struct mesh {
 	GLenum primitive_type;
 	vec3f *bounding_box;
 	bool keep_cpu_data;
-	void *cpu_vertex_buffers;	//! we use void* here because there is actually no tellin...
+	void **cpu_vertex_buffers;	//! we use void* here because there is actually no tellin...
 	void *cpu_index_buffer;
 };
 
@@ -286,10 +286,6 @@ bool change_vertex_buffer_data(mesh_ref mr, const char *name, GLenum content_typ
 	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 #endif
-	if (mesh->keep_cpu_data) {
-		mesh->cpu_index_buffer = malloc(size_in_bytes);
-		memcpy(mesh->cpu_index_buffer, data);
-	}
 	return true;
 }
 
@@ -299,6 +295,10 @@ void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, const
 	glGenBuffers(1, &mesh->index_buffer_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer_id);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * number_of_indices, data, usage_hint);
+	if (mesh->keep_cpu_data) {
+		mesh->cpu_index_buffer = malloc(sizeof(unsigned int) * number_of_indices);
+		memcpy(mesh->cpu_index_buffer, data, sizeof(unsigned int) * number_of_indices);
+	}
 }
 
 unsigned int index_buffer_length_of_mesh(mesh_ref mr) {
@@ -350,6 +350,21 @@ void mesh_keep_cpu_data(mesh_ref ref) {
 bool mesh_keeps_cpu_data(mesh_ref ref) {
 	struct mesh *mesh = meshes+ref.id;
 	return mesh->keep_cpu_data;
+}
+
+void* cpu_index_buffer_of_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->cpu_index_buffer;
+}
+
+void** cpu_vertex_buffers_of_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->cpu_vertex_buffers;
+}
+
+unsigned int vertex_buffers_in_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->vertex_buffers;
 }
 
 //! @}
