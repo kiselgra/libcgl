@@ -402,6 +402,10 @@ bool compile_and_link_shader(shader_ref ref) {
 		glBindAttribLocation(shader->shader_program, shader->input_var_ids[i], shader->input_var_names[i]);
 	}
 
+ 	// TODO cleanup
+// 	glProgramParameteri(shader->shader_program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
+	// TODO end
+ 
 	// link
 	glLinkProgram(shader->shader_program);
 	glGetProgramiv(shader->shader_program, GL_LINK_STATUS, &compile_res);
@@ -412,6 +416,24 @@ bool compile_and_link_shader(shader_ref ref) {
 	}
 	
 	shader->built_ok = true;
+        
+ 	// TODO cleanup
+// 		int binary_length;
+//         glGetProgramiv(shader->shader_program, GL_PROGRAM_BINARY_LENGTH, &binary_length);
+// 		printf("length of binary of shader %s is %d.\n", shader->name, binary_length);
+// 
+// 		char *binary = malloc(binary_length+1);
+//         GLenum binary_format;
+//         glGetProgramBinary(shader->shader_program, binary_length, 0, &binary_format, binary);
+// 
+// 			printf("----------- binary for shader %s --------------\n", shader->name);
+// 			for (int i = 0; i < binary_length; ++i)
+// 				putchar(binary[i]);
+// 			printf("\n----------- end of binary for shader %s --------------\n", shader->name);
+// 			exit(-1);
+	// TODO end
+
+
 
 	for (int i = 0; i < shader->uniforms; ++i)
 		establish_uniform_location(shader, i);
@@ -500,7 +522,7 @@ int shader_uniform_location_by_id(shader_ref ref, unsigned int id) {
 vec3i compute_shader_local_workgroup_size(shader_ref ref) {
 	GLuint so = gl_shader_object(ref);
 	vec3i v;
-	glGetProgramiv(so, GL_COMPUTE_WORK_GROUP_SIZE, &v);
+	glGetProgramiv(so, GL_COMPUTE_WORK_GROUP_SIZE, (GLint*)&v);
 	return v;
 }
 
