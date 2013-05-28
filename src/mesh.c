@@ -45,6 +45,9 @@ struct mesh {
 #endif
 	GLenum primitive_type;
 	vec3f *bounding_box;
+	bool keep_cpu_data;
+	void **cpu_vertex_buffers;	//! we use void* here because there is actually no tellin...
+	void *cpu_index_buffer;
 };
 
 // see http://gustedt.wordpress.com/2010/11/29/myth-and-reality-about-inline-in-c99/
@@ -98,6 +101,9 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 #endif
 	mesh->primitive_type = GL_TRIANGLES;
 	mesh->bounding_box = 0;
+	mesh->keep_cpu_data = false;
+	mesh->cpu_vertex_buffers = 0;
+	mesh->cpu_index_buffer = 0;
 	return ref;
 }
 
@@ -226,11 +232,16 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	mesh->element_dim[vbo_id] = element_dim;
 	mesh->content_type[vbo_id] = content_type;
 #endif
+	if (mesh->keep_cpu_data) {
+		mesh->cpu_vertex_buffers[vbo_id] = malloc(size_in_bytes);
+		memcpy(mesh->cpu_vertex_buffers[vbo_id], data, size_in_bytes);
+	}
 	if (mesh->bounding_box == 0 && content_type == GL_FLOAT)
 		compute_bounding_box_for_mesh(mr, vertices, element_dim, data);
 	return true;
 }
 
+//! \attention this does not work with cpu side buffer copies!
 bool add_existing_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, GLuint vboid) {
 	struct mesh *mesh = meshes+mr.id;
 	if (mesh->vertices) {
@@ -284,6 +295,10 @@ void add_index_buffer_to_mesh(mesh_ref mr, unsigned int number_of_indices, const
 	glGenBuffers(1, &mesh->index_buffer_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer_id);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * number_of_indices, data, usage_hint);
+	if (mesh->keep_cpu_data) {
+		mesh->cpu_index_buffer = malloc(sizeof(unsigned int) * number_of_indices);
+		memcpy(mesh->cpu_index_buffer, data, sizeof(unsigned int) * number_of_indices);
+	}
 }
 
 unsigned int index_buffer_length_of_mesh(mesh_ref mr) {
@@ -321,6 +336,35 @@ void draw_mesh_as(mesh_ref ref, GLenum primitive_type) {
 		glDrawElements(primitive_type, mesh->indices, GL_UNSIGNED_INT, 0);
 	else
 		glDrawArrays(primitive_type, 0, mesh->vertices);
+}
+	
+/*! \brief setup mesh state to make a copy of data passed to add_*_buffer.
+ *  \attention has to be setup before the buffers are added to the mes.
+ */
+void mesh_keep_cpu_data(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	mesh->keep_cpu_data = true;
+	mesh->cpu_vertex_buffers = malloc(sizeof(float*) * mesh->vertex_buffers);
+}
+
+bool mesh_keeps_cpu_data(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->keep_cpu_data;
+}
+
+void* cpu_index_buffer_of_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->cpu_index_buffer;
+}
+
+void** cpu_vertex_buffers_of_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->cpu_vertex_buffers;
+}
+
+unsigned int vertex_buffers_in_mesh(mesh_ref ref) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->vertex_buffers;
 }
 
 //! @}
