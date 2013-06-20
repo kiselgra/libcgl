@@ -153,6 +153,13 @@ void camera_near_plane_size(camera_ref ref, vec2f *out) {
 	out->x = out->y * camera_aspect(ref);
 }
 
+void camera_far_plane_size(camera_ref ref, vec2f *out) {
+	float fovy_rad = camera_fovy(ref) * M_PI / 180.0f;
+	float far_dist = camera_far(ref);
+	out->y = 2*tanf(fovy_rad/2.0)*far_dist;	 // a=x/y
+	out->x = out->y * camera_aspect(ref);
+}
+
 //! @}
 
 #ifdef WITH_GUILE

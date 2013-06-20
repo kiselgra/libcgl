@@ -38,6 +38,7 @@ bool valid_camera_ref(camera_ref ref);
 bool is_perspective_camera(camera_ref ref);
 
 void camera_near_plane_size(camera_ref ref, vec2f *out);
+void camera_far_plane_size(camera_ref ref, vec2f *out);
 
 #ifdef __cplusplus
 }
