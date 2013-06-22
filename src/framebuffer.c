@@ -49,6 +49,7 @@ struct framebuffer {
 static struct framebuffer *framebuffers = 0;
 static unsigned int framebuffers_allocated = 0, 
                     next_framebuffer_index = 0;
+static framebuffer_ref last_bound_fbo = { -1 };
 
 static void allocate_framebuffer() {
 	// maintain framebuffer table
@@ -182,6 +183,7 @@ void bind_framebuffer(framebuffer_ref ref) {
 		glDrawBuffer(GL_NONE);
 #endif
 	framebuffer->bound = true;
+	last_bound_fbo.id = ref.id;
 }
 
 void unbind_framebuffer(framebuffer_ref ref) {
@@ -189,6 +191,7 @@ void unbind_framebuffer(framebuffer_ref ref) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	framebuffer->bound = false;
 	glViewport(old_vp[0], old_vp[1], old_vp[2],  old_vp[3]);
+	last_bound_fbo.id = -1;
 }
 
 void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int height) {
@@ -219,6 +222,10 @@ char* framebuffer_name(framebuffer_ref ref) {
 
 bool valid_framebuffer_ref(framebuffer_ref ref) {
 	return ref.id >= 0;
+}
+
+framebuffer_ref currently_bound_framebuffer() {
+	return last_bound_fbo;
 }
 
 //! @}
