@@ -40,6 +40,7 @@ atomic_buffer_ref make_atomic_buffer(const char *name, unsigned int w, unsigned 
 	buf->width = w;
 	buf->height = h;
 	buf->mapped = false;
+	return ref;
 }
 
 void bind_atomic_buffer(atomic_buffer_ref ref, unsigned int location) {
