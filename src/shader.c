@@ -29,6 +29,21 @@
  *  \li  destroy_shader(old_ref);
  *  \li  shader_ref new_ref = make_shader("my-shader", ...);
  *  \li  --> old_ref.id == new_ref.id
+ *
+ *
+ *  \section shaderreload2 Automatic shader file reload
+ *
+ * 	A shader reaload can be triggered from scheme by calling \c (trigger-reload-of-shader-files)
+ * 	(or an alias defined in scheme/shader.scm). This just sets the flag \c cgl_shader_reload_pending
+ * 	which has to be checked in the applications mainloop. If it is set the application should call
+ * 	\c reload_shaders which will call the scheme function \c (execute-shader-reload). Note that this
+ * 	function cannot just be called from scheme as its calling OpenGL functions which can only be
+ * 	called from the thread holding an OpenGL context. That's the reason for the whole indirection
+ * 	process.
+ *
+ * 	\note For shaders to be known to the reloading process they have to loaded using
+ * 	\c load-shader-file, initiallay.
+ *
  */
 
 /*! \file shader.h
@@ -702,6 +717,17 @@ SCM_DEFINE(s_shader_uniform_loc, "uniform-location", 2, 0, 0, (SCM id, SCM uni),
 	int loc = uniform_location(ref, n);
 	free(n);
 	return scm_from_int(loc);
+}
+
+bool cgl_shader_reload_pending = false;
+SCM_DEFINE(s_trigger_shader_reload, "trigger-reload-of-shader-files", 0, 0, 0, (), "") {
+	cgl_shader_reload_pending = true;
+	return SCM_BOOL_T;
+}
+
+void reload_shaders() {
+	scm_c_eval_string("(execute-shader-reload)");
+	cgl_shader_reload_pending = false;
 }
 
 void register_scheme_functions_for_shaders() {

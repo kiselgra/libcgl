@@ -90,3 +90,12 @@
                 	  (format #t "linker info log:~%~a~%---------~%" (shader-link-info-log shader))))
                 shader))))))))
 
+;; shader reload
+(define shader-files '())
+(define (load-shader-file file)
+  (set! shader-files (cons file shader-files))
+  (primitive-load file))
+(define (execute-shader-reload)
+  (for-each primitive-load shader-files))
+(define reload-shaders trigger-reload-of-shader-files)
+

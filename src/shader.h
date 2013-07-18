@@ -56,6 +56,9 @@ void uniform3fv(shader_ref ref, const char *name, float *v);
 void uniform4fv(shader_ref ref, const char *name, float *v);
 void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m);
 
+// shader file reload
+void reload_shaders();
+extern bool cgl_shader_reload_pending;
 
 #ifdef __cplusplus
 }
