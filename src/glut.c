@@ -6,6 +6,7 @@
 #include <libmcm-0.0.1/matrix.h>
 #include <libmcm-0.0.1/camera-matrices.h>
 
+extern bool cgl_shader_reload_pending;
 
 #if CGL_GL == GL
 	#include <GL/freeglut.h>
@@ -138,6 +139,9 @@ void standard_keyboard(unsigned char key, int x, int y)
 			copy_vec3f(&tmp, &cam_up);
 			mul_vec3f_by_scalar(&tmp, &tmp, cgl_cam_move_factor);
 			add_components_vec3f(&cam_pos, &cam_pos, &tmp);
+			break;
+		case 'R':
+			cgl_shader_reload_pending = true;
 			break;
 		case 'p':
 			printf("campos:   %f %f %f\n", cam_pos.x, cam_pos.y, cam_pos.z);
