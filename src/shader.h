@@ -39,6 +39,7 @@ shader_ref find_shader(const char *name);
 bool valid_shader_ref(shader_ref ref);
 shader_ref make_invalid_shader(void);
 const char* shader_name(shader_ref ref);
+bool shader_usable(shader_ref ref);
 
 // these functions handle the uniforms by retrieving the internally stored location.
 int shader_uniforms(shader_ref ref);

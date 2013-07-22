@@ -87,6 +87,7 @@ define_mm(shader, shaders, shader_ref);
  */
 
 shader_ref make_shader(const char *name, int input_vars) {
+	printf("---> make shader %s.\n", name);
 	shader_ref ref = allocate_shader_ref();
 	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
@@ -115,6 +116,7 @@ shader_ref make_shader(const char *name, int input_vars) {
 void destroy_shader(shader_ref ref) {
 	if (!valid_shader_ref(ref)) return;
 	struct shader *shader = shaders+ref.id;
+	printf("---> destroy shader %s.\n", shader->name);
 	for (int i = 0; i < shader->next_input_var; ++i) {
 		free(shader->input_var_names[i]);
 	}
@@ -124,15 +126,6 @@ void destroy_shader(shader_ref ref) {
 	for (int i = 0; i < shader->tesselation_control_sources; ++i)    free(shader->tesselation_control_source[i]);
 	for (int i = 0; i < shader->tesselation_evaluation_sources; ++i) free(shader->tesselation_evaluation_source[i]);
 	for (int i = 0; i < shader->compute_sources; ++i)                free(shader->compute_source[i]);
-	free(shader->input_var_names);                shader->input_var_names = 0;
-	free(shader->input_var_ids);                  shader->input_var_ids = 0;
-	free(shader->name);                           shader->name = 0;
-	free(shader->vertex_source);                  shader->vertex_source = 0;
-	free(shader->fragment_source);                shader->fragment_source = 0;
-	free(shader->geometry_source);                shader->geometry_source = 0;
-	free(shader->tesselation_control_source);     shader->tesselation_control_source = 0;
-	free(shader->tesselation_evaluation_source);  shader->tesselation_evaluation_source = 0;
-	free(shader->compute_source);                 shader->compute_source = 0;
 	if (shader->shader_program)       { glDeleteProgram(shader->shader_program);      shader->shader_program = 0; }
 	if (shader->vertex_program)       { glDeleteShader(shader->vertex_program);       shader->vertex_program = 0; }
 	if (shader->fragment_program)     { glDeleteShader(shader->fragment_program);     shader->fragment_program = 0; }
@@ -140,6 +133,15 @@ void destroy_shader(shader_ref ref) {
 	if (shader->tess_control_program) { glDeleteShader(shader->tess_control_program); shader->tess_control_program = 0; }
 	if (shader->tess_eval_program)    { glDeleteShader(shader->tess_eval_program);    shader->tess_eval_program = 0; }
 	if (shader->compute_program)      { glDeleteShader(shader->compute_program);      shader->compute_program = 0; }
+	free(shader->input_var_names);                shader->input_var_names = 0;
+	free(shader->input_var_ids);                  shader->input_var_ids = 0;
+	free(shader->vertex_source);                  shader->vertex_source = 0;
+	free(shader->fragment_source);                shader->fragment_source = 0;
+	free(shader->geometry_source);                shader->geometry_source = 0;
+	free(shader->tesselation_control_source);     shader->tesselation_control_source = 0;
+	free(shader->tesselation_evaluation_source);  shader->tesselation_evaluation_source = 0;
+	free(shader->compute_source);                 shader->compute_source = 0;
+	free(shader->name);                           shader->name = 0;
 	free_shader_ref(ref);
 }
 
@@ -267,6 +269,8 @@ void store_info_log(char **target, GLuint object) {
 bool compile_and_link_shader(shader_ref ref) {
 	struct shader *shader = shaders+ref.id;
 	GLint compile_res;
+
+	shader->built_ok = false;
 
 	// compile shader source
 	if (shader->vertex_source) {
@@ -513,6 +517,13 @@ shader_ref find_shader(const char *name) {
 shader_ref make_invalid_shader(void) {
 	shader_ref r = { -1 };
 	return r;
+}
+
+//! usable means: valid ref and built fine.
+bool shader_usable(shader_ref ref) {
+	if (valid_shader_ref(ref))
+		return shaders[ref.id].built_ok;
+	return false;
 }
 
 const char* shader_name(shader_ref ref) {
