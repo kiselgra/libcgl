@@ -166,7 +166,7 @@ void camera_far_plane_size(camera_ref ref, vec2f *out) {
 
 bool point_in_frustum(camera_ref ref, vec3f *point) {
 	struct camera *camera = cameras + ref.id;
-	float h_near = tan(camera->fovy / 2) * camera->near;
+	float h_near = tan(camera->fovy * M_PI / 180.0f) * camera->near;
 	float w_near = h_near * camera->aspect;
 	vec3f tmp;
 	vec3f far_center, near_center;
@@ -206,8 +206,6 @@ bool point_in_frustum(camera_ref ref, vec3f *point) {
 	if (dot_vec3f(&plane_normal, &to_point) < 0)
 		return false;
 
-return true;
-	
 	// left
 	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
 	sub_components_vec3f(&in_plane, &near_center, &tmp);
@@ -217,7 +215,7 @@ return true;
 	sub_components_vec3f(&to_point, point, &cam_pos);
 	if (dot_vec3f(&plane_normal, &to_point) < 0)
 		return false;
-	
+
 	// top
 	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
 	add_components_vec3f(&in_plane, &near_center, &tmp);
