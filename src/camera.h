@@ -40,6 +40,8 @@ bool is_perspective_camera(camera_ref ref);
 void camera_near_plane_size(camera_ref ref, vec2f *out);
 void camera_far_plane_size(camera_ref ref, vec2f *out);
 
+bool aabb_in_camera_frustum(camera_ref ref, vec3f *bb_min, vec3f *bb_max);
+
 #ifdef __cplusplus
 }
 #endif

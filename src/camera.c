@@ -74,7 +74,9 @@ matrix4x4f* projection_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].p
 //! This is the lookat matrix as specified by pos/dir/up, not the GL view matrix.
 matrix4x4f* lookat_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].lookat_matrix; }
 //! This is the OpenGL view matrix for wc->ec.
+
 matrix4x4f* gl_view_matrix_of_cam(camera_ref ref) { return &cameras[ref.id].gl_view_matrix; }	
+
 matrix4x4f* gl_normal_matrix_for_view_of(camera_ref ref) { return &cameras[ref.id].gl_view_normal_matrix; }
 float camera_near(camera_ref ref) { return cameras[ref.id].near; }
 float camera_far(camera_ref ref)  { return cameras[ref.id].far; }
@@ -160,6 +162,175 @@ void camera_far_plane_size(camera_ref ref, vec2f *out) {
 // 	out->y = 2*tanf(fovy_rad/2.0)*far_dist;	 // a=x/y
 	out->y = tanf(fovy_rad)*far_dist;	 // a=x/y
 	out->x = out->y * camera_aspect(ref);
+}
+
+bool point_in_frustum(camera_ref ref, vec3f *point) {
+	struct camera *camera = cameras + ref.id;
+	float h_near = tan(camera->fovy / 2) * camera->near;
+	float w_near = h_near * camera->aspect;
+	vec3f tmp;
+	vec3f far_center, near_center;
+	vec3f cam_pos, cam_dir, cam_up;
+	vec3f cam_right;
+	extract_pos_vec3f_of_matrix(&cam_pos, &camera->lookat_matrix);
+	extract_dir_vec3f_of_matrix(&cam_dir, &camera->lookat_matrix);
+	extract_up_vec3f_of_matrix(&cam_up, &camera->lookat_matrix);
+	mul_vec3f_by_scalar(&tmp, &cam_dir, camera->near);
+	add_components_vec3f(&near_center, &cam_pos, &tmp);
+	mul_vec3f_by_scalar(&tmp, &cam_dir, camera->far);
+	add_components_vec3f(&far_center, &cam_pos, &tmp);
+	cross_vec3f(&cam_right, &cam_dir, &cam_up);
+
+	vec3f plane_normal, to_point, in_plane, null = { 0,0,0 };
+	
+	// check far
+	sub_components_vec3f(&plane_normal, &null, &cam_dir);
+	sub_components_vec3f(&to_point, point, &far_center);
+	if (dot_vec3f(&plane_normal, &to_point) < 0)
+		return false;
+
+	// check near
+	plane_normal = cam_dir;
+	sub_components_vec3f(&to_point, point, &near_center);
+	if (dot_vec3f(&plane_normal, &to_point) < 0)
+		return false;
+
+
+	// right
+	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
+	add_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&plane_normal, &cam_up, &in_plane);
+	sub_components_vec3f(&to_point, point, &cam_pos);
+	if (dot_vec3f(&plane_normal, &to_point) < 0)
+		return false;
+
+return true;
+	
+	// left
+	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
+	sub_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&plane_normal, &in_plane, &cam_up);
+	sub_components_vec3f(&to_point, point, &cam_pos);
+	if (dot_vec3f(&plane_normal, &to_point) < 0)
+		return false;
+	
+	// top
+	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
+	add_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&plane_normal, &in_plane, &cam_right);
+	sub_components_vec3f(&to_point, point, &cam_pos);
+	if (dot_vec3f(&plane_normal, &to_point) < 0)
+		return false;
+		
+	// bottom
+	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
+	sub_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&plane_normal, &cam_right, &in_plane);
+	sub_components_vec3f(&to_point, point, &cam_pos);
+	if (dot_vec3f(&plane_normal, &to_point) < 0)
+		return false;
+	
+	return true;
+}
+
+bool aabb_in_camera_frustum(camera_ref ref, vec3f *bb_min, vec3f *bb_max) {
+	
+	vec3f points[] = { { bb_min->x, bb_min->y, bb_min->z },
+	                   { bb_min->x, bb_min->y, bb_max->z },
+	                   { bb_min->x, bb_max->y, bb_min->z },
+	                   { bb_min->x, bb_max->y, bb_max->z },
+	                   { bb_max->x, bb_min->y, bb_min->z },
+	                   { bb_max->x, bb_min->y, bb_max->z },
+	                   { bb_max->x, bb_max->y, bb_min->z },
+	                   { bb_max->x, bb_max->y, bb_max->z } };
+
+	for (int i = 0; i < 8; ++i) {
+		if (point_in_frustum(ref, points+i))
+			return true;
+	}
+	return false;
+
+
+	/*
+	#define row_col(r,c) col_major[(c)*4+(r)]
+	#define A(r,c) clipspace.row_col(r-1,c-1)
+	// #define A(i,j) clipspace.row_col(i-1,j-1)
+
+	matrix4x4f clipspace;
+	multiply_matrices4x4f(&clipspace, &camera->projection_matrix, &camera->gl_view_matrix);
+
+	vec4f left_plane = { A(4,1) + A(1,1),
+	                     A(4,2) + A(1,2),
+	                     A(4,3) + A(1,3),
+	                     A(4,4) + A(1,4) };
+
+	vec4f right_plane = { A(4,1) - A(1,1),
+	                      A(4,2) - A(1,2),
+	                      A(4,3) - A(1,3),
+	                      A(4,4) - A(1,4) };
+
+	vec4f bottom_plane = { A(4,1) + A(2,1),
+	                       A(4,2) + A(2,2),
+	                       A(4,3) + A(2,3),
+	                       A(4,4) + A(2,4) };
+
+
+	vec4f top_plane = { A(4,1) - A(2,1),
+	                    A(4,2) - A(2,2),
+	                    A(4,3) - A(2,3),
+	                    A(4,4) - A(2,4) };
+
+	vec4f near_plane = { A(4,1) + A(3,1),
+	                     A(4,2) + A(3,2),
+	                     A(4,3) + A(3,3),
+	                     A(4,4) + A(3,4) };
+
+	vec4f far_plane = { A(4,1) - A(3,1),
+	                    A(4,2) - A(3,2),
+	                    A(4,3) - A(3,3),
+	                    A(4,4) - A(3,4) };
+	
+	vec4f points[] = { { bb_min->x, bb_min->y, bb_min->z, 1 },
+	                   { bb_min->x, bb_min->y, bb_max->z, 1 },
+	                   { bb_min->x, bb_max->y, bb_min->z, 1 },
+	                   { bb_min->x, bb_max->y, bb_max->z, 1 },
+	                   { bb_max->x, bb_min->y, bb_min->z, 1 },
+	                   { bb_max->x, bb_min->y, bb_max->z, 1 },
+	                   { bb_max->x, bb_max->y, bb_min->z, 1 },
+	                   { bb_max->x, bb_max->y, bb_max->z, 1 } };
+
+	for (int i = 0; i < 8; ++i) {
+		float d_left, d_right, d_top, d_bottom, d_near, d_far;
+
+		d_left   = dot_vec4f(&left_plane,   &points[i]);
+		d_right  = dot_vec4f(&right_plane,  &points[i]);
+		d_top    = dot_vec4f(&top_plane,    &points[i]);
+		d_bottom = dot_vec4f(&bottom_plane, &points[i]);
+		d_near   = dot_vec4f(&near_plane,   &points[i]);
+		d_far    = dot_vec4f(&far_plane,    &points[i]);
+		if (d_left < 0 || d_right < 0 || d_top < 0 || d_bottom < 0 || d_near < 0 || d_far < 0)
+			return false;
+	}
+	*/
+	
+	return true;
+
+// 	float distanceLeft = dot_vec4f(&leftPlane, &chunkCenter);
+// 	float distanceRight = dot_vec4f(&rightPlane, &chunkCenter);
+// 	float distanceBottom = dot_vec4f(&bottomPlane, &chunkCenter);
+// 	float distanceTop = dot_vec4f(&topPlane, &chunkCenter);
+// 	float distanceNear = dot_vec4f(&nearPlane, &chunkCenter);
+// 	float distanceFar = dot_vec4f(&farPlane, &chunkCenter);
+
+	
 }
 
 //! @}
