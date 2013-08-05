@@ -164,6 +164,160 @@ void camera_far_plane_size(camera_ref ref, vec2f *out) {
 	out->x = out->y * camera_aspect(ref);
 }
 
+void add_normal_and_point_to_culling_data(int i, frustum_culling_t *data, vec3f *normal, vec3f *point) {
+	data->normal[i] = *normal;
+	normalize_vec3f(&data->normal[i]);
+	data->dist[i] = -dot_vec3f(&data->normal[i], point);
+}
+
+void populate_frustum_culling_info(camera_ref ref, frustum_culling_t *data) {
+	struct camera *camera = cameras + ref.id;
+	float h_near = tan(camera->fovy * M_PI / 180.0f) * camera->near;
+	float w_near = h_near * camera->aspect;
+	vec3f tmp;
+	vec3f cam_pos, cam_dir, cam_up;
+	vec3f cam_right;
+	extract_pos_vec3f_of_matrix(&cam_pos, &camera->lookat_matrix);
+	extract_dir_vec3f_of_matrix(&cam_dir, &camera->lookat_matrix);
+	extract_up_vec3f_of_matrix(&cam_up, &camera->lookat_matrix);
+	cross_vec3f(&cam_right, &cam_dir, &cam_up);
+	
+	vec3f normal, point, in_plane, near_center, null = { 0,0,0 };
+	
+	// store cam
+	data->cam = ref;
+
+	// near
+	normal = cam_dir;
+	mul_vec3f_by_scalar(&tmp, &cam_dir, camera->near);
+	add_components_vec3f(&point, &cam_pos, &tmp);
+	near_center = point;
+	add_normal_and_point_to_culling_data(0, data, &normal, &point);
+
+	// far
+	sub_components_vec3f(&normal, &null, &cam_dir);
+	mul_vec3f_by_scalar(&tmp, &cam_dir, camera->far);
+	add_components_vec3f(&point, &cam_pos, &tmp);
+	add_normal_and_point_to_culling_data(1, data, &normal, &point);
+
+	// right
+	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
+	add_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&normal, &cam_up, &in_plane);
+	add_normal_and_point_to_culling_data(2, data, &normal, &cam_pos);
+
+	// left
+	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
+	sub_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&normal, &in_plane, &cam_up);
+	add_normal_and_point_to_culling_data(3, data, &normal, &cam_pos);
+
+	// top
+	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
+	add_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&normal, &in_plane, &cam_right);
+	add_normal_and_point_to_culling_data(4, data, &normal, &cam_pos);
+		
+	// bottom
+	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
+	sub_components_vec3f(&in_plane, &near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&normal, &cam_right, &in_plane);
+	add_normal_and_point_to_culling_data(5, data, &normal, &cam_pos);
+}
+
+typedef struct {
+	camera_ref cam;
+	vec3f point_on_plane; // camera eye, point on left,right,top,bottom
+	vec3f near_center, far_center; // point on plane for near/far.
+	vec3f normal_left, normal_right, normal_top, normal_bottom, normal_near, normal_far;
+} frustum_culling_t_b;
+
+void populate_frustum_culling_info_b(camera_ref ref, frustum_culling_t_b *data) {
+	struct camera *camera = cameras + ref.id;
+	float h_near = tan(camera->fovy * M_PI / 180.0f) * camera->near;
+	float w_near = h_near * camera->aspect;
+	vec3f tmp;
+	vec3f cam_pos, cam_dir, cam_up;
+	vec3f cam_right;
+	extract_pos_vec3f_of_matrix(&cam_pos, &camera->lookat_matrix);
+	extract_dir_vec3f_of_matrix(&cam_dir, &camera->lookat_matrix);
+	extract_up_vec3f_of_matrix(&cam_up, &camera->lookat_matrix);
+	cross_vec3f(&cam_right, &cam_dir, &cam_up);
+	
+	vec3f in_plane, null = { 0,0,0 };
+	
+	// store cam
+	data->cam = ref;
+
+	// point on plane for near and far.
+	mul_vec3f_by_scalar(&tmp, &cam_dir, camera->near);
+	add_components_vec3f(&data->near_center, &cam_pos, &tmp);
+	mul_vec3f_by_scalar(&tmp, &cam_dir, camera->far);
+	add_components_vec3f(&data->far_center, &cam_pos, &tmp);
+
+	// far, near and common point for other planes
+	sub_components_vec3f(&data->normal_near, &null, &cam_dir);
+	data->normal_near = cam_dir;
+	data->point_on_plane = cam_pos;
+
+	// right
+	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
+	add_components_vec3f(&in_plane, &data->near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&data->normal_right, &cam_up, &in_plane);
+
+	// left
+	mul_vec3f_by_scalar(&tmp, &cam_right, w_near);
+	sub_components_vec3f(&in_plane, &data->near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&data->normal_left, &in_plane, &cam_up);
+
+	// top
+	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
+	add_components_vec3f(&in_plane, &data->near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&data->normal_top, &in_plane, &cam_right);
+		
+	// bottom
+	mul_vec3f_by_scalar(&tmp, &cam_up, h_near);
+	sub_components_vec3f(&in_plane, &data->near_center, &tmp);
+	sub_components_vec3f(&in_plane, &in_plane, &cam_pos);
+	normalize_vec3f(&in_plane);
+	cross_vec3f(&data->normal_bottom, &cam_right, &in_plane);
+}
+
+bool aabb_in_frustum(frustum_culling_t *culling_data, vec3f *bb_min, vec3f *bb_max) {
+	
+	for (int i = 0; i < 6; ++i) {
+		vec3f p, n;
+		vec3f *normal = &culling_data->normal[i];
+
+		if (normal->x >= 0) p.x = bb_max->x; else p.x = bb_min->x;
+		if (normal->y >= 0) p.y = bb_max->y; else p.y = bb_min->y;
+		if (normal->z >= 0) p.z = bb_max->z; else p.z = bb_min->z;
+
+		if (normal->x >= 0) n.x = bb_min->x; else n.x = bb_max->x;
+		if (normal->y >= 0) n.y = bb_min->y; else n.y = bb_max->y;
+		if (normal->z >= 0) n.z = bb_min->z; else n.z = bb_max->z;
+
+		float distance = culling_data->dist[i] + dot_vec3f(&culling_data->normal[i], &p);
+		if (distance < 0)
+			return false;
+	}
+	return true;
+}
+
 bool point_in_frustum(camera_ref ref, vec3f *point) {
 	struct camera *camera = cameras + ref.id;
 	float h_near = tan(camera->fovy * M_PI / 180.0f) * camera->near;
