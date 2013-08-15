@@ -6,6 +6,7 @@
 
 #include "cgl-config.h"
 #include "gl-version.h"
+#include "cgl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +61,8 @@ vec3f* download_texture3f(texture_ref ref);
 vec4f* download_texture4f(texture_ref ref);
 
 int* download_texture1i(texture_ref ref);
+
+define_array(texture);
 
 #ifdef __cplusplus
 }

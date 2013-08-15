@@ -37,6 +37,11 @@ void standard_error_message_handler(const char *fmt, va_list ap);
 void register_error_message_handler(error_message_handler_t);
 void print_error_message(const char *fmt, ...);
 
+//! use this in headers (in concert with mm.m4)
+#ifndef CPP_CGL_PASTER
+#define CPP_CGL_PASTER(x,y) x ## _ ## y
+#endif
+#define define_array(T) struct T##_array { int capacity, size; CPP_CGL_PASTER(T,ref) *element; };
 
 #ifdef __cplusplus
 }

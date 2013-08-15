@@ -27,6 +27,7 @@ bool valid_framebuffer_ref(framebuffer_ref ref);
 
 framebuffer_ref currently_bound_framebuffer();
 
+define_array(framebuffer);
 
 #ifdef __cplusplus
 }

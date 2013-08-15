@@ -1,6 +1,7 @@
 #ifndef __CAMERA_H__ 
 #define __CAMERA_H__ 
 
+#include "cgl.h"
 #include <libmcm-0.0.1/camera-matrices.h>
 
 #ifdef __cplusplus
@@ -50,6 +51,8 @@ typedef struct {
 bool aabb_in_camera_frustum(camera_ref ref, vec3f *bb_min, vec3f *bb_max);
 bool aabb_in_frustum(frustum_culling_t *culling_data, vec3f *bb_min, vec3f *bb_max);
 void populate_frustum_culling_info(camera_ref ref, frustum_culling_t *data);
+
+define_array(camera);
 
 #ifdef __cplusplus
 }

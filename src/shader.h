@@ -6,6 +6,8 @@
 #include <libmcm/vectors.h>
 #include <libmcm/matrix.h>
 
+#include "cgl.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,6 +62,8 @@ void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m);
 // shader file reload
 void reload_shaders();
 extern bool cgl_shader_reload_pending;
+
+define_array(shader);
 
 #ifdef __cplusplus
 }

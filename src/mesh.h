@@ -42,6 +42,7 @@ unsigned int vertex_buffers_in_mesh(mesh_ref ref);
 void** cpu_vertex_buffers_of_mesh(mesh_ref ref);
 void* cpu_index_buffer_of_mesh(mesh_ref ref);
 
+define_array(mesh);
 
 #ifdef __cplusplus
 }
