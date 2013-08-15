@@ -41,7 +41,14 @@ void print_error_message(const char *fmt, ...);
 #ifndef CPP_CGL_PASTER
 #define CPP_CGL_PASTER(x,y) x ## _ ## y
 #endif
-#define define_array(T) struct T##_array { int capacity, size; CPP_CGL_PASTER(T,ref) *element; };
+#define define_array(T) \
+	struct T##_array { int capacity, size; CPP_CGL_PASTER(T,ref) *element; }; \
+	struct T##_list { struct CPP_CGL_PASTER(T,list) *next; CPP_CGL_PASTER(T,ref) ref; }; \
+	struct T##_array make_##T##_array(void); \
+	void push_##T##_to_array(CPP_CGL_PASTER(T,ref), struct CPP_CGL_PASTER(T,array) *); \
+	CPP_CGL_PASTER(T,ref) pop_##T##_from_array(struct CPP_CGL_PASTER(T,array) *); \
+	void push_##T##_list_to_array(struct CPP_CGL_PASTER(T,list) *, struct CPP_CGL_PASTER(T,array) *);
+
 
 #ifdef __cplusplus
 }

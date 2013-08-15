@@ -58,7 +58,7 @@ define(`define_mm',` dnl)
 		put_$1_on_free_list(ref.id);
 	}
 
-	struct $1_array make_$1_array() {
+	struct $1_array make_$1_array(void) {
 		struct $1_array a;
 		a.capacity = 4;
 		a.size = 0;
@@ -69,7 +69,7 @@ define(`define_mm',` dnl)
 	void push_$1_to_array($3 ref, struct $1_array *array) {
 		if (array->size == array->capacity) {
 			array->capacity *= 1.5;
-			array->element = ($3*)realloc(array->element, array->capacity);
+			array->element = ($3*)realloc(array->element, sizeof($3)*array->capacity);
 		}
 		array->element[array->size++] = ref;
 	}
@@ -77,6 +77,11 @@ define(`define_mm',` dnl)
 	$3 pop_$1_from_array(struct $1_array *array) {
 		assert(array->size > 0);
 		return array->element[--array->size];
+	}
+
+	void push_$1_list_to_array(struct $1_list *list, struct $1_array *array) {
+		for (struct $1_list *run = list; run; run = run->next)
+			push_$1_to_array(run->ref, array);
 	}
 	divert(-1)
 	')
