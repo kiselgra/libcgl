@@ -28,12 +28,12 @@ using lib3dmath::mat4f;
  */
 
 extern "C" {
-	void load_objfile(const char *name, const char *filename, obj_data *output, bool inflate, bool collapse) {
+	void load_objfile(const char *name, const char *filename, obj_data *output, bool inflate, bool collapse, float collapse_factor) {
 		obj_default::ObjFileLoader loader(filename, "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
 		if (inflate) {
 			loader.Inflate();
 			if (collapse)
-				loader.CollapseMaterials();
+				loader.CollapseMaterials(collapse_factor);
 		}
 		output->name = (char*)malloc(strlen(name)+1);
 		strcpy(output->name, name);
