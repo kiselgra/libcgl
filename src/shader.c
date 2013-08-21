@@ -87,7 +87,7 @@ define_mm(shader, shaders, shader_ref);
  */
 
 shader_ref make_shader(const char *name, int input_vars) {
-	printf("---> make shader %s.\n", name);
+// 	printf("---> make shader %s.\n", name);
 	shader_ref ref = allocate_shader_ref();
 	struct shader *shader = shaders+ref.id;
 	shader->name = malloc(strlen(name)+1);
@@ -116,7 +116,7 @@ shader_ref make_shader(const char *name, int input_vars) {
 void destroy_shader(shader_ref ref) {
 	if (!valid_shader_ref(ref)) return;
 	struct shader *shader = shaders+ref.id;
-	printf("---> destroy shader %s.\n", shader->name);
+// 	printf("---> destroy shader %s.\n", shader->name);
 	for (int i = 0; i < shader->next_input_var; ++i) {
 		free(shader->input_var_names[i]);
 	}
