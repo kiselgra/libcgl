@@ -19,6 +19,9 @@
  */
 
 extern void load_internal_configfiles(void);
+#ifdef WITH_GUILE
+bool cgl_use_guile = true;
+#endif
 
 static void hop(void *data, int argc, char **argv) {
 #ifdef WITH_GUILE
@@ -75,6 +78,7 @@ void startup_cgl(const char *window_title, int gl_major, int gl_minor, int argc,
 	start_debug_output();
 
 #ifdef WITH_GUILE
+	cgl_use_guile = (use_guile == with_guile ? true : false);	// cgl_use_guile is false even if we allow guile configuration.
 	if (use_guile == with_guile) {
 		char *p[2] = { (char*)initfile, 0 };
 		scm_boot_guile(initfile?1:0, p, hop, (void*)call);
@@ -163,9 +167,11 @@ void quit(int status) {
 	if (isatty(STDOUT_FILENO))
 		tcsetattr(STDOUT_FILENO, TCSANOW, &termios);
 #ifdef WITH_GUILE
-	scm_c_eval_string("(cancel-thread repl-thread)");
-	scm_c_eval_string("(join-thread repl-thread)");
-	scm_primitive_exit(scm_from_int(status));
+	if (cgl_use_guile) {
+		scm_c_eval_string("(cancel-thread repl-thread)");
+		scm_c_eval_string("(join-thread repl-thread)");
+		scm_primitive_exit(scm_from_int(status));
+	}
 #endif
 	exit(status);
 }

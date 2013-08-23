@@ -10,6 +10,9 @@
 extern "C" {
 #endif
 
+#ifdef WITH_GUILE
+extern bool cgl_use_guile;
+#endif
 
 enum { invalid_ref = -1 };
 enum { without_guile, with_guile, guile_cfg_only };

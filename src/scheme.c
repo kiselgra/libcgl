@@ -2,8 +2,10 @@
 
 #include "scheme.h"
 #include "gl-version.h"
+#include "cgl.h"
 
 #include <libguile.h>
+#include <stdio.h>
 
 void register_scheme_functions_for_shaders(void);
 void register_scheme_functions_for_cameras(void);
@@ -180,6 +182,10 @@ vec3f scm_vec_to_vec3f(SCM v) {
 }
 
 void push_cgl_feature(const char *name) {
+	if (!cgl_use_guile) {
+// 		fprintf(stderr, "cgl: cannot push feature %s because guile was disabled at startup_cgl.\n", name);
+		return;
+	}
 	static bool proc_set = false;
 	static SCM proc;
 	if (!proc_set) {
@@ -191,6 +197,10 @@ void push_cgl_feature(const char *name) {
 }
 
 bool has_cgl_feature(const char *name) {
+	if (!cgl_use_guile) {
+// 		fprintf(stderr, "cgl: cannot check for feature %s because guile was disabled at startup_cgl. feature cannot be found.\n", name);
+		return false;
+	}
 	static bool proc_set = false;
 	static SCM proc;
 	if (!proc_set) {
