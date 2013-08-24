@@ -336,26 +336,31 @@ void save_texture_as_png(texture_ref ref, const char *filename) {
 		vec3f *data = malloc(sizeof(vec3f)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_RGB, GL_FLOAT, data);
 		save_png3f(data, texture->width, texture->height, filename);
+		free(data);
 	}
 	else if (texture->format == GL_RGBA) {
 		vec4f *data = malloc(sizeof(vec4f)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_RGBA, GL_FLOAT, data);
 		save_png4f(data, texture->width, texture->height, filename);
+		free(data);
 	}
 	else if (texture->format == GL_RED) {
 		float *data = malloc(sizeof(float)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_RED, GL_FLOAT, data);
 		save_png1f(data, texture->width, texture->height, filename);
+		free(data);
 	}
 	else if (texture->format == GL_DEPTH_COMPONENT) {
 		float *data = malloc(sizeof(float)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
 		save_png1f(data, texture->width, texture->height, filename);
+		free(data);
 	}
 	else if (texture->internal_format == GL_R32F) {
 		float *data = malloc(sizeof(float)*texture->width*texture->height);
 		glGetTexImage(texture->target, 0, GL_RED, GL_FLOAT, data);
 		save_png1f(data, texture->width, texture->height, filename);
+		free(data);
 	}
 	else fprintf(stderr, "Don't know how to save texture of format %ud.\n", texture->format);
 
