@@ -57,7 +57,8 @@ library_includedir = $(includedir)/$(PACKAGE)-$(VERSION)
 library_include_HEADERS = atomic_buffer.h cgl.h camera.h debug.h framebuffer.h glut.h gl-version.h impex.h libcgl.h mesh.h shader.h texture.h objloader.h scheme.h mm.h cgl-config.h prepared.h wall-time.h
 
 # setting c++ flags:
-# AM_CXXFLAGS = -Wall -ansi -pedantic -ggdb -pg
+AM_CXXFLAGS = -Werror=return-type
+AM_CFLAGS = -Werror=return-type
 
 # setting c preprocessor flags for main project
 libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(WAND_CFLAGS)-D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)

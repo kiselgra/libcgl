@@ -441,6 +441,7 @@ shader_ref make_shader_from_strings(const char *name, const char *vert, const ch
 	}
 
 	delete [] input_name;
+	return shader;
 }
 
 
