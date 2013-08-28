@@ -552,6 +552,17 @@ vec3i compute_shader_local_workgroup_size(shader_ref ref) {
 	return v;
 }
 
+//! dispatches a compute of <em>at least</em> size_x*size_y*size_z (rounded up to multiples of the defined work sizes, each).
+void dispatch_compute(shader_ref ref, int size_x, int size_y, int size_z) {
+	vec3i local_size = compute_shader_local_workgroup_size(ref);
+	float x = ((float)size_x)/local_size.x,
+		  y = ((float)size_y)/local_size.y,
+		  z = ((float)size_z)/local_size.z;
+	int w = (int)x; if (floor(x) != x) ++w;
+	int h = (int)y; if (floor(y) != y) ++h;
+	int d = (int)z; if (floor(z) != z) ++d;
+	glDispatchCompute(w, h, d);
+}
 
 int uniform_location(shader_ref ref, const char *name) {
 	return glGetUniformLocation(gl_shader_object(ref), name);

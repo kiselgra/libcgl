@@ -50,6 +50,7 @@ int shader_uniform_location_by_id(shader_ref ref, unsigned int id);
 
 // compute shader specifics.
 vec3i compute_shader_local_workgroup_size(shader_ref ref);
+void dispatch_compute(shader_ref ref, int size_x, int size_y, int size_z);
 
 // the following functions retrieve the uniform location for each call.
 int uniform_location(shader_ref ref, const char *name);
