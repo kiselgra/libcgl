@@ -33,6 +33,7 @@ void draw_mesh(mesh_ref ref);//!< attention: very general, your own draw call mi
 void draw_mesh_as(mesh_ref mr, GLenum primitive_type);//!< ditto.
 GLenum mesh_primitive_type(mesh_ref mr);
 void set_mesh_primitive_type(mesh_ref mr, GLenum type);
+GLuint mesh_vertex_buffer(mesh_ref mr, int id);
 void bounding_box_of_mesh(mesh_ref mr, vec3f *min, vec3f *max);
 void force_bounding_box_for_mesh(mesh_ref mr, const vec3f *min, const vec3f *max);
 void compute_bounding_box_for_mesh(mesh_ref mr, unsigned int vertices, unsigned int element_dim, const float *data);
