@@ -139,7 +139,7 @@ void unbind_mesh_from_gl(mesh_ref mr) {
 	if (!mesh->done)
 		mesh->done = true;
 #endif
-	meshes[mr.id].bound = true;
+	meshes[mr.id].bound = false;
 }
 
 int size_of_gl_type(GLenum content_type) {
@@ -164,6 +164,11 @@ void set_mesh_primitive_type(mesh_ref mr, GLenum type) {
 GLenum mesh_primitive_type(mesh_ref mr) {
 	struct mesh *mesh = meshes+mr.id;
 	return mesh->primitive_type;
+}
+
+GLuint mesh_vertex_buffer(mesh_ref mr, int id) {
+	struct mesh *mesh = meshes+mr.id;
+	return mesh->vertex_buffer_ids[id];
 }
 
 void compute_bounding_box_for_mesh(mesh_ref mr, unsigned int vertices, unsigned int element_dim, const float *data) {
