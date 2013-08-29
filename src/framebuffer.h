@@ -29,6 +29,12 @@ framebuffer_ref currently_bound_framebuffer();
 
 define_array(framebuffer);
 
+// fbo stack
+
+framebuffer_ref current_framebuffer();
+void pop_framebuffer();
+void push_framebuffer(framebuffer_ref fbo);
+
 #ifdef __cplusplus
 }
 #endif

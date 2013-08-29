@@ -230,6 +230,38 @@ framebuffer_ref currently_bound_framebuffer() {
 
 //! @}
 
+
+// fbo stack
+
+enum { stack_size = 128 };
+static framebuffer_ref fbo_stack[stack_size];
+static int stack_pointer = 0;
+
+void push_framebuffer(framebuffer_ref fbo) {
+	if (stack_pointer == stack_size) {
+		fprintf(stderr, "Framebuffer stack-overflow while pushing %s.\n", framebuffer_name(fbo));
+		exit(-1);
+	}
+	fbo_stack[stack_pointer++] = fbo;
+	bind_framebuffer(fbo);
+}
+
+void pop_framebuffer() {
+	if (stack_pointer == 0) {
+		fprintf(stderr, "Framebuffer stack-underflow.\n");
+		exit(-1);
+	}
+	stack_pointer--;
+	bind_framebuffer(fbo_stack[stack_pointer-1]);
+}
+
+framebuffer_ref current_framebuffer() {
+	framebuffer_ref r = { -1 };
+	if (stack_pointer > 0)
+		r = fbo_stack[stack_pointer-1];
+	return r;
+}
+
 #ifdef WITH_GUILE
 #include  <libguile.h>
 #include <stdio.h>
