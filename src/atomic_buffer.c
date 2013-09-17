@@ -74,25 +74,35 @@ void unmap_atomic_buffer(atomic_buffer_ref ref) {
 }
 
 /*! \brief Reset the atomic buffer.
- *  \attention This causes the buffer to be taken out of video memory on 2012/2013 nvidia drivers. Really bad.
+ *  \attention touches binding point 0
  */
 void reset_atomic_buffer(atomic_buffer_ref ref, int value) {
+	/*
 	struct atomic_buffer *buf = atomic_buffers + ref.id;
 	int *b = map_atomic_int_buffer(ref, GL_WRITE_ONLY);
 	for (unsigned int i = 0; i < buf->width * buf->height; ++i)
 		b[i] = value;
 	unmap_atomic_buffer(ref);
+	*/
+	bind_atomic_buffer(ref, 0);
+	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32I, GL_RED, GL_INT, &value);
+	unbind_atomic_buffer(ref, 0);
 }
 
 /*! \brief Reset the atomic buffer.
- *  \attention This causes the buffer to be taken out of video memory on 2012/2013 nvidia drivers. Really bad.
+ *  \attention touches binding point 0
  */
 void reset_atomic_bufferu(atomic_buffer_ref ref, unsigned int value) {
+	/*
 	struct atomic_buffer *buf = atomic_buffers + ref.id;
 	unsigned int *b = map_atomic_int_buffer(ref, GL_WRITE_ONLY);
 	for (unsigned int i = 0; i < buf->width * buf->height; ++i)
 		b[i] = value;
 	unmap_atomic_buffer(ref);
+	*/
+	bind_atomic_buffer(ref, 0);
+	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32I, GL_RED, GL_INT, &value);
+	unbind_atomic_buffer(ref, 0);
 }
 
 atomic_buffer_ref find_atomic_buffer(const char *name) {
