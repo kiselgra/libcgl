@@ -132,7 +132,8 @@
     (if (not (null? U))
 	(begin (line 1 "strings[~a] = \"~a\";" i (car U))
 	       (loop (cdr U) (1+ i)))))
-  (line 1 "register_single_material_shader_fragment(\"~a\", \"~a\", ~a, strings);" name (escape-newlines code) (length uniforms)))
+  (line 1 "register_custom_shader_fragment(\"~a\", \"~a\", ~a, strings);" name (escape-newlines code) (length uniforms)))
+(define register-shader-fragment register-single-material-shader-fragment)
 
 ;; main program
 
