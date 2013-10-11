@@ -86,7 +86,7 @@ void make_frustum_matrixf(matrix4x4f *to, float t, float b, float l, float r, fl
 }
 
 void update_perspective_stereo_projection_left(struct camera *camera) {
-	float t = camera->near * tan((camera->fovy/2) * M_PI/180.0);
+	float t = camera->near * tan((camera->fovy) * M_PI/180.0);
 	float frustumshift = (camera->iod/2.0)*camera->near/camera->focus_plane;
 
 	float b = -t;
@@ -101,7 +101,7 @@ void update_perspective_stereo_projection_left(struct camera *camera) {
 }
 
 void update_perspective_stereo_projection_right(struct camera *camera) {
-	float t = camera->near * tan((camera->fovy/2) * M_PI/180.0);
+	float t = camera->near * tan((camera->fovy) * M_PI/180.0);
 	float frustumshift = (camera->iod/2.0)*camera->near/camera->focus_plane;
 
 	float b = -t;
@@ -676,6 +676,46 @@ SCM_DEFINE(s_make_perspective_cam, "make-perspective-camera", 8, 0, 0, (SCM name
 	float ne = (float)scm_to_double(near);
 	float fa = (float)scm_to_double(far);
 	camera_ref ref = make_perspective_cam(n, &p, &d, &u, fo, as, ne, fa);
+	free(n);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_make_perspective_stereo_cam_left, "make-perspective-stereo-camera-left", 10, 0, 0, (SCM name, SCM pos, SCM dir, SCM up, SCM fovy, SCM aspect, SCM near, SCM far, SCM iod, SCM focus), "") {
+	char *n = scm_to_locale_string(name);
+	vec3f p, d, u;
+	make_vec3f(&p, 0, 0, 0);
+	make_vec3f(&d, 0, 0, 0);
+	make_vec3f(&u, 0, 0, 0);
+	load_vec3f(pos, &p, "pos");
+	load_vec3f(dir, &d, "dir");
+	load_vec3f(up, &u, "up");
+	float fo = (float)scm_to_double(fovy);
+	float as = (float)scm_to_double(aspect);
+	float ne = (float)scm_to_double(near);
+	float fa = (float)scm_to_double(far);
+	float io = (float)scm_to_double(iod);
+	float fp = (float)scm_to_double(focus);
+	camera_ref ref = make_perspective_stereo_cam_left(n, &p, &d, &u, fo, as, ne, fa, io, fp);
+	free(n);
+	return scm_from_int(ref.id);
+}
+
+SCM_DEFINE(s_make_perspective_stereo_cam_right, "make-perspective-stereo-camera-right", 10, 0, 0, (SCM name, SCM pos, SCM dir, SCM up, SCM fovy, SCM aspect, SCM near, SCM far, SCM iod, SCM focus), "") {
+	char *n = scm_to_locale_string(name);
+	vec3f p, d, u;
+	make_vec3f(&p, 0, 0, 0);
+	make_vec3f(&d, 0, 0, 0);
+	make_vec3f(&u, 0, 0, 0);
+	load_vec3f(pos, &p, "pos");
+	load_vec3f(dir, &d, "dir");
+	load_vec3f(up, &u, "up");
+	float fo = (float)scm_to_double(fovy);
+	float as = (float)scm_to_double(aspect);
+	float ne = (float)scm_to_double(near);
+	float fa = (float)scm_to_double(far);
+	float io = (float)scm_to_double(iod);
+	float fp = (float)scm_to_double(focus);
+	camera_ref ref = make_perspective_stereo_cam_right(n, &p, &d, &u, fo, as, ne, fa, io, fp);
 	free(n);
 	return scm_from_int(ref.id);
 }
