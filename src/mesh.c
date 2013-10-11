@@ -8,18 +8,24 @@
 /*! \defgroup meshes Meshes
  *
  *  A mesh is a very simple thing.
- *  It is just a collection of vertex attributes (i.e. positions, normals, texture coordinates) used to support data for a draw call.
- *  It does not hold any references to textures, colors, materials, shaders or whatever.
+ *  It is just a collection of vertex attributes (i.e. positions, normals,
+ *  texture coordinates) used to support data for a draw call.
+ *  It does not hold any references to textures, colors, materials, shaders or
+ *  whatever.
  *
  *  You can add a vertex buffer to a mesh in two different ways.
  *  First: add it by passing cpu data -> a vbo will be created.
- *  Second: add an existing vbo -> it will be used. (create the mesh with make_mesh("", 0).
+ *  Second: add an existing vbo -> it will be used. (create the mesh with
+ *  make_mesh("", 0)).
  *  \attention don't mix the two methods!
  *
  *
- * 	We compute a bounding box for the mesh based on the first floating point buffer passed as an attribute.
- * 	If this is not the right thing for you just use \c compute_bounding_box_for_mesh or 
- * 	\c force_bounding_box_for_mesh afterwards.
+ * 	We compute a bounding box for the mesh based on the first floating point
+ * 	buffer passed as an attribute.  If this is not the right thing for you just
+ * 	use \c compute_bounding_box_for_mesh or \c force_bounding_box_for_mesh
+ * 	afterwards.
+ *  \note When you pass 0 as vertex data to \c add_vertex_buffer_to_mesh the
+ *  first non-zero float buffer is used for bounding box computation.
  */
 
 /*! \file mesh.h
@@ -241,7 +247,7 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 		mesh->cpu_vertex_buffers[vbo_id] = malloc(size_in_bytes);
 		memcpy(mesh->cpu_vertex_buffers[vbo_id], data, size_in_bytes);
 	}
-	if (mesh->bounding_box == 0 && content_type == GL_FLOAT)
+	if (mesh->bounding_box == 0 && content_type == GL_FLOAT && data)
 		compute_bounding_box_for_mesh(mr, vertices, element_dim, data);
 	return true;
 }
