@@ -25,11 +25,16 @@ struct camera {
 			   lookat_matrix, 
 			   gl_view_matrix,
 			   gl_view_normal_matrix;
+	vec3f internal_offset;
+	float focus_plane, iod;
+	void (*update_projection)(struct camera *);
 };
 
 #include "mm.h"
 define_mm(camera, cameras, camera_ref);
 #include "camera.xx"
+	
+void update_perspective_projection_of_cam(struct camera *camera);
 
 /*! \addtogroup cameras
  *  @{
@@ -41,8 +46,110 @@ camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, f
 	// set up cam
 	struct camera *camera = cameras + ref.id;
 	camera->name = malloc(strlen(name)+1);
+	make_vec3f(&camera->internal_offset, 0, 0, 0);
 	strcpy(camera->name, name);
-	change_projection_of_cam(ref, fovy, aspect, near, far);
+	camera->fovy = fovy;
+	camera->aspect = aspect;
+	camera->near = near;
+	camera->far = far;
+	camera->focus_plane = 0;
+	camera->iod = 0;
+	camera->update_projection = update_perspective_projection_of_cam;
+	update_perspective_projection_of_cam(camera);
+	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
+	recompute_gl_matrices_of_cam(ref);
+	return ref;
+}
+
+void make_frustum_matrixf(matrix4x4f *to, float t, float b, float l, float r, float near, float far) {
+	#define row_col(r,c) col_major[(c)*4+(r)]
+	to->row_col(0,0) = (2*near)/(r-l);
+	to->row_col(1,0) = 0;
+	to->row_col(2,0) = 0;
+	to->row_col(3,0) = 0;
+
+	to->row_col(0,1) = 0;
+	to->row_col(1,1) = (2*near)/(t-b);
+	to->row_col(2,1) = 0;
+	to->row_col(3,1) = 0;
+
+	to->row_col(0,2) = (r+l)/(r-l);
+	to->row_col(1,2) = (t+b)/(t-b);
+	to->row_col(2,2) = -(far+near)/(far-near);
+	to->row_col(3,2) = -1;
+	
+	to->row_col(0,3) = 0;
+	to->row_col(1,3) = 0;
+	to->row_col(2,3) = -(2*far*near)/(far-near);
+	to->row_col(3,3) = 0;
+	#undef row_col
+}
+
+void update_perspective_stereo_projection_left(struct camera *camera) {
+	float t = camera->near * tan((camera->fovy/2) * M_PI/180.0);
+	float frustumshift = (camera->iod/2.0)*camera->near/camera->focus_plane;
+
+	float b = -t;
+	float r = camera->aspect * t;
+	float l = -r + frustumshift;
+	r += frustumshift;
+
+	make_frustum_matrixf(&camera->projection_matrix, t, b, l, r, camera->near, camera->far);
+	camera->projection_matrix.col_major[12] += camera->iod/2.0;
+	make_vec3f(&camera->internal_offset, camera->iod/2.0, 0, 0);
+// 	make_vec3f(&camera->internal_offset, 0, 0, 0);
+}
+
+void update_perspective_stereo_projection_right(struct camera *camera) {
+	float t = camera->near * tan((camera->fovy/2) * M_PI/180.0);
+	float frustumshift = (camera->iod/2.0)*camera->near/camera->focus_plane;
+
+	float b = -t;
+	float r = camera->aspect * t;
+	float l = -r - frustumshift;
+	r -= frustumshift;
+
+	make_frustum_matrixf(&camera->projection_matrix, t, b, l, r, camera->near, camera->far);
+	camera->projection_matrix.col_major[12] -= camera->iod/2.0;
+	make_vec3f(&camera->internal_offset, -camera->iod/2.0, 0, 0);
+// 	make_vec3f(&camera->internal_offset, 0, 0, 0);
+}
+
+camera_ref make_perspective_stereo_cam_left(char *name, vec3f *pos, vec3f *dir, vec3f *up, float fovy, float aspect, float near, float far, float iod, float focus) {
+	camera_ref ref = allocate_camera_ref();
+	struct camera *camera = cameras + ref.id;
+	camera->name = malloc(strlen(name)+1);
+	strcpy(camera->name, name);
+
+	camera->fovy = fovy;
+	camera->aspect = aspect;
+	camera->near = near;
+	camera->far = far;
+	camera->iod = iod;
+	camera->focus_plane = focus;
+	camera->update_projection = update_perspective_stereo_projection_left;
+	update_perspective_stereo_projection_left(camera);
+
+	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
+	recompute_gl_matrices_of_cam(ref);
+	return ref;
+}
+
+camera_ref make_perspective_stereo_cam_right(char *name, vec3f *pos, vec3f *dir, vec3f *up, float fovy, float aspect, float near, float far, float iod, float focus) {
+	camera_ref ref = allocate_camera_ref();
+	struct camera *camera = cameras + ref.id;
+	camera->name = malloc(strlen(name)+1);
+	strcpy(camera->name, name);
+
+	camera->fovy = fovy;
+	camera->aspect = aspect;
+	camera->near = near;
+	camera->far = far;
+	camera->iod = iod;
+	camera->focus_plane = focus;
+	camera->update_projection = update_perspective_stereo_projection_right;
+	update_perspective_stereo_projection_right(camera);
+
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
 	recompute_gl_matrices_of_cam(ref);
 	return ref;
@@ -59,6 +166,8 @@ camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up,
 	camera->far = far;
 	camera->aspect = (float)(top-bottom) / (float)(right-left);
 	camera->fovy = 0;
+	camera->update_projection = 0;
+	make_vec3f(&camera->internal_offset, 0, 0, 0);
 	strcpy(camera->name, name);
 	make_orthographic_matrixf(&camera->projection_matrix, right, left, top, bottom, near, far);
 	make_lookat_matrixf(&camera->lookat_matrix, pos, dir, up);
@@ -84,7 +193,16 @@ float camera_far(camera_ref ref)  { return cameras[ref.id].far; }
 //! after changing any of the camera's parameters, you'll have to recompute the OpenGL matrices derived from them, to have effect on rendering.
 void recompute_gl_matrices_of_cam(camera_ref ref) {
 	struct camera *camera = cameras + ref.id;
+// 	matrix4x4f translate, res;
+// 	make_unit_matrix4x4f(&translate);
+// 	camera->lookat_matrix.col_major[12] = camera->internal_offset.x;
+// 	camera->lookat_matrix.col_major[13] = camera->internal_offset.y;
+// 	camera->lookat_matrix.col_major[14] = camera->internal_offset.z;
+// 	multiply_matrices4x4f(&res, &translate, &camera->lookat_matrix);
+// 	multiply_matrices4x4f(&res, &camera->lookat_matrix, &translate);
+
 	make_gl_viewing_matrixf(&camera->gl_view_matrix, &camera->lookat_matrix);
+// 	make_gl_viewing_matrixf(&camera->gl_view_matrix, &res);
 	matrix4x4f tmp;
 	invert_matrix4x4f(&tmp, &camera->gl_view_matrix);
 	transpose_matrix4x4f(&camera->gl_view_normal_matrix, &tmp);
@@ -102,11 +220,29 @@ float camera_aspect(camera_ref ref) {
 
 void change_projection_of_cam(camera_ref ref, float fovy, float aspect, float near, float far) {
 	struct camera *camera = cameras + ref.id;
+	camera->fovy = fovy;
+	camera->aspect = aspect;
 	camera->near = near;
 	camera->far = far;
-	camera->aspect = aspect;
-	camera->fovy = fovy;
-	make_projection_matrixf(&camera->projection_matrix, fovy, aspect, near, far);
+	camera->update_projection(camera);
+}
+
+void change_near_far_of_cam(camera_ref ref, float near, float far) {
+	struct camera *camera = cameras + ref.id;
+	camera->near = near;
+	camera->far = far;
+	camera->update_projection(camera);
+}
+
+void change_stereo_camera_iod(camera_ref ref, float iod) {
+	struct camera *camera = cameras + ref.id;
+	camera->iod = iod;
+	camera->update_projection(camera);
+}
+
+
+void update_perspective_projection_of_cam(struct camera *camera) {
+	make_projection_matrixf(&camera->projection_matrix, camera->fovy, camera->aspect, camera->near, camera->far);
 }
 
 //! See \ref recompute_gl_matrices_of_cam.

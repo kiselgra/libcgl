@@ -16,9 +16,17 @@ typedef struct {
 camera_ref make_perspective_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, float fovy, float aspect, float near, float far);
 camera_ref make_orthographic_cam(char *name, vec3f *pos, vec3f *dir, vec3f *up, 
                                  float right, float left, float top, float bottom, float near, float far);
+camera_ref make_perspective_stereo_cam_right(char *name, vec3f *pos, vec3f *dir, vec3f *up, 
+                                             float fovy, float aspect, float near, float far, 
+                                             float iod, float focus);
+camera_ref make_perspective_stereo_cam_left(char *name, vec3f *pos, vec3f *dir, vec3f *up, 
+                                             float fovy, float aspect, float near, float far, 
+                                             float iod, float focus);
 void delete_camera(camera_ref ref);
 
 void change_projection_of_cam(camera_ref ref, float fovy, float aspect, float near, float far);
+void change_near_far_of_cam(camera_ref ref, float near, float far);
+void change_stereo_camera_iod(camera_ref ref, float iod);
 void change_lookat_of_cam(camera_ref ref, vec3f *pos, vec3f *dir, vec3f *up);
 void recompute_gl_matrices_of_cam(camera_ref ref);
 
@@ -53,6 +61,8 @@ bool aabb_in_frustum(frustum_culling_t *culling_data, vec3f *bb_min, vec3f *bb_m
 void populate_frustum_culling_info(camera_ref ref, frustum_culling_t *data);
 
 define_array(camera);
+
+
 
 #ifdef __cplusplus
 }
