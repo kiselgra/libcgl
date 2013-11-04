@@ -30,6 +30,11 @@ void please_use_a_backward_gl_context() {
 	forward = false;
 }
 
+static bool multisampling = false;
+void enable_glut_multisampling() {
+	multisampling = true;
+}
+
 #if CGL_GL == GL || LIBCGL_HAVE_EGLUT_X11 == 1
 
 void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_min, int res_x, int res_y)
@@ -40,7 +45,7 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 	unsigned int flags = GLUT_DEBUG;
 	if (forward) flags |= GLUT_FORWARD_COMPATIBLE;
 	glutInitContextFlags(flags);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | (multisampling ? GLUT_MULTISAMPLE : 0));
 	glutInitWindowSize(res_x, res_y); 
 // 	glutInitWindowPosition (100, 100);
 	int sw = glutGet(GLUT_SCREEN_WIDTH);
