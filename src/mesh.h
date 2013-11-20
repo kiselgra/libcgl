@@ -42,6 +42,9 @@ bool mesh_keeps_cpu_data(mesh_ref ref);
 unsigned int vertex_buffers_in_mesh(mesh_ref ref);
 void** cpu_vertex_buffers_of_mesh(mesh_ref ref);
 void* cpu_index_buffer_of_mesh(mesh_ref ref);
+const char* mesh_vertex_buffer_name(mesh_ref ref, int n);
+GLenum mesh_vertex_buffer_content_type(mesh_ref ref, int n);
+int mesh_vertex_buffer_element_dim(mesh_ref ref, int n);
 
 define_array(mesh);
 

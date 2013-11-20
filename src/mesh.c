@@ -46,9 +46,9 @@ struct mesh {
 	bool bound;
 #if CGL_GL_VERSION == GLES2
 	bool done;
+#endif
 	unsigned int *element_dim;
 	GLenum *content_type;
-#endif
 	GLenum primitive_type;
 	vec3f *bounding_box;
 	bool keep_cpu_data;
@@ -102,9 +102,9 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	glGenVertexArrays(1, &mesh->vao_id);
 #else
 	mesh->done = false;
+#endif
 	mesh->element_dim = malloc(sizeof(unsigned int) * vertex_buffers);
 	mesh->content_type = malloc(sizeof(GLenum) * vertex_buffers);
-#endif
 	mesh->primitive_type = GL_TRIANGLES;
 	mesh->bounding_box = 0;
 	mesh->keep_cpu_data = false;
@@ -239,10 +239,9 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 #if CGL_GL == GL
 	glEnableVertexAttribArray(vbo_id);
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
-#else
+#endif
 	mesh->element_dim[vbo_id] = element_dim;
 	mesh->content_type[vbo_id] = content_type;
-#endif
 	if (mesh->keep_cpu_data) {
 		mesh->cpu_vertex_buffers[vbo_id] = malloc(size_in_bytes);
 		memcpy(mesh->cpu_vertex_buffers[vbo_id], data, size_in_bytes);
@@ -270,10 +269,10 @@ bool add_existing_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum co
 	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
 #else
 	mesh->vertex_buffer_ids[vbo_id] = vboid;
-	mesh->element_dim[vbo_id] = element_dim;
-	mesh->content_type[vbo_id] = content_type;
 #warning "adding existing vbos to meshes is experimental on gles, yet."
 #endif
+	mesh->element_dim[vbo_id] = element_dim;
+	mesh->content_type[vbo_id] = content_type;
 	return true;
 }
 
@@ -376,6 +375,21 @@ void** cpu_vertex_buffers_of_mesh(mesh_ref ref) {
 unsigned int vertex_buffers_in_mesh(mesh_ref ref) {
 	struct mesh *mesh = meshes+ref.id;
 	return mesh->vertex_buffers;
+}
+
+const char* mesh_vertex_buffer_name(mesh_ref ref, int n) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->vertex_buffer_names[n];
+}
+
+GLenum mesh_vertex_buffer_content_type(mesh_ref ref, int n) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->content_type[n];
+}
+
+int mesh_vertex_buffer_element_dim(mesh_ref ref, int n) {
+	struct mesh *mesh = meshes+ref.id;
+	return mesh->element_dim[n];
 }
 
 //! @}
