@@ -57,6 +57,19 @@ extern "C" {
 		return pixels;
 	}
 
+	vec4f* load_png4f(const char *filename, unsigned int *w, unsigned int *h) {
+		png::image<png::rgba_pixel> image(filename);
+		*w = image.get_width(),
+		*h = image.get_height();
+		vec4f *pixels = (vec4f*)malloc(sizeof(vec4f)**w**h);
+		for (size_t y = 0; y < *h; ++y)
+			for (size_t x = 0; x < *w; ++x) {
+				png::rgba_pixel px = image.get_pixel(x, *h-y-1);
+				make_vec4f(pixels+y**w+x, px.red/255.0f, px.green/255.0f, px.blue/255.0f, px.alpha/255.0f);
+			}
+		return pixels;
+	}
+
 	unsigned char* load_png3ub(const char *filename, unsigned int *w, unsigned int *h) {
 		png::image<png::rgb_pixel> image(filename);
 		*w = image.get_width(),
@@ -159,6 +172,36 @@ extern "C" {
 #if LIBCGL_HAVE_LIBPNG == 1
 		if (f == f_png)
 			return load_png3f(filename, w, h);
+#endif
+#endif
+		fprintf(stderr, "Cannot guess image format of '%s', or format unsupported (maybe not compiled in?).\n", filename);
+		exit(1);
+	}
+
+
+	vec4f *load_image4f(const char *filename, unsigned int *w, unsigned int *h) {
+#if LIBCGL_HAVE_MAGICKWAND == 1
+		MagickWandGenesis();
+		MagickWand *img = NewMagickWand();
+		int status = MagickReadImage(img, filename);
+		if (status == MagickFalse) {
+			magickwand_error(img);
+		}
+		MagickFlipImage(img);
+		*w = MagickGetImageWidth(img);
+		*h = MagickGetImageHeight(img);
+		vec4f *pixels = (vec4f*)malloc(sizeof(vec4f)**w**h);
+		MagickExportImagePixels(img, 0, 0, *w, *h, "RGBA", FloatPixel, (void*)pixels);
+		DestroyMagickWand(img);
+		MagickWandTerminus();
+		return pixels;
+#else
+		format f = guess_image_format(filename);
+#if LIBCGL_HAVE_LIBPNG == 1
+		if (f == f_png) {
+			fprintf("WARNING: untested image loader used! (%s:%d)\n", __FILE__, __LINE__);
+			return load_png4f(filename, w, h);
+		}
 #endif
 #endif
 		fprintf(stderr, "Cannot guess image format of '%s', or format unsupported (maybe not compiled in?).\n", filename);

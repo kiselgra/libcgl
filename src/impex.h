@@ -9,6 +9,7 @@ extern "C" {
 
 // png
 vec3f* load_png3f(const char *filename, unsigned int *w, unsigned int *h);
+vec4f* load_png4f(const char *filename, unsigned int *w, unsigned int *h);
 unsigned char* load_png3ub(const char *filename, unsigned int *w, unsigned int *h);
 
 void save_png1f(const float *data, unsigned int w, unsigned int h, const char *filename);
@@ -20,6 +21,7 @@ vec3f* load_jpeg3f(const char *filename, unsigned int *w, unsigned int *h);
 
 // general
 vec3f* load_image3f(const char *filename, unsigned int *w, unsigned int *h);
+vec4f* load_image4f(const char *filename, unsigned int *w, unsigned int *h);
 
 	
 void append_image_path(const char *path);
