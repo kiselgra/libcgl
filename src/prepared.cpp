@@ -198,6 +198,46 @@ mesh_ref make_cylinder(const char *name, int n, matrix4x4f *trafo) {
 	return mesh;
 }
 
+void make_cube_vertices_and_normals(vec3f **verts, vec3f **norms, int *N, matrix4x4f *trafo) {
+	static vec3f v[] = { {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1}, { 1,  1,  1}, {-1,  1,  1}, {-1, -1,  1}, // FRONT
+	                     {-1, -1, -1}, {-1,  1, -1}, { 1,  1, -1}, { 1,  1, -1}, { 1, -1, -1}, {-1, -1, -1}, // BACK
+	                     {-1, -1,  1}, {-1,  1,  1}, {-1,  1, -1}, {-1,  1, -1}, {-1, -1, -1}, {-1, -1,  1}, // LEFT
+	                     { 1, -1, -1}, { 1,  1, -1}, { 1,  1,  1}, { 1,  1,  1}, { 1, -1,  1}, { 1, -1, -1}, // RIGHT
+	                     {-1,  1,  1}, { 1,  1,  1}, { 1,  1, -1}, { 1,  1, -1}, {-1,  1, -1}, {-1,  1,  1}, // TOP
+	                     {-1, -1,  1}, {-1, -1, -1}, { 1, -1, -1}, { 1, -1, -1}, { 1, -1,  1}, {-1, -1,  1}, // BOTTOM
+	};
+	static vec3f n[] = { { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 }, 
+	                     { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },
+	                     {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },
+	                     { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },
+	                     { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },
+	                     { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 } 
+	};
+	*verts = (vec3f*)malloc(sizeof(vec3f)*36);
+	*norms = (vec3f*)malloc(sizeof(vec3f)*36);
+	for (int i = 0; i < 36; ++i) {
+		(*verts)[i] = v[i];
+		(*norms)[i] = n[i];
+	}
+	*N = 36;
+	if (trafo) {
+		matrix4x4f tmp, norm;
+		invert_matrix4x4f(&tmp, trafo);
+		transpose_matrix4x4f(&norm, &tmp);
+		for (int i = 0; i < 36; ++i) {
+			// transform v
+			vec4f cur = { (*verts)[i].x, (*verts)[i].y, (*verts)[i].z, 1 };
+			vec4f res;
+			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
+			(*verts)[i].x = res.x; (*verts)[i].y = res.y; (*verts)[i].z = res.z;
+			// transform n
+			cur.x = (*norms)[i].x; cur.y = (*norms)[i].y; cur.z = (*norms)[i].z; cur.w = 0;
+			multiply_matrix4x4f_vec4f(&res, &norm, &cur);
+			(*norms)[i].x = res.x; (*norms)[i].y = res.y; (*norms)[i].z = res.z;
+		}
+	}
+}
+
 mesh_ref make_cube(const char *name, matrix4x4f *trafo) {
 	vec3f v[] = { {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1}, { 1,  1,  1}, {-1,  1,  1}, {-1, -1,  1}, // FRONT
 	              {-1, -1, -1}, {-1,  1, -1}, { 1,  1, -1}, { 1,  1, -1}, { 1, -1, -1}, {-1, -1, -1}, // BACK
@@ -258,6 +298,143 @@ mesh_ref make_general_wire_furstum(const char *name, vec3f *near_ll, vec3f *near
 	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, 8, 3, v, GL_STATIC_DRAW);
 	add_index_buffer_to_mesh(mesh, 24, indices, GL_STATIC_DRAW);
 	unbind_mesh_from_gl(mesh);
+	return mesh;
+}
+
+/*! \brief make an icosahedron and subdivide it n times.
+ * 	\param subdiv how often to subdivde (0 produces a plain icosahedron).
+ *
+ * 	\note this produces redundant vertices which may be taken out later on.
+ *
+ * 	based on http://www.fho-emden.de/~hoffmann/ikos27042002.pdf, 
+ * 	found at http://sarvanz.blogspot.de/2013/07/sphere-triangulation-using-icosahedron.html
+ */
+vec3f* make_isosphere_vertices(int subdiv, int *resulting_verts) {
+	vec3f base[12];
+
+	float theta = 26.56505117707799 * M_PI / 180.0; // refer paper for theta value
+
+	float stheta = sinf(theta);
+	float ctheta = cosf(theta);
+
+	// bottom vertex
+	make_vec3f(base+0, 0.0f, -1.0f, 0.0f);
+
+	// lower pentagon
+	float phi = M_PI / 5.0f;
+	for (int i = 1; i < 6; ++i) {
+		make_vec3f(base+i, ctheta * cosf(phi), -stheta, ctheta * sinf(phi));
+		phi += 2.0f * M_PI / 5.0f;
+	}
+	
+	// the upper pentagon
+	phi = 0.0f;
+	for (int i = 6; i < 11; ++i) {
+		make_vec3f(base+i, ctheta * cosf(phi), stheta, ctheta * sinf(phi));
+		phi += 2.0f * M_PI / 5.0f;
+	}
+
+	make_vec3f(base+11, 0.0f, 1.0f, 0.0f); // the upper vertex
+
+	// piece together (each line is a triangle)
+	std::list<vec3f> curr, next;
+	curr.push_back(base[0]);  curr.push_back(base[1]); curr.push_back(base[2]);  
+	curr.push_back(base[0]);  curr.push_back(base[2]); curr.push_back(base[3]);  
+	curr.push_back(base[0]);  curr.push_back(base[3]); curr.push_back(base[4]);  
+	curr.push_back(base[0]);  curr.push_back(base[4]); curr.push_back(base[5]);  
+	curr.push_back(base[0]);  curr.push_back(base[5]); curr.push_back(base[1]);  
+	curr.push_back(base[1]);  curr.push_back(base[7]); curr.push_back(base[2]);  
+	curr.push_back(base[2]);  curr.push_back(base[8]); curr.push_back(base[3]);  
+	curr.push_back(base[3]);  curr.push_back(base[9]); curr.push_back(base[4]);  
+	curr.push_back(base[4]);  curr.push_back(base[10]);curr.push_back(base[5]);  
+	curr.push_back(base[5]);  curr.push_back(base[6]); curr.push_back(base[1]);  
+	curr.push_back(base[1]);  curr.push_back(base[6]); curr.push_back(base[7]);  
+	curr.push_back(base[2]);  curr.push_back(base[7]); curr.push_back(base[8]);  
+	curr.push_back(base[3]);  curr.push_back(base[8]); curr.push_back(base[9]);  
+	curr.push_back(base[4]);  curr.push_back(base[9]); curr.push_back(base[10]); 
+	curr.push_back(base[5]);  curr.push_back(base[10]);curr.push_back(base[6]);  
+	curr.push_back(base[6]);  curr.push_back(base[11]);curr.push_back(base[7]);  
+	curr.push_back(base[7]);  curr.push_back(base[11]);curr.push_back(base[8]);  
+	curr.push_back(base[8]);  curr.push_back(base[11]);curr.push_back(base[9]);  
+	curr.push_back(base[9]);  curr.push_back(base[11]);curr.push_back(base[10]); 
+	curr.push_back(base[10]); curr.push_back(base[11]);curr.push_back(base[6]);  
+
+	// subdivide
+	for (int s = 0; s < subdiv; ++s) {
+		vec3f v[6];
+		while (curr.size()) {
+			v[0] = curr.front(); curr.pop_front();
+			v[1] = curr.front(); curr.pop_front();
+			v[2] = curr.front(); curr.pop_front();
+
+			add_components_vec3f(v+3, v+0, v+1); normalize_vec3f(v+3);
+			add_components_vec3f(v+4, v+1, v+2); normalize_vec3f(v+4);
+			add_components_vec3f(v+5, v+2, v+0); normalize_vec3f(v+5);
+
+			next.push_back(v[0]); next.push_back(v[3]); next.push_back(v[5]);
+			next.push_back(v[1]); next.push_back(v[4]); next.push_back(v[3]);
+			next.push_back(v[2]); next.push_back(v[5]); next.push_back(v[4]);
+			next.push_back(v[4]); next.push_back(v[5]); next.push_back(v[3]);
+		}
+		curr.swap(next);
+	}
+	
+	*resulting_verts = curr.size();
+	vec3f *data = (vec3f*)malloc(sizeof(vec3f) * *resulting_verts);
+	int i = 0;
+	for (std::list<vec3f>::iterator it = curr.begin(); it != curr.end(); ++it, ++i)
+		data[i] = *it;
+
+	return data;
+}
+
+void compute_flat_icosphere(int subdiv, vec3f **v_out, vec3f **n_out, int *N, matrix4x4f *trafo) {
+	*v_out = make_isosphere_vertices(subdiv, N);
+	*n_out = (vec3f*)malloc(sizeof(vec3f) * *N);
+	vec3f *v = *v_out,
+		  *n = *n_out;
+	for (int i = 0; i < *N; i+=3) {
+		vec3f e1, e2;
+		sub_components_vec3f(&e1, v+i, v+i+1);
+		sub_components_vec3f(&e2, v+i, v+i+2);
+		cross_vec3f(n+i, &e1, &e2);
+		normalize_vec3f(n+i);
+		n[i+1] = n[i+2] = n[i];
+	}
+
+	if (trafo) {
+		matrix4x4f tmp, norm;
+		invert_matrix4x4f(&tmp, trafo);
+		transpose_matrix4x4f(&norm, &tmp);
+		for (int i = 0; i < *N; ++i) {
+			// transform v
+			vec4f cur = { v[i].x, v[i].y, v[i].z, 1 };
+			vec4f res;
+			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
+			v[i].x = res.x; v[i].y = res.y; v[i].z = res.z;
+			// transform n
+			cur.x = n[i].x; cur.y = n[i].y; cur.z = n[i].z; cur.w = 0;
+			multiply_matrix4x4f_vec4f(&res, &norm, &cur);
+			n[i].x = res.x; n[i].y = res.y; n[i].z = res.z;
+		}
+	}
+}
+
+mesh_ref make_flat_icosphere(const char *name, int subdiv, matrix4x4f *trafo) {
+	vec3f *v, *n;
+	int N;
+	compute_flat_icosphere(subdiv, &v, &n, &N, trafo);
+
+	mesh_ref mesh = make_mesh(name, 2);
+	bind_mesh_to_gl(mesh);
+	add_vertex_buffer_to_mesh(mesh, "vt", GL_FLOAT, N, 3, v, GL_STATIC_DRAW);
+	add_vertex_buffer_to_mesh(mesh, "vn", GL_FLOAT, N, 3, n, GL_STATIC_DRAW);
+	set_mesh_primitive_type(mesh, GL_TRIANGLES);
+	unbind_mesh_from_gl(mesh);
+
+	free(v);
+	free(n);
+
 	return mesh;
 }
 

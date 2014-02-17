@@ -215,6 +215,30 @@ void bounding_box_of_mesh(mesh_ref mr, vec3f *min, vec3f *max) {
 	}
 }
 
+typedef void (*gl_vertex_attrib_pointer_t)(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid * pointer);
+void gl_vertex_attrib_pointer_float(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid * pointer) {
+	glVertexAttribPointer(index, size, type, GL_FALSE, stride, pointer);
+}
+void gl_vertex_attrib_pointer_normalized_float(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid * pointer) {
+	glVertexAttribPointer(index, size, type, GL_TRUE, stride, pointer);
+}
+void gl_vertex_attrib_pointer_int(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid * pointer) {
+	glVertexAttribIPointer(index, size, type, stride, pointer);
+}
+gl_vertex_attrib_pointer_t choose_gl_vertex_attrib_pointer_type(GLenum content_type) {
+	gl_vertex_attrib_pointer_t t = 0;
+	switch (content_type) {
+	case GL_FLOAT:
+		t = gl_vertex_attrib_pointer_float;
+		break;
+	case GL_BYTE: case GL_UNSIGNED_BYTE: case GL_SHORT: case GL_UNSIGNED_SHORT: case GL_INT: case GL_UNSIGNED_INT:
+		t = gl_vertex_attrib_pointer_int;
+		break;
+	defalt:;
+	}
+	return t;
+}
+
 bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_type, unsigned int vertices, unsigned int element_dim, const void *data, GLenum usage_hint) {
 	int unit_size = size_of_gl_type(content_type);
 	struct mesh *mesh = meshes+mr.id;
@@ -237,8 +261,13 @@ bool add_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum content_typ
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertex_buffer_ids[vbo_id]);
 	glBufferData(GL_ARRAY_BUFFER, size_in_bytes, data, usage_hint);
 #if CGL_GL == GL
+	gl_vertex_attrib_pointer_t gl_vertex_attrib_pointer = choose_gl_vertex_attrib_pointer_type(content_type);
+	if (!gl_vertex_attrib_pointer) {
+		fprintf(stderr, "Don't know how to setup vertex buffer attribute %s (for mesh %s) of type %d!\n", name, mesh_name(mr), content_type);
+		return false;
+	}
 	glEnableVertexAttribArray(vbo_id);
-	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+	gl_vertex_attrib_pointer(vbo_id, element_dim, content_type, 0, 0);
 #endif
 	mesh->element_dim[vbo_id] = element_dim;
 	mesh->content_type[vbo_id] = content_type;
@@ -265,8 +294,13 @@ bool add_existing_vertex_buffer_to_mesh(mesh_ref mr, const char *name, GLenum co
 	int vbo_id = mesh->next_vbo++;
 	glBindBuffer(GL_ARRAY_BUFFER, vboid);
 #if CGL_GL == GL
+	gl_vertex_attrib_pointer_t gl_vertex_attrib_pointer = choose_gl_vertex_attrib_pointer_type(content_type);
+	if (!gl_vertex_attrib_pointer) {
+		fprintf(stderr, "Don't know how to setup vertex buffer attribute %s (for mesh %s) of type %d!\n", name, mesh_name(mr), content_type);
+		return false;
+	}
 	glEnableVertexAttribArray(vbo_id);
-	glVertexAttribPointer(vbo_id, element_dim, content_type, GL_FALSE, 0, 0);
+	gl_vertex_attrib_pointer(vbo_id, element_dim, content_type, 0, 0);
 #else
 	mesh->vertex_buffer_ids[vbo_id] = vboid;
 #warning "adding existing vbos to meshes is experimental on gles, yet."
