@@ -590,6 +590,7 @@ void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m) {
 
 //! @}
 
+bool cgl_shader_reload_pending = false;
 
 #ifdef WITH_GUILE
 #include <libguile.h>
@@ -741,7 +742,6 @@ SCM_DEFINE(s_shader_uniform_loc, "uniform-location", 2, 0, 0, (SCM id, SCM uni),
 	return scm_from_int(loc);
 }
 
-bool cgl_shader_reload_pending = false;
 SCM_DEFINE(s_trigger_shader_reload, "trigger-reload-of-shader-files", 0, 0, 0, (), "") {
 	cgl_shader_reload_pending = true;
 	return SCM_BOOL_T;
