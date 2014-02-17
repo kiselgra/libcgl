@@ -198,6 +198,46 @@ mesh_ref make_cylinder(const char *name, int n, matrix4x4f *trafo) {
 	return mesh;
 }
 
+void make_cube_vertices_and_normals(vec3f **verts, vec3f **norms, int *N, matrix4x4f *trafo) {
+	static vec3f v[] = { {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1}, { 1,  1,  1}, {-1,  1,  1}, {-1, -1,  1}, // FRONT
+	                     {-1, -1, -1}, {-1,  1, -1}, { 1,  1, -1}, { 1,  1, -1}, { 1, -1, -1}, {-1, -1, -1}, // BACK
+	                     {-1, -1,  1}, {-1,  1,  1}, {-1,  1, -1}, {-1,  1, -1}, {-1, -1, -1}, {-1, -1,  1}, // LEFT
+	                     { 1, -1, -1}, { 1,  1, -1}, { 1,  1,  1}, { 1,  1,  1}, { 1, -1,  1}, { 1, -1, -1}, // RIGHT
+	                     {-1,  1,  1}, { 1,  1,  1}, { 1,  1, -1}, { 1,  1, -1}, {-1,  1, -1}, {-1,  1,  1}, // TOP
+	                     {-1, -1,  1}, {-1, -1, -1}, { 1, -1, -1}, { 1, -1, -1}, { 1, -1,  1}, {-1, -1,  1}, // BOTTOM
+	};
+	static vec3f n[] = { { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 },  { 0, 0, 1 }, 
+	                     { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },  { 0, 0,-1 },
+	                     {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },  {-1, 0, 0 },
+	                     { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },  { 1, 0, 0 },
+	                     { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },  { 0, 1, 0 },
+	                     { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 },  { 0,-1, 0 } 
+	};
+	*verts = (vec3f*)malloc(sizeof(vec3f)*36);
+	*norms = (vec3f*)malloc(sizeof(vec3f)*36);
+	for (int i = 0; i < 36; ++i) {
+		(*verts)[i] = v[i];
+		(*norms)[i] = n[i];
+	}
+	*N = 36;
+	if (trafo) {
+		matrix4x4f tmp, norm;
+		invert_matrix4x4f(&tmp, trafo);
+		transpose_matrix4x4f(&norm, &tmp);
+		for (int i = 0; i < 36; ++i) {
+			// transform v
+			vec4f cur = { (*verts)[i].x, (*verts)[i].y, (*verts)[i].z, 1 };
+			vec4f res;
+			multiply_matrix4x4f_vec4f(&res, trafo, &cur);
+			(*verts)[i].x = res.x; (*verts)[i].y = res.y; (*verts)[i].z = res.z;
+			// transform n
+			cur.x = (*norms)[i].x; cur.y = (*norms)[i].y; cur.z = (*norms)[i].z; cur.w = 0;
+			multiply_matrix4x4f_vec4f(&res, &norm, &cur);
+			(*norms)[i].x = res.x; (*norms)[i].y = res.y; (*norms)[i].z = res.z;
+		}
+	}
+}
+
 mesh_ref make_cube(const char *name, matrix4x4f *trafo) {
 	vec3f v[] = { {-1, -1,  1}, { 1, -1,  1}, { 1,  1,  1}, { 1,  1,  1}, {-1,  1,  1}, {-1, -1,  1}, // FRONT
 	              {-1, -1, -1}, {-1,  1, -1}, { 1,  1, -1}, { 1,  1, -1}, { 1, -1, -1}, {-1, -1, -1}, // BACK

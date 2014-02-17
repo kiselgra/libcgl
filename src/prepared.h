@@ -44,6 +44,7 @@ mesh_ref make_circle(const char *name, int n, matrix4x4f *trafo);
 mesh_ref make_cylinder(const char *name, int n, matrix4x4f *trafo);
 
 //! Returns a cube mesh [-1,-1,-1]x[1,1,1]
+void make_cube_vertices_and_normals(vec3f **verts, vec3f **norms, int *N, matrix4x4f *trafo);
 mesh_ref make_cube(const char *name, matrix4x4f *trafo);
 
 //! Returns a icosahedron with flat-shading normals, subdiveded \c subdiv times.
