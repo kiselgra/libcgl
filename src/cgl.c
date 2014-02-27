@@ -1,6 +1,7 @@
 #include "cgl.h"
 
 #include "glut.h"
+#include "debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>

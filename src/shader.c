@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /*! \defgroup shaders Shaders
  * 	See \ref shader.h for a detailled description.
