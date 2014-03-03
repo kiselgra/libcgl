@@ -113,6 +113,10 @@ mesh_ref make_mesh(const char *name, unsigned int vertex_buffers) {
 	return ref;
 }
 
+bool valid_mesh_ref(mesh_ref mr) {
+	return mr.id >= 0;
+}
+
 void bind_mesh_to_gl(mesh_ref mr) {
 #if CGL_GL == GL
 	glBindVertexArray(meshes[mr.id].vao_id);
