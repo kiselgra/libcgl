@@ -47,6 +47,9 @@ bool shader_usable(shader_ref ref);
 int shader_uniforms(shader_ref ref);
 const char* shader_uniform_name_by_id(shader_ref ref, unsigned int id);
 int shader_uniform_location_by_id(shader_ref ref, unsigned int id);
+// here we expose the underlying arrays. this was added for performance reasons.
+const int* shader_uniform_locations(shader_ref ref);
+const char** shader_uniform_names(shader_ref ref);
 
 // compute shader specifics.
 vec3i compute_shader_local_workgroup_size(shader_ref ref);

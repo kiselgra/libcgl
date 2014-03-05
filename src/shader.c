@@ -541,6 +541,14 @@ const char* shader_uniform_name_by_id(shader_ref ref, unsigned int id) {
 	return shader->uniform_names[id];
 }
 
+const char** shader_uniform_names(shader_ref ref) {
+	return shaders[ref.id].uniform_names;
+}
+
+const int* shader_uniform_locations(shader_ref ref) {
+	return shaders[ref.id].uniform_locations;
+}
+
 int shader_uniform_location_by_id(shader_ref ref, unsigned int id) {
 	struct shader *shader = shaders+ref.id;
 	return shader->uniform_locations[id];
