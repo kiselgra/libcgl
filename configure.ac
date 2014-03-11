@@ -29,6 +29,8 @@ AM_PROG_CC_C_O
 
 # when building libraries
 AC_PROG_LIBTOOL
+AX_STDCXX11_FLAG
+CXXFLAGS="$CXXFLAGS $ac_cv_cxx_cxx11_spec"
 
 # Checks for libraries.
 AC_CHECK_LIB([mcm], [make_vec3f])
@@ -127,7 +129,7 @@ AS_CASE(["$with_magickwand"],
 		[no], [],
 		[AC_MSG_ERROR([dont know how to do this])])
 
-AC_CHECK_LIB([3dmath], [main])
+#AC_CHECK_LIB([3dmath], [main])
 #AC_PATH_PROG([OBJL_CONFIG], [libobjloader-config])
 #if test "x$ac_cv_path_OBJL_CONFIG" = "x"; then
 #	AC_MSG_ERROR([libobjloader not found. get it somewhere at server1.darkcellarnights.de/~kai/projekte])

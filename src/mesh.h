@@ -46,6 +46,8 @@ const char* mesh_vertex_buffer_name(mesh_ref ref, int n);
 GLenum mesh_vertex_buffer_content_type(mesh_ref ref, int n);
 int mesh_vertex_buffer_element_dim(mesh_ref ref, int n);
 
+bool valid_mesh_ref(mesh_ref ref);
+
 define_array(mesh);
 
 #ifdef __cplusplus

@@ -12,7 +12,6 @@
 #include <string.h>
 
 using namespace std;
-using lib3dmath::mat4f;
 
 /*! \defgroup objloader Obj File Loader
  *
