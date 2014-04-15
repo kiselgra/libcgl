@@ -53,6 +53,7 @@ texture_ref find_texture(const char *name);
 const char* texture_name(texture_ref ref);
 GLuint texture_buffer(texture_ref ref);
 texture_ref find_texture_by_filename(const char *filename);
+const char* texture_source_filename(texture_ref ref);
 
 
 void* download_texture(texture_ref ref, GLenum format, size_t bytes, GLenum type);

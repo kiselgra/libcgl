@@ -458,6 +458,11 @@ texture_ref find_texture_by_filename(const char *filename) {
 	return ref;
 }
 
+//! \attention might be 0!
+const char* texture_source_filename(texture_ref ref) {
+	return textures[ref.id].filename;
+}
+
 const char* texture_name(texture_ref ref) {
 	return textures[ref.id].name;
 }
