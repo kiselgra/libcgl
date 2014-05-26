@@ -199,7 +199,7 @@ extern "C" {
 		format f = guess_image_format(filename);
 #if LIBCGL_HAVE_LIBPNG == 1
 		if (f == f_png) {
-			fprintf("WARNING: untested image loader used! (%s:%d)\n", __FILE__, __LINE__);
+			fprintf(stderr, "WARNING: untested image loader used! (%s:%d)\n", __FILE__, __LINE__);
 			return load_png4f(filename, w, h);
 		}
 #endif
