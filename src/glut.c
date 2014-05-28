@@ -45,7 +45,7 @@ void startup_glut(const char *title, int argc, char **argv, int gl_maj, int gl_m
 	unsigned int flags = GLUT_DEBUG;
 	if (forward) flags |= GLUT_FORWARD_COMPATIBLE;
 	glutInitContextFlags(flags);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | (multisampling ? GLUT_MULTISAMPLE : 0));
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL | (multisampling ? GLUT_MULTISAMPLE : 0));
 	glutInitWindowSize(res_x, res_y); 
 // 	glutInitWindowPosition (100, 100);
 	int sw = glutGet(GLUT_SCREEN_WIDTH);
