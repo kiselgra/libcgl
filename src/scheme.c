@@ -62,7 +62,7 @@ void load_configfile(const char *filename) {
 	char *buffer = 0;
 	size_t bs = 0;
 	FILE *stream = open_memstream(&buffer, &bs);
-	fprintf(stream, "(load \"%s\")", filename);
+	fprintf(stream, "(primitive-load \"%s\")", filename);
 	fclose(stream);
 
 	scm_c_eval_string(buffer);
