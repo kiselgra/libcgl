@@ -4,11 +4,11 @@
 #include <stdbool.h>
 #include "cgl.h"
 
+#include <libmcm/vectors.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <libmcm/vectors.h>
 
 typedef struct {
 	int id;
