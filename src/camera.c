@@ -807,6 +807,16 @@ SCM_DEFINE(s_recompute_gl_matrices_of_cam, "recompute-gl-matrices-of-cam", 1, 0,
 	return SCM_BOOL_T;
 }
 
+SCM_DEFINE(s_change_lookat_of_cam, "change-lookat-of-cam!", 4, 0, 0, (SCM id, SCM pos, SCM dir, SCM up), "") {
+	camera_ref ref = { scm_to_int(id) };
+	vec3f p = scm_vec_to_vec3f(pos);
+	vec3f d = scm_vec_to_vec3f(dir);
+	vec3f u = scm_vec_to_vec3f(up);
+	change_lookat_of_cam(ref, &p, &d, &u);
+	return SCM_BOOL_T;
+}
+
+
 
 void s_uniform_cam_any_matrix(SCM loc, matrix4x4f *m) {
 	int location = scm_to_int(loc);
