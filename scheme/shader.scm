@@ -49,6 +49,21 @@
               lines))
   )
 
+(define (show-errors name code log headline)
+  (format #f "~a~%~a~%" headline log))
+
+(define (shader-error-output shader name vert-source frag-source geom-source tcs-source tes-source compute-source)
+  (let ((str (format #f "INFO LOG FOR SHADER ~a~%" name)))
+    (if vert-source     (set! str (string-append str (show-errors name vert-source (vertex-shader-info-log shader) "VERTEX LOG"))))
+    (if frag-source     (set! str (string-append str (show-errors name frag-source (fragment-shader-info-log shader) "FRAGMENT LOG"))))
+    (if geom-source     (set! str (string-append str (show-errors name geom-source (geometry-shader-info-log shader) "GEOMETRY LOG"))))
+    (if tcs-source      (set! str (string-append str (show-errors name tcs-source (tesselation-control-shader-info-log shader) "TESSELATION CONTROL LOG"))))
+    (if tes-source      (set! str (string-append str (show-errors name tes-source (tesselation-evaluation-shader-info-log shader) "TESSELATION EVALUATION LOG"))))
+    (if compute-source  (set! str (string-append str (show-errors name compute-source (compute-shader-info-log shader) "COMPUTE LOG"))))
+    (set! str (string-append str (show-errors name "" (shader-link-info-log shader) "LINK LOG")))
+    (display str)(newline)
+    str))
+
 (define make-shader-ll make-shader)
 (define* (make-shader name #:key vertex-shader fragment-shader geometry-shader tess-control-shader tess-eval-shader compute-shader inputs uniforms)
   (let ((old-shader (find-shader name)))
@@ -79,15 +94,7 @@
                             (add-shader-uniform shader u)) 
                           uniforms)
                 (if (not (compile-and-link-shader shader))
-                    (begin
-                	  (format #t "info log for shader ~a~%" name)
-                	  (if vertex-shader (show-errors name vert-source (vertex-shader-info-log shader) "vertex info log"))
-                	  (if fragment-shader (show-errors name frag-source (fragment-shader-info-log shader) "fragment info log"))
-                	  (if geometry-shader (show-errors name geom-source (geometry-shader-info-log shader) "geometry info log"))
-                	  (if tess-control-shader (show-errors name tcs-source (tesselation-control-shader-info-log shader) "tesselation control info log"))
-                	  (if tess-eval-shader (show-errors name tes-source (tesselation-evaluation-shader-info-log shader) "tesselation evaluation info log"))
-                	  (if compute-shader (show-errors name compute-source (compute-shader-info-log shader) "compute info log"))
-                	  (format #t "linker info log:~%~a~%---------~%" (shader-link-info-log shader))))
+                    (shader-error-output shader name vert-source frag-source geom-source tcs-source tes-source compute-source))
                 shader))))))))
 
 ;; shader reload
@@ -95,7 +102,21 @@
 (define (load-shader-file file)
   (set! shader-files (cons file shader-files))
   (primitive-load file))
+(define shader-error-texts "")
+(define shader-errors #f)
 (define (execute-shader-reload)
-  (for-each primitive-load shader-files))
+  (set! shader-error-texts "")
+  (set! shader-errors #f)
+  (for-each primitive-load shader-files)
+  (if (string<> "" shader-error-texts)
+      (let ((logfile (string-append "/tmp/shader-errors:" (getlogin))))
+	(set shader-errors #t)
+	(set shader-error-texts (format #f "~
+Some shaders did not compile.
+-----------------------------
+A complete log can be found at ~a.~%~%~a" logfile shader-error-texts))
+	(with-output-to-file logfile
+	  (lambda () (format #t shader-error-texts))))))
+
 (define reload-shaders trigger-reload-of-shader-files)
 
