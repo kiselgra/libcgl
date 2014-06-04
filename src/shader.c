@@ -935,6 +935,133 @@ void render_shader_error_message() {
 #endif	
 }
 
+#include <sys/inotify.h>
+#include <errno.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+static int inotify_fd = -1;
+struct pollfd poll_fds[1];
+static int inotify_watches[512];
+static int inotify_watches_N = 0;
+
+void activate_automatic_shader_reload() {
+	fprintf(stderr, "ino\n");
+	if (inotify_fd == -1) {
+		inotify_fd = inotify_init1(IN_NONBLOCK);
+		poll_fds[0].fd = inotify_fd;
+		poll_fds[0].events = POLLIN;
+	}
+
+	SCM file_list = scm_c_eval_string("shader-files");
+	while (!scm_is_null(file_list)) {
+		SCM car = scm_car(file_list);
+		file_list = scm_cdr(file_list);
+		char *file = scm_to_locale_string(car);
+		inotify_watches[inotify_watches_N++] = inotify_add_watch(inotify_fd, file, IN_ALL_EVENTS);
+		if (inotify_watches[inotify_watches_N-1] == -1) {
+			fprintf(stderr, "Cannot watch '%s'\n", file);
+			perror("inotify_add_watch");
+			exit(EXIT_FAILURE);
+		}
+		fprintf(stderr, "adding a watch on <%s>\n", file);
+		fprintf(stderr, "watch is %d.\n", inotify_watches[inotify_watches_N-1]);
+		free(file);
+	}
+}
+
+/* right now we get a SELF_DELETE followed by an IGNORE which meas the watch is dropped. something with how vi saves the file? */
+
+static void handle_inotify_events() {
+	/* Some systems cannot read integer variables if they are not
+	   properly aligned. On other systems, incorrect alignment may
+	   decrease performance. Hence, the buffer used for reading from
+	   the inotify file descriptor should have the same alignment as
+	   struct inotify_event. */
+
+	static char buf[4096]
+		__attribute__ ((aligned(__alignof__(struct inotify_event))));
+	const struct inotify_event *event;
+	int i;
+	ssize_t len;
+	char *ptr;
+
+	/* Loop while events can be read from inotify file descriptor. */
+
+	for (;;) {
+
+		/* Read some events. */
+
+		len = read(inotify_fd, buf, sizeof buf);
+		if (len == -1 && errno != EAGAIN) {
+			perror("read");
+			exit(EXIT_FAILURE);
+		}
+
+		/* If the nonblocking read() found no events to read, then
+		   it returns -1 with errno set to EAGAIN. In that case,
+		   we exit the loop. */
+
+		if (len <= 0)
+			break;
+
+		/* Loop over all events in the buffer */
+
+		for (ptr = buf; ptr < buf + len;
+				ptr += sizeof(struct inotify_event) + event->len) {
+			printf("event!\n");
+
+			event = (const struct inotify_event *) ptr;
+
+			/* Print event type */
+// 			int      wd;       /* Watch descriptor */
+// 			uint32_t mask;     /* Mask of events */
+// 			uint32_t cookie;   /* Unique cookie associating related
+// 								  events (for rename(2)) */
+// 			uint32_t len;      /* Size of name field */
+// 			char     name[];   /* Optional null-terminated name */
+			printf("EVENT: %d %d %d %d %s\n", event->wd, event->mask, event->cookie, event->len, event->name);
+
+// 			if (event->mask & IN_MODIFY)
+// 				printf("modified: ");
+
+			if (event->mask & IN_ACCESS) printf("M: IN_ACCESS\n");
+			if (event->mask & IN_ATTRIB) printf("M: IN_ATTRIB\n");
+			if (event->mask & IN_CLOSE_WRITE) printf("M: IN_CLOSE_WRITE\n");
+			if (event->mask & IN_CLOSE_NOWRITE) printf("M: IN_CLOSE_NOWRITE\n");
+			if (event->mask & IN_CREATE) printf("M: IN_CREATE\n");
+			if (event->mask & IN_DELETE) printf("M: IN_DELETE\n");
+			if (event->mask & IN_DELETE_SELF) printf("M: IN_DELETE_SELF\n");
+			if (event->mask & IN_MODIFY) printf("M: IN_MODIFY\n");
+			if (event->mask & IN_MOVE_SELF) printf("M: IN_MOVE_SELF\n");
+			if (event->mask & IN_MOVED_FROM) printf("M: IN_MOVED_FROM\n");
+			if (event->mask & IN_MOVED_TO) printf("M: IN_MOVED_TO\n");
+			if (event->mask & IN_OPEN) printf("M: IN_OPEN\n");
+
+			/* Print the name of the file */
+			if (event->len)
+				printf("%s", event->name);
+			printf("\n");
+		}
+	}
+}
+
+void reload_modified_shader_files() {
+	int poll_num = poll(poll_fds, 1, 0);
+	if (poll_num == -1) {
+		if (errno == EINTR)
+			return;
+		perror("poll for reload_modified_shader_files");
+		exit(EXIT_FAILURE);
+	}
+	if (poll_num > 0) {
+		printf("polled something!\n");
+		handle_inotify_events();
+	}
+}
+
 
 void register_scheme_functions_for_shaders() {
 #ifndef SCM_MAGIC_SNARFER

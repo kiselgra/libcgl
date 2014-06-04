@@ -72,6 +72,9 @@ void make_shader_error_display(int w, int h);
 bool shader_errors_present();
 void render_shader_error_message();
 
+// semi-automatic shader reload. might hit performance when activated...
+void activate_automatic_shader_reload();
+void reload_modified_shader_files();
 
 define_array(shader);
 
