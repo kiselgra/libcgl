@@ -119,8 +119,8 @@
   (for-each primitive-load shader-files)
   (if (string<> "" shader-error-texts)
       (let ((logfile (string-append "/tmp/shader-errors:" (getlogin))))
-	(set shader-errors #t)
-	(set shader-error-texts (format #f "~
+	(set! shader-errors #t)
+	(set! shader-error-texts (format #f "~
 Some shaders did not compile.
 -----------------------------
 A complete log can be found at ~a.~%~%~a" logfile shader-error-texts))
@@ -129,3 +129,21 @@ A complete log can be found at ~a.~%~%~a" logfile shader-error-texts))
 
 (define reload-shaders trigger-reload-of-shader-files)
 
+(make-shader "cgl/shader-error-shader"
+#:vertex-shader
+"#version 150 core
+in vec3 in_pos;
+in vec2 in_tc;
+out vec2 tc;
+void main() {
+    gl_Position = vec4(in_pos.xy, -0.8, 1.0);
+    tc = in_tc;
+}"
+#:fragment-shader
+"#version 420 core
+in vec2 tc;
+uniform layout(binding = 0) sampler2D tex;
+out vec4 col;
+void main() {
+    col = vec4(texture(tex, tc).rgb, 1);
+}")

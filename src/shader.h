@@ -67,6 +67,12 @@ void uniform_matrix4x4f(shader_ref ref, const char *name, matrix4x4f *m);
 void reload_shaders();
 extern bool cgl_shader_reload_pending;
 
+// shader error message display
+void make_shader_error_display(int w, int h);
+bool shader_errors_present();
+void render_shader_error_message();
+
+
 define_array(shader);
 
 #ifdef __cplusplus

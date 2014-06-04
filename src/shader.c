@@ -1,5 +1,8 @@
 #include "cgl.h"
 #include "shader.h"
+#include "mesh.h"		// just for shader-error texture
+#include "texture.h"	// just for shader-error texture
+#include "prepared.h"	// just for shader-error texture
 #include "gl-version.h"
 
 #include <string.h>
@@ -782,6 +785,34 @@ void reload_shaders() {
 	scm_c_eval_string("(execute-shader-reload)");
 	cgl_shader_reload_pending = false;
 }
+
+static mesh_ref shader_error_quad = { -1 };
+static texture_ref shader_error_tex = { -1 };
+static shader_ref shader_error_shader = { -1 };
+
+void make_shader_error_display(int w, int h) {
+	shader_error_quad = make_quad_with_tc("shader error display", 0);
+	tex_params_t p = default_tex_params();
+	shader_error_tex =  make_empty_texture("shader error texture", w, h, GL_TEXTURE_2D, GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA, &p);
+	shader_error_shader = find_shader("cgl/shader-error-shader");
+}
+
+bool shader_errors_present() {
+	return scm_is_true(scm_c_eval_string("shader-errors"));
+}
+
+void render_shader_error_message() {
+	glDisable(GL_DEPTH_TEST);
+	bind_shader(shader_error_shader);
+	bind_mesh_to_gl(shader_error_quad);
+	bind_texture(shader_error_tex, 0);
+	draw_mesh(shader_error_quad);
+	unbind_texture(shader_error_tex);
+	unbind_mesh_from_gl(shader_error_quad);
+	unbind_shader(shader_error_shader);
+	glEnable(GL_DEPTH_TEST);
+}
+
 
 void register_scheme_functions_for_shaders() {
 #ifndef SCM_MAGIC_SNARFER
