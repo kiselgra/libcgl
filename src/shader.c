@@ -255,7 +255,7 @@ void store_info_log(char **target, GLuint object) {
 	free(*target);
 	*target = malloc(len+1);
 	while (written < len-1) {
-		printf("len = %d, written = %d\n", len, written);
+// 		printf("len = %d, written = %d\n", len, written);
 		if (glIsShader(object))       glGetShaderInfoLog(object, len, &written, *target);
 		else if (glIsProgram(object)) glGetProgramInfoLog(object, len, &written, *target);
 		else                          strcpy(*target, "tried to get info log of an object which is neither a shader nor a program"), written = len;
@@ -704,37 +704,44 @@ SCM_DEFINE(s_valid_shader_ref, "valid-shader-ref", 1, 0, 0, (SCM id), "") {
 SCM_DEFINE(s_vertex_shader_info_log, "vertex-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = vertex_shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_fragment_shader_info_log, "fragment-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = fragment_shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_geometry_shader_info_log, "geometry-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = geometry_shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_tc_shader_info_log, "tesselation-control-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = tess_control_shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_te_shader_info_log, "tesselation-evaluation-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = tess_eval_shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_comp_shader_info_log, "compute-shader-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = compute_shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_shader_link_info_log, "shader-link-info-log", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
 	const char *log = shader_info_log(ref);
-	return scm_from_locale_string(log ? log : (const char*)"nil");
+	if (log) return scm_from_locale_string(log);
+	return SCM_EOL;
 }
 SCM_DEFINE(s_shader_name, "shader-name", 1, 0, 0, (SCM id), "") {
 	shader_ref ref = { scm_to_int(id) };
