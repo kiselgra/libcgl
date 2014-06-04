@@ -129,6 +129,8 @@ AS_CASE(["$with_magickwand"],
 		[no], [],
 		[AC_MSG_ERROR([dont know how to do this])])
 
+AC_CHECK_LIB([cairo], [main])
+
 #AC_CHECK_LIB([3dmath], [main])
 #AC_PATH_PROG([OBJL_CONFIG], [libobjloader-config])
 #if test "x$ac_cv_path_OBJL_CONFIG" = "x"; then

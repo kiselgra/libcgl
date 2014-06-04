@@ -329,7 +329,7 @@ bool compile_and_link_shader(shader_ref ref) {
 			store_info_log(&shader->vert_info_log, shader->vertex_program);
 			glDeleteShader(shader->vertex_program);     shader->vertex_program = 0;
 			glDeleteShader(shader->fragment_program);   shader->fragment_program = 0;
-			if (shader->geometry_source) { glDeleteShader(shader->geometry_program);   shader->geometry_source = 0; }
+			if (shader->geometry_source) { glDeleteShader(shader->geometry_program);   shader->geometry_program = 0; }
 			fprintf(stderr, "failed to compile vertex shader of %s\n", shader->name);
 			return false;
 		}
@@ -339,9 +339,9 @@ bool compile_and_link_shader(shader_ref ref) {
 		glGetShaderiv(shader->fragment_program, GL_COMPILE_STATUS, &compile_res);
 		if (compile_res == GL_FALSE) {
 			store_info_log(&shader->frag_info_log, shader->fragment_program);
-			glDeleteShader(shader->vertex_program);
-			glDeleteShader(shader->fragment_program);
-			if (shader->geometry_source)      { glDeleteShader(shader->geometry_program);      shader->geometry_source = 0; }
+			glDeleteShader(shader->vertex_program);    shader->vertex_program = 0;
+			glDeleteShader(shader->fragment_program);  shader->fragment_program = 0;
+			if (shader->geometry_source)      { glDeleteShader(shader->geometry_program);      shader->geometry_program = 0; }
 			if (shader->tess_control_program) { glDeleteShader(shader->tess_control_program);  shader->tess_control_program = 0; }
 			if (shader->tess_eval_program)    { glDeleteShader(shader->tess_eval_program);     shader->tess_eval_program = 0; }
 			fprintf(stderr, "failed to compile fragment shader of %s\n", shader->name);
@@ -553,7 +553,7 @@ const char* shader_uniform_name_by_id(shader_ref ref, unsigned int id) {
 }
 
 const char** shader_uniform_names(shader_ref ref) {
-	return shaders[ref.id].uniform_names;
+	return (const char **)shaders[ref.id].uniform_names;
 }
 
 const int* shader_uniform_locations(shader_ref ref) {
@@ -789,28 +789,150 @@ void reload_shaders() {
 static mesh_ref shader_error_quad = { -1 };
 static texture_ref shader_error_tex = { -1 };
 static shader_ref shader_error_shader = { -1 };
+static char *shader_error_message = 0;
 
 void make_shader_error_display(int w, int h) {
+#if LIBCGL_HAVE_LIBCAIRO == 1
 	shader_error_quad = make_quad_with_tc("shader error display", 0);
-	tex_params_t p = default_tex_params();
+	tex_params_t p = default_fbo_tex_params();
 	shader_error_tex =  make_empty_texture("shader error texture", w, h, GL_TEXTURE_2D, GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA, &p);
 	shader_error_shader = find_shader("cgl/shader-error-shader");
+#else
+	fprintf(stderr, "Cairo support was not compiled in, this will not produce output!\n");
+#endif
 }
 
 bool shader_errors_present() {
 	return scm_is_true(scm_c_eval_string("shader-errors"));
 }
 
+#if LIBCGL_HAVE_LIBCAIRO == 1
+
+#include <cairo/cairo.h>
+
+static cairo_t *cairo = 0;
+static cairo_surface_t *cairo_surface = 0;
+static unsigned char *cairo_surface_data = 0;
+
+//! literally taken from cgls/console.c.in
+static cairo_t* create_cairo_context(int width, int height, int channels, cairo_surface_t **surf, unsigned char **buffer) {
+	cairo_t *cr;
+
+	/* create cairo-surface/context to act as OpenGL-texture source */
+	*buffer = (unsigned char*)calloc(channels * width * height, sizeof(unsigned char));
+	if (!*buffer) {
+		printf("create_cairo_context() - Couldn't allocate surface-buffer\n");
+		return 0;
+	}
+
+	*surf = cairo_image_surface_create_for_data(*buffer, CAIRO_FORMAT_ARGB32, width, height, channels * width);
+	if (cairo_surface_status(*surf) != CAIRO_STATUS_SUCCESS) {
+		free(*buffer);
+		printf("create_cairo_context() - Couldn't create surface\n");
+		return 0;
+	}
+
+	cr = cairo_create(*surf);
+	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS) {
+		free(*buffer);
+		printf("create_cairo_context() - Couldn't create context\n");
+		return 0;
+	}
+	
+	cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_paint(cr);
+	return cr;
+}
+
+void regenerate_error_texture(char *text) {
+	int max_line_len = 256;
+	char *line = malloc(max_line_len+1);
+	int w = texture_width(shader_error_tex);
+	int h = texture_height(shader_error_tex);
+	if (!cairo)
+		cairo = create_cairo_context(w, h, 4, &cairo_surface, &cairo_surface_data);
+
+	cairo_set_source_rgb(cairo, 1, 1, 1);
+
+	cairo_set_font_size(cairo, 12);
+	char *font_name = scm_to_locale_string(scm_c_eval_string("shader-error-font-name"));
+	cairo_select_font_face(cairo, font_name, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+	free(font_name);
+	cairo_font_extents_t fe;
+	cairo_font_extents(cairo, &fe);
+
+	int len = strlen(text);
+	int start_i = 0;
+	int line_nr = 0;
+	int xoffset = 20,
+		yoffset = 20;
+	int max_line_width = 0;
+	for (int i = 0; i < len; ++i) {
+		if (text[i] == '\n') {
+			int line_len = i - start_i;
+			if (line_len > max_line_len) {
+				free(line);
+				line = malloc(line_len+1);
+			}
+			strncpy(line, text+start_i, line_len);
+			line[line_len] = '\0';
+			cairo_move_to(cairo, xoffset, yoffset);
+			cairo_show_text(cairo, line);
+			yoffset += fe.height;
+			cairo_text_extents_t te;
+			cairo_text_extents(cairo, line, &te);
+			if (te.width > max_line_width)
+				max_line_width = te.width;
+			if (yoffset > h - fe.height - 20) {
+				if (max_line_width > w/2-20 || xoffset > w/2) {
+					cairo_move_to(cairo, w-40, h-10);
+					cairo_set_source_rgb(cairo, 0, 0, 1);
+					cairo_show_text(cairo, "...");
+					cairo_set_source_rgb(cairo, 1, 1, 1);
+					break;
+				}
+				yoffset = 20;
+				xoffset = 20+w/2;
+			}
+			start_i = i+1;
+			++line_nr;
+		}
+	}
+	
+	bind_texture(shader_error_tex, 0);
+	unsigned char *data = cairo_image_surface_get_data(cairo_surface);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	unbind_texture(shader_error_tex);
+
+// 	save_texture_as_png(shader_error_tex, "tex.png");
+}
+
+#endif
+
 void render_shader_error_message() {
+#if LIBCGL_HAVE_LIBCAIRO == 1
+	char *error_text = scm_to_locale_string(scm_c_eval_string("shader-error-texts"));
+	if (!shader_error_message || strcmp(shader_error_message, error_text) != 0) {
+		regenerate_error_texture(error_text);
+		free(shader_error_message);
+		shader_error_message = error_text;
+	}
+	else
+		free(error_text);
+
+// 	texture_ref tex = find_texture("gbuffer/normal");
+	texture_ref tex = find_texture("shader error texture");
 	glDisable(GL_DEPTH_TEST);
 	bind_shader(shader_error_shader);
 	bind_mesh_to_gl(shader_error_quad);
-	bind_texture(shader_error_tex, 0);
+	bind_texture(tex, 0);
 	draw_mesh(shader_error_quad);
-	unbind_texture(shader_error_tex);
+	unbind_texture(tex);
 	unbind_mesh_from_gl(shader_error_quad);
 	unbind_shader(shader_error_shader);
 	glEnable(GL_DEPTH_TEST);
+#endif	
 }
 
 

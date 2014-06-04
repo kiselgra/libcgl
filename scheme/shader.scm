@@ -1,5 +1,6 @@
 (use-modules (ice-9 optargs))
 (use-modules (ice-9 receive))
+(use-modules (ice-9 regex))
 
 (define *fragments* '())
 (define* (shader-fragment name code #:key (uniforms '()))
@@ -125,7 +126,8 @@ Some shaders did not compile.
 -----------------------------
 A complete log can be found at ~a.~%~%~a" logfile shader-error-texts))
 	(with-output-to-file logfile
-	  (lambda () (format #t shader-error-texts))))))
+	  (lambda () (format #t shader-error-texts)))
+	(set! shader-error-texts (regexp-substitute/global #f "	" shader-error-texts 'pre "    " 'post)))))
 
 (define reload-shaders trigger-reload-of-shader-files)
 
@@ -145,5 +147,9 @@ in vec2 tc;
 uniform layout(binding = 0) sampler2D tex;
 out vec4 col;
 void main() {
-    col = vec4(texture(tex, tc).rgb, 1);
-}")
+    col = vec4(texture(tex, vec2(tc.x, 1-tc.y)).rgb, 1);
+}"
+#:inputs (list "in_pos" "in_tc"))
+
+(define shader-error-font-name "Liberation Mono")
+
