@@ -22,6 +22,7 @@ libcgl_la_SOURCES = 	atomic_buffer.c atomic_buffer.h \
 						objloader.cpp  objloader.h \
 						scheme.c       scheme.h \
                         shader.c       shader.h  \
+						shader-reload.c \
                         texture.c      texture.h \
 						mm.h \
 						prepared.cpp   prepared.h \
