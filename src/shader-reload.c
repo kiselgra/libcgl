@@ -193,7 +193,6 @@ static int inotify_watches_N = 0;
 static bool inotify_verbose = false;
 
 void activate_automatic_shader_reload() {
-	fprintf(stderr, "ino\n");
 	if (inotify_fd == -1) {
 		inotify_fd = inotify_init1(IN_NONBLOCK);
 		poll_fds[0].fd = inotify_fd;
@@ -308,10 +307,8 @@ void reload_modified_shader_files() {
 		perror("poll for reload_modified_shader_files");
 		exit(EXIT_FAILURE);
 	}
-	if (poll_num > 0) {
-		printf("polled something!\n");
+	if (poll_num > 0)
 		handle_inotify_events();
-	}
 }
 
 #endif
