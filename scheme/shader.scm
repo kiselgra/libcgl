@@ -114,20 +114,23 @@
   (primitive-load file))
 (define shader-error-texts "")
 (define shader-errors #f)
-(define (execute-shader-reload)
+(define (execute-shader-reload file)
   (set! shader-error-texts "")
   (set! shader-errors #f)
-  (for-each primitive-load shader-files)
-  (if (string<> "" shader-error-texts)
-      (let ((logfile (string-append "/tmp/shader-errors:" (getlogin))))
-	(set! shader-errors #t)
-	(set! shader-error-texts (format #f "~
+  (let ((files (if (string=? "" file)
+		   shader-files
+		   (list file))))
+    (for-each primitive-load files)
+    (if (string<> "" shader-error-texts)
+	(let ((logfile (string-append "/tmp/shader-errors:" (getlogin))))
+	  (set! shader-errors #t)
+	  (set! shader-error-texts (format #f "~
 Some shaders did not compile.
 -----------------------------
 A complete log can be found at ~a.~%~%~a" logfile shader-error-texts))
-	(with-output-to-file logfile
-	  (lambda () (format #t shader-error-texts)))
-	(set! shader-error-texts (regexp-substitute/global #f "	" shader-error-texts 'pre "    " 'post)))))
+	  (with-output-to-file logfile
+	    (lambda () (format #t shader-error-texts)))
+	  (set! shader-error-texts (regexp-substitute/global #f "	" shader-error-texts 'pre "    " 'post))))))
 
 (define reload-shaders trigger-reload-of-shader-files)
 

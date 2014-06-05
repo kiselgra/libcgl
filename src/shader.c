@@ -1,8 +1,11 @@
+#define _GNU_SOURCE
+
 #include "cgl.h"
 #include "shader.h"
 #include "mesh.h"		// just for shader-error texture
 #include "texture.h"	// just for shader-error texture
 #include "prepared.h"	// just for shader-error texture
+#include "impex.h"		// just for shader-error texture
 #include "gl-version.h"
 
 #include <string.h>
@@ -782,8 +785,15 @@ SCM_DEFINE(s_check_gl_error, "check-for-gl-error", 1, 0, 0, (SCM s), "") {
 }
 
 void reload_shaders() {
-	scm_c_eval_string("(execute-shader-reload)");
+	scm_c_eval_string("(execute-shader-reload \"\")");
 	cgl_shader_reload_pending = false;
+}
+
+void reload_shader(const char *filename) {
+	char *tmp = 0;
+	int n = asprintf(&tmp, "(execute-shader-reload \"%s\")", filename);
+	scm_c_eval_string(tmp);
+	free(tmp);
 }
 
 static mesh_ref shader_error_quad = { -1 };
@@ -840,7 +850,7 @@ static cairo_t* create_cairo_context(int width, int height, int channels, cairo_
 	}
 	
 	cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_set_source_rgb(cr, 1, 1, 1);
 	cairo_paint(cr);
 	return cr;
 }
@@ -853,7 +863,7 @@ void regenerate_error_texture(char *text) {
 	if (!cairo)
 		cairo = create_cairo_context(w, h, 4, &cairo_surface, &cairo_surface_data);
 
-	cairo_set_source_rgb(cairo, 1, 1, 1);
+	cairo_set_source_rgb(cairo, 0, 0, 0);
 
 	cairo_set_font_size(cairo, 12);
 	char *font_name = scm_to_locale_string(scm_c_eval_string("shader-error-font-name"));
@@ -887,9 +897,9 @@ void regenerate_error_texture(char *text) {
 			if (yoffset > h - fe.height - 20) {
 				if (max_line_width > w/2-20 || xoffset > w/2) {
 					cairo_move_to(cairo, w-40, h-10);
-					cairo_set_source_rgb(cairo, 0, 0, 1);
+					cairo_set_source_rgb(cairo, 0, 0, .7);
 					cairo_show_text(cairo, "...");
-					cairo_set_source_rgb(cairo, 1, 1, 1);
+					cairo_set_source_rgb(cairo, 0, 0, 0);
 					break;
 				}
 				yoffset = 20;
@@ -942,10 +952,14 @@ void render_shader_error_message() {
 #include <stdlib.h>
 #include <unistd.h>
 
+#define max_inotify_watches 512
 static int inotify_fd = -1;
 struct pollfd poll_fds[1];
-static int inotify_watches[512];
+static int inotify_watches[max_inotify_watches];
+static char *inotify_watched_files[max_inotify_watches];
 static int inotify_watches_N = 0;
+
+static bool inotify_verbose = false;
 
 void activate_automatic_shader_reload() {
 	fprintf(stderr, "ino\n");
@@ -960,15 +974,18 @@ void activate_automatic_shader_reload() {
 		SCM car = scm_car(file_list);
 		file_list = scm_cdr(file_list);
 		char *file = scm_to_locale_string(car);
-		inotify_watches[inotify_watches_N++] = inotify_add_watch(inotify_fd, file, IN_ALL_EVENTS);
-		if (inotify_watches[inotify_watches_N-1] == -1) {
+		if (inotify_watches_N >= max_inotify_watches) {
+			fprintf(stderr, "Adding a watch on shader file '%s': too many inotify watches. Can be extended, see %s:%d.\n", file, __FILE__, __LINE__);
+			exit(EXIT_FAILURE);
+		}
+		inotify_watches[inotify_watches_N] = inotify_add_watch(inotify_fd, file, inotify_verbose ? IN_ALL_EVENTS : (IN_MODIFY | IN_IGNORED));
+		inotify_watched_files[inotify_watches_N] = file;	// that's why we don't free it.
+		if (inotify_watches[inotify_watches_N] == -1) {
 			fprintf(stderr, "Cannot watch '%s'\n", file);
 			perror("inotify_add_watch");
 			exit(EXIT_FAILURE);
 		}
-		fprintf(stderr, "adding a watch on <%s>\n", file);
-		fprintf(stderr, "watch is %d.\n", inotify_watches[inotify_watches_N-1]);
-		free(file);
+		inotify_watches_N++;
 	}
 }
 
@@ -988,62 +1005,66 @@ static void handle_inotify_events() {
 	ssize_t len;
 	char *ptr;
 
-	/* Loop while events can be read from inotify file descriptor. */
-
-	for (;;) {
-
-		/* Read some events. */
-
+	// Loop while events can be read from inotify file descriptor.
+	while (1) {
+		// Read events
 		len = read(inotify_fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
 			perror("read");
 			exit(EXIT_FAILURE);
 		}
 
-		/* If the nonblocking read() found no events to read, then
-		   it returns -1 with errno set to EAGAIN. In that case,
-		   we exit the loop. */
-
+		// If the nonblocking read() found no events to read, then it returns
+ 		// -1 with errno set to EAGAIN. In that case, we exit the loop. 
 		if (len <= 0)
 			break;
 
-		/* Loop over all events in the buffer */
-
-		for (ptr = buf; ptr < buf + len;
-				ptr += sizeof(struct inotify_event) + event->len) {
-			printf("event!\n");
-
+		// Loop over all events in the buffer
+		for (ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
+			char *file = 0;
+			int index = 0;
+			for (index = 0; index < inotify_watches_N; ++index)
+				if (inotify_watches[index] == event->wd) {
+					file = inotify_watched_files[index];
+					break;
+				}
+			bool exists = file_exists(file);
+			if (inotify_verbose) {
+				printf("FILE:  %s\n", file);
+				printf("EVENT: %d %d %d %d %s\n", event->wd, event->mask, event->cookie, event->len, event->name);
+				if (exists) printf("EXIST: yes.\n");
+				else        printf("EXIST: no.\n");
 
-			/* Print event type */
-// 			int      wd;       /* Watch descriptor */
-// 			uint32_t mask;     /* Mask of events */
-// 			uint32_t cookie;   /* Unique cookie associating related
-// 								  events (for rename(2)) */
-// 			uint32_t len;      /* Size of name field */
-// 			char     name[];   /* Optional null-terminated name */
-			printf("EVENT: %d %d %d %d %s\n", event->wd, event->mask, event->cookie, event->len, event->name);
-
-// 			if (event->mask & IN_MODIFY)
-// 				printf("modified: ");
-
-			if (event->mask & IN_ACCESS) printf("M: IN_ACCESS\n");
-			if (event->mask & IN_ATTRIB) printf("M: IN_ATTRIB\n");
-			if (event->mask & IN_CLOSE_WRITE) printf("M: IN_CLOSE_WRITE\n");
-			if (event->mask & IN_CLOSE_NOWRITE) printf("M: IN_CLOSE_NOWRITE\n");
-			if (event->mask & IN_CREATE) printf("M: IN_CREATE\n");
-			if (event->mask & IN_DELETE) printf("M: IN_DELETE\n");
-			if (event->mask & IN_DELETE_SELF) printf("M: IN_DELETE_SELF\n");
-			if (event->mask & IN_MODIFY) printf("M: IN_MODIFY\n");
-			if (event->mask & IN_MOVE_SELF) printf("M: IN_MOVE_SELF\n");
-			if (event->mask & IN_MOVED_FROM) printf("M: IN_MOVED_FROM\n");
-			if (event->mask & IN_MOVED_TO) printf("M: IN_MOVED_TO\n");
-			if (event->mask & IN_OPEN) printf("M: IN_OPEN\n");
-
-			/* Print the name of the file */
-			if (event->len)
-				printf("%s", event->name);
-			printf("\n");
+				if (event->mask & IN_ACCESS) printf("M: IN_ACCESS\n");
+				if (event->mask & IN_ATTRIB) printf("M: IN_ATTRIB\n");
+				if (event->mask & IN_CLOSE_WRITE) printf("M: IN_CLOSE_WRITE\n");
+				if (event->mask & IN_CLOSE_NOWRITE) printf("M: IN_CLOSE_NOWRITE\n");
+				if (event->mask & IN_CREATE) printf("M: IN_CREATE\n");
+				if (event->mask & IN_DELETE) printf("M: IN_DELETE\n");
+				if (event->mask & IN_DELETE_SELF) printf("M: IN_DELETE_SELF\n");
+				if (event->mask & IN_MODIFY) printf("M: IN_MODIFY\n");
+				if (event->mask & IN_MOVE_SELF) printf("M: IN_MOVE_SELF\n");
+				if (event->mask & IN_MOVED_FROM) printf("M: IN_MOVED_FROM\n");
+				if (event->mask & IN_MOVED_TO) printf("M: IN_MOVED_TO\n");
+				if (event->mask & IN_OPEN) printf("M: IN_OPEN\n");
+			}
+			bool reload = false;
+			if (event->mask & IN_MODIFY)
+				reload = true;
+			else if (event->mask & IN_IGNORED)
+				if (exists) {
+					reload = true;
+					inotify_watches[index] = inotify_add_watch(inotify_fd, file, inotify_verbose ? IN_ALL_EVENTS : (IN_MODIFY | IN_IGNORED));
+				}
+				else {
+					fprintf(stderr, "Missing logic in shader reload: File was (presumably) changed by copying over it (like vim :w does), but the file no longer exists. Maybe it is really gone. Maybe we should poll for a few frames.\n");
+					exit(EXIT_FAILURE);
+				}
+			if (reload) {
+				printf("reloading %s\n", file);
+				reload_shader(file);
+			}
 		}
 	}
 }
