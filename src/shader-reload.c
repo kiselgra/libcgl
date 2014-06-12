@@ -94,6 +94,8 @@ void regenerate_error_texture(char *text) {
 	if (!cairo)
 		cairo = create_cairo_context(w, h, 4, &cairo_surface, &cairo_surface_data);
 
+	cairo_set_source_rgb(cairo, 1, 1, 1);
+	cairo_paint(cairo);
 	cairo_set_source_rgb(cairo, 0, 0, 0);
 
 	cairo_set_font_size(cairo, 12);
