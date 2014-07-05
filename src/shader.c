@@ -77,6 +77,8 @@ struct shader {
 	char *vert_info_log, *frag_info_log, *geom_info_log, *tess_control_info_log, *tess_eval_info_log, *compute_info_log, *program_info_log;
 };
 
+bool cgl_verbose_shader_handling = true;
+
 #ifndef SCM_MAGIC_SNARFER
 #include "mm.h"
 define_mm(shader, shaders, shader_ref);
@@ -211,7 +213,7 @@ bool add_shader_input(shader_ref ref, const char *varname, unsigned int index) {
 
 static void establish_uniform_location(struct shader *shader, int i) {
 	int loc = glGetUniformLocation(shader->shader_program, shader->uniform_names[i]);
-	if (loc < 0)
+	if (loc < 0 && cgl_verbose_shader_handling)
 		fprintf(stderr, "WARNING: Location of uniform %s in shader %s is < 0.\n", shader->uniform_names[i], shader->name);
 	shader->uniform_locations[i] = loc;
 }

@@ -76,6 +76,9 @@ void render_shader_error_message();
 void activate_automatic_shader_reload();
 void reload_modified_shader_files();
 
+//! be verbose about unused uniform variables. default: true.
+extern bool cgl_verbose_shader_handling;
+
 define_array(shader);
 
 #ifdef __cplusplus
