@@ -181,6 +181,11 @@ GLuint mesh_vertex_buffer(mesh_ref mr, int id) {
 	return mesh->vertex_buffer_ids[id];
 }
 
+GLuint mesh_indexbuffer(mesh_ref mr) {
+	struct mesh *mesh = meshes+mr.id;
+	return mesh->index_buffer_id;
+}
+
 void compute_bounding_box_for_mesh(mesh_ref mr, unsigned int vertices, unsigned int element_dim, const float *data) {
 	struct mesh *mesh = meshes+mr.id;
 	mesh->bounding_box = malloc(sizeof(vec3f)*2);
