@@ -228,6 +228,16 @@ framebuffer_ref currently_bound_framebuffer() {
 	return last_bound_fbo;
 }
 
+texture_ref framebuffer_depth_texture(framebuffer_ref ref) {
+	return framebuffers[ref.id].depth_tex;
+}
+
+texture_ref* framebuffer_color_textures(framebuffer_ref ref, int *n) {
+	*n = framebuffers[ref.id].attachments_in_use;
+	return framebuffers[ref.id].color_textures;
+}
+
+
 //! @}
 
 

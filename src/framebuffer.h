@@ -25,6 +25,9 @@ framebuffer_ref find_framebuffer(const char *name);
 char* framebuffer_name(framebuffer_ref ref);
 bool valid_framebuffer_ref(framebuffer_ref ref);
 
+texture_ref framebuffer_depth_texture(framebuffer_ref ref);
+texture_ref* framebuffer_color_textures(framebuffer_ref ref, int *n);
+
 framebuffer_ref currently_bound_framebuffer();
 
 define_array(framebuffer);
