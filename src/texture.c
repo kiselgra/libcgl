@@ -186,6 +186,7 @@ texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int
 
 	glGenTextures(1, &texture->texid);
 	texture->target = target;
+	texture->samples = s;	// has to be set up before calling set_texture_params.
 	glBindTexture(target, texture->texid);
 	
 	texture->bound = true;
@@ -199,7 +200,6 @@ texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int
 	texture->type = type;
 	texture->buffer = 0;
 	texture->filename = 0;
-	texture->samples = s;
 	if (s <= 1)
 		glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
 	else

@@ -12,6 +12,7 @@ typedef struct {
 	int id;
 } framebuffer_ref;
 
+framebuffer_ref make_framebuffer_ms(const char *name, unsigned int samples, unsigned int width, unsigned int height);
 framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned int height);
 void attach_texture_as_colorbuffer(framebuffer_ref ref, const char *name, texture_ref texture);
 void attach_texture_as_depthbuffer(framebuffer_ref ref, const char *name, texture_ref texture);
