@@ -24,6 +24,7 @@ void resize_framebuffer(framebuffer_ref ref, unsigned int width, unsigned int he
 framebuffer_ref find_framebuffer(const char *name);
 char* framebuffer_name(framebuffer_ref ref);
 bool valid_framebuffer_ref(framebuffer_ref ref);
+GLuint framebuffer_id(framebuffer_ref);
 
 texture_ref framebuffer_depth_texture(framebuffer_ref ref);
 texture_ref* framebuffer_color_textures(framebuffer_ref ref, int *n);

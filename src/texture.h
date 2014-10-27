@@ -34,6 +34,7 @@ texture_ref make_texture_ub(const char *name, const char *filename, int target, 
 #endif
 texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params);
 texture_ref make_empty_texture1d(const char *name, unsigned int elems, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params);
+texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int h, unsigned int s, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params);
 texture_ref make_buffer_texture(const char *name, unsigned int elements, unsigned int element_size, unsigned int internal_format);
 void resize_texture(texture_ref ref, unsigned int w, unsigned int h);
 int texture_id(texture_ref ref);
@@ -46,6 +47,7 @@ void set_texture_params(texture_ref ref, tex_params_t *params);
 
 unsigned int texture_height(texture_ref ref);
 unsigned int texture_width(texture_ref ref);
+unsigned int texture_samples(texture_ref ref);
 const tex_params_t* texture_params(texture_ref ref);
 
 bool valid_texture_ref(texture_ref ref);

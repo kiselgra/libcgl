@@ -30,7 +30,7 @@ struct texture {
 	GLuint texid;
 	GLuint target;
 	tex_params_t params;
-	unsigned int width, height;
+	unsigned int width, height, samples;
 	bool bound;
 	GLenum internal_format,  // GL_RGBA32F ...
 		   format,           // GL_RGB ...
@@ -173,8 +173,10 @@ texture_ref make_texture(const char *name, const char *filename, int target, tex
 /*! \brief Creates an empty texture.
  *  \ingroup textures
  *  \note The parameter order of int-format, type, format is not the same as in the glTexImage2D call.
+ *  \param s the number of samples per pixel. use 1 to specify non-multisample texture setup.
+ *  \note For MS you need to specify a multisampling texture target, e.g. GL_TEXTURE_2D_MULTISAMPLE
  */
-texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
+texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int h, unsigned int s, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
 	allocate_texture();
 	texture_ref ref;
 	ref.id = next_texture_index++;
@@ -197,11 +199,23 @@ texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h,
 	texture->type = type;
 	texture->buffer = 0;
 	texture->filename = 0;
-	glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
+	texture->samples = s;
+	if (s <= 1)
+		glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
+	else
+		glTexImage2DMultisample(target, s, internal_format, w, h, 0);
 
 	glBindTexture(target, 0);
 	check_for_gl_errors(__FUNCTION__);
 	return ref;
+}
+
+/*! \brief Creates an empty texture.
+ *  \ingroup textures
+ *  \note The parameter order of int-format, type, format is not the same as in the glTexImage2D call.
+ */
+texture_ref make_empty_texture(const char *name, unsigned int w, unsigned int h, int target, unsigned int internal_format, unsigned int type, unsigned int format, tex_params_t *params) {
+	return make_empty_texture_ms(name, w, h, 1, target, internal_format, type, format, params);
 }
 
 #if CGL_GL == GL
@@ -270,15 +284,17 @@ texture_ref make_buffer_texture(const char *name, unsigned int elements, unsigne
 
 void set_texture_params(texture_ref ref, tex_params_t *params) {
 	struct texture *texture = textures+ref.id;
-	bool was_bound = false;
-	if (!texture->bound) glBindTexture(texture->target, texture->texid);
-	else                 was_bound = true;
-	incorporate_params(texture, params);
-	glTexParameteri(texture->target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
-	glTexParameteri(texture->target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
-	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
-	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, texture->params.min);
-	if (!was_bound)  glBindTexture(texture->target, 0);
+	if (texture->samples <= 1) {
+		bool was_bound = false;
+		if (!texture->bound) glBindTexture(texture->target, texture->texid);
+		else                 was_bound = true;
+		incorporate_params(texture, params);
+		glTexParameteri(texture->target, GL_TEXTURE_WRAP_S, texture->params.wrap_s);
+		glTexParameteri(texture->target, GL_TEXTURE_WRAP_T, texture->params.wrap_t);
+		glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, texture->params.mag);
+		glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, texture->params.min);
+		if (!was_bound)  glBindTexture(texture->target, 0);
+	}
 }
 
 /*! \note This does destroy the texture's content, yea?
@@ -423,6 +439,10 @@ unsigned int texture_width(texture_ref ref) {
 
 unsigned int texture_height(texture_ref ref) {
 	return textures[ref.id].height;
+}
+
+unsigned int texture_samples(texture_ref ref) {
+	return textures[ref.id].samples;
 }
 
 const tex_params_t* texture_params(texture_ref ref) {

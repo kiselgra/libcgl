@@ -181,7 +181,7 @@ GLuint mesh_vertex_buffer(mesh_ref mr, int id) {
 	return mesh->vertex_buffer_ids[id];
 }
 
-GLuint mesh_indexbuffer(mesh_ref mr) {
+GLuint mesh_index_buffer(mesh_ref mr) {
 	struct mesh *mesh = meshes+mr.id;
 	return mesh->index_buffer_id;
 }

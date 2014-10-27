@@ -108,7 +108,10 @@ void attach_texture_as_colorbuffer(framebuffer_ref ref, const char *name, textur
 	framebuffer->color_textures[id] = texture;
 // 	printf("attaching texture id %d to framebuffer %s as att #%d.\n", texture_id(texture), framebuffer->name, id);
 	framebuffer->color_attachments[id] = GL_COLOR_ATTACHMENT0 + id;
-	glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D, texture_id(texture), 0);
+	if (texture_samples(texture) <= 1)
+		glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D, texture_id(texture), 0);
+	else
+		glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D_MULTISAMPLE, texture_id(texture), 0);
 	check_for_gl_errors(__FUNCTION__);
 }
 
@@ -117,7 +120,10 @@ void attach_texture_as_depthbuffer(framebuffer_ref ref, const char *name, textur
 	framebuffer->depthbuffer_name = malloc(strlen(name)+1);
 	framebuffer->depth_tex = texture;
 	strcpy(framebuffer->depthbuffer_name, name);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_id(texture), 0);
+	if (texture_samples(texture) <= 1)
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_id(texture), 0);
+	else
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, texture_id(texture), 0);
 }
 
 
@@ -237,6 +243,9 @@ texture_ref* framebuffer_color_textures(framebuffer_ref ref, int *n) {
 	return framebuffers[ref.id].color_textures;
 }
 
+GLuint framebuffer_id(framebuffer_ref ref) {
+	return framebuffers[ref.id].fbo_id;
+}
 
 //! @}
 
