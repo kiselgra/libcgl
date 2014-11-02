@@ -96,6 +96,7 @@ static texture_ref internal_make_tex(const char *name, GLenum target, tex_params
 	glGenTextures(1, &texture->texid);
 	
 	glBindTexture(target, texture->texid);
+	texture->samples = 1;
 	texture->target = target;
 	texture->format = format; // data comes in this format
 	texture->internal_format = int_format; // data is stored in this format
@@ -189,6 +190,7 @@ texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int
 	glBindTexture(target, texture->texid);
 	
 	texture->bound = true;
+	texture->samples = s;
 	set_texture_params(ref, params);
 	texture->bound = false;
 
@@ -199,7 +201,6 @@ texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int
 	texture->type = type;
 	texture->buffer = 0;
 	texture->filename = 0;
-	texture->samples = s;
 	if (s <= 1)
 		glTexImage2D(target, 0, internal_format, texture->width, texture->height, 0, format, type, 0);
 	else
@@ -237,6 +238,7 @@ texture_ref make_empty_texture1d(const char *name, unsigned int elems, unsigned 
 
 	texture->width = elems;
 	texture->height = 1;
+	texture->samples = 1;
 	texture->format = format;
 	texture->internal_format = internal_format;
 	texture->type = type;
