@@ -44,6 +44,7 @@ struct framebuffer {
 	GLuint depthbuffer;
 	texture_ref depth_tex;
 	char *depthbuffer_name;
+	int samples;
 };
 
 static struct framebuffer *framebuffers = 0;
@@ -68,7 +69,7 @@ static void allocate_framebuffer() {
  *  @{
  */
 
-framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned int height) {
+framebuffer_ref make_framebuffer_ms(const char *name, unsigned int samples, unsigned int width, unsigned int height) {
 	allocate_framebuffer();
 	framebuffer_ref ref;
 	ref.id = next_framebuffer_index++;
@@ -91,11 +92,18 @@ framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned 
 	glGenFramebuffers(1, &framebuffer->fbo_id);
 	framebuffer->bound = false;
 	framebuffer->depthbuffer = 0;
+	framebuffer->samples = samples;
 
 	check_for_gl_errors(__FUNCTION__);
 	return ref;
 }
 
+framebuffer_ref make_framebuffer(const char *name, unsigned int width, unsigned int height) {
+	return make_framebuffer_ms(name, 1, width, height);
+}
+
+/*! \attention If the first texture attached to a single sample framebuffer is a multisample texture, the frambuffer is changed to be multisample, too!
+ */
 void attach_texture_as_colorbuffer(framebuffer_ref ref, const char *name, texture_ref texture) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 	if (framebuffer->attachments_in_use == framebuffer->max_number_of_color_attachments) {
@@ -108,18 +116,30 @@ void attach_texture_as_colorbuffer(framebuffer_ref ref, const char *name, textur
 	framebuffer->color_textures[id] = texture;
 // 	printf("attaching texture id %d to framebuffer %s as att #%d.\n", texture_id(texture), framebuffer->name, id);
 	framebuffer->color_attachments[id] = GL_COLOR_ATTACHMENT0 + id;
-	if (texture_samples(texture) <= 1)
+	int tex_samples = texture_samples(texture);
+	if (id == 0 && framebuffer->depthbuffer_name == 0)
+		framebuffer->samples = texture_samples(texture);
+	if (tex_samples != framebuffer->samples)
+		fprintf(stderr, "Cannot attach a multisample texture to a non-multisample framebuffer!\n");
+	if (framebuffer->samples <= 1)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D, texture_id(texture), 0);
 	else
 		glFramebufferTexture2D(GL_FRAMEBUFFER, framebuffer->color_attachments[id], GL_TEXTURE_2D_MULTISAMPLE, texture_id(texture), 0);
 	check_for_gl_errors(__FUNCTION__);
 }
 
+/*! \attention If the first texture attached to a single sample framebuffer is a multisample texture, the frambuffer is changed to be multisample, too!
+ */
 void attach_texture_as_depthbuffer(framebuffer_ref ref, const char *name, texture_ref texture) {
 	struct framebuffer *framebuffer = framebuffers+ref.id;
 	framebuffer->depthbuffer_name = malloc(strlen(name)+1);
 	framebuffer->depth_tex = texture;
 	strcpy(framebuffer->depthbuffer_name, name);
+	int tex_samples = texture_samples(texture);
+	if (framebuffer->attachments_in_use == 0)
+		framebuffer->samples = texture_samples(texture);
+	if (tex_samples != framebuffer->samples)
+		fprintf(stderr, "Cannot attach a multisample texture to a non-multisample framebuffer!\n");
 	if (texture_samples(texture) <= 1)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_id(texture), 0);
 	else
@@ -135,11 +155,14 @@ void attach_depth_buffer(framebuffer_ref ref) {
 
 	glGenRenderbuffers(1, &framebuffer->depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->depthbuffer);
+	if (framebuffer->samples <= 1)
 #if CGL_GL == GL
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
 #else
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, framebuffer->width, framebuffer->height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, framebuffer->width, framebuffer->height);
 #endif
+	else
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, framebuffer->samples, GL_DEPTH_COMPONENT32, framebuffer->width, framebuffer->height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer->depthbuffer);
 	// unbind renderbuffer?
 	check_for_gl_errors(__FUNCTION__);

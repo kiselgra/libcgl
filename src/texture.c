@@ -187,6 +187,7 @@ texture_ref make_empty_texture_ms(const char *name, unsigned int w, unsigned int
 
 	glGenTextures(1, &texture->texid);
 	texture->target = target;
+	texture->samples = s;	// has to be set up before calling set_texture_params.
 	glBindTexture(target, texture->texid);
 	
 	texture->bound = true;
