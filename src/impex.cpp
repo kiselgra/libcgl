@@ -1,6 +1,7 @@
 #include "impex.h"
 #include "cgl-config.h"
 
+#include <string.h>	// because of png++ bug.
 #if LIBCGL_HAVE_LIBPNG == 1
 #include <png++/png.hpp>
 #endif
