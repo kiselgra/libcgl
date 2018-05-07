@@ -62,7 +62,8 @@ AM_CXXFLAGS = -Werror=return-type
 AM_CFLAGS = -Werror=return-type
 
 # setting c preprocessor flags for main project
-libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(WAND_CFLAGS)-D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION)
+libcgl_la_CPPFLAGS = -D PACKAGE=\"$(PACKAGE)\" -D VERSION=\"$(VERSION)\" $(GUILE_CFLAGS) $(WAND_CFLAGS) -D DATADIR=\"$(pkgdatadir)\" @GUILE_DEF@ $(AM_CPPFLAGS) -D CGL_GL_VERSION=$(GL_VERSION) -I /usr/include/ImageMagick-6
+
 
 libcgl_la_LIBADD = $(GUILE_LDFLAGS) $(OBJL_LDFLAGS) $(GLEW_LIBS) $(WAND_LIBS)
 
